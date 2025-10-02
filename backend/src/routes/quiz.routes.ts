@@ -410,3 +410,98 @@ router.get('/health', (req: Request, res: Response) => {
 });
 
 export default router;
+// TEMPORAL: AI Random Question endpoint for testing - ADDED $(date)
+router.get('/ai-random', async (req: Request, res: Response) => {
+  try {
+    logger.info('🤖 AI Random Question endpoint called');
+
+    // Get total count of AI-generated questions
+    const totalQuestions = await prisma.questionVariation.count({
+      where: {
+        baseQuestion: {
+          status: 'REVIEW_REQUIRED'
+        }
+      }
+    });
+
+    logger.info(`📊 Total AI questions available: ${totalQuestions}`);
+
+    if (totalQuestions === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'No hay ejercicios de IA disponibles'
+      });
+    }
+
+    const randomSkip = Math.floor(Math.random() * totalQuestions);
+    logger.info(`🎲 Random skip: ${randomSkip}`);
+
+    // Get random AI question with alternatives
+    const question = await prisma.questionVariation.findFirst({
+      where: {
+        baseQuestion: {
+          status: 'REVIEW_REQUIRED'
+        }
+      },
+      skip: randomSkip,
+      include: {
+        alternatives: {
+          orderBy: { order: 'asc' }
+        },
+        baseQuestion: {
+          include: {
+            aiAnalysis: {
+              select: {
+                specialty: true,
+                topic: true,
+                difficulty: true
+              }
+            }
+          }
+        }
+      }
+    });
+
+    if (!question) {
+      return res.status(404).json({
+        success: false,
+        message: 'No se pudo obtener ejercicio de IA'
+      });
+    }
+
+    logger.info(`✅ AI Question found: ${question.id}`);
+
+    // Format response to match frontend expectations
+    const formattedQuestion = {
+      id: question.id,
+      content: question.content,
+      explanation: question.explanation || 'Explicación generada por IA',
+      difficulty: question.difficulty || question.baseQuestion.aiAnalysis?.difficulty || 'MEDIUM',
+      type: 'MULTIPLE_CHOICE',
+      specialty: question.baseQuestion.aiAnalysis?.specialty || 'General',
+      topic: question.baseQuestion.aiAnalysis?.topic || 'General',
+      options: question.alternatives.map(alternative => ({
+        id: alternative.id,
+        text: alternative.text,
+        isCorrect: alternative.isCorrect,
+        order: alternative.order
+      }))
+    };
+
+    logger.info(`🎯 Returning formatted question with ${formattedQuestion.options.length} options`);
+
+    return res.json({
+      success: true,
+      question: formattedQuestion,
+      source: 'AI_FACTORY',
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    logger.error('❌ Error in AI random question:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error al obtener ejercicio de IA',
+      error: error.message
+    });
+  }
+});
