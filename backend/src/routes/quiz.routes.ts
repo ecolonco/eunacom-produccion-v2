@@ -407,3 +407,89 @@ router.get('/ai-random', async (req: Request, res: Response) => {
     });
   }
 });
+
+// ALIAS: Redirect /random-question to working /ai-random endpoint
+router.get('/random-question', async (req: Request, res: Response) => {
+  try {
+    logger.info('🔄 Redirecting /random-question to /ai-random');
+    
+    // Get total count of AI-generated questions
+    const totalQuestions = await prisma.questionVariation.count({
+      where: {
+        baseQuestion: {
+          status: 'REVIEW_REQUIRED'
+        }
+      }
+    });
+
+    if (totalQuestions === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'No se encontraron preguntas con los criterios especificados'
+      });
+    }
+
+    const randomSkip = Math.floor(Math.random() * totalQuestions);
+
+    // Get random AI question with alternatives
+    const question = await prisma.questionVariation.findFirst({
+      where: {
+        baseQuestion: {
+          status: 'REVIEW_REQUIRED'
+        }
+      },
+      skip: randomSkip,
+      include: {
+        alternatives: {
+          orderBy: { order: 'asc' }
+        },
+        baseQuestion: {
+          include: {
+            aiAnalysis: {
+              select: {
+                specialty: true,
+                topic: true,
+                difficulty: true
+              }
+            }
+          }
+        }
+      }
+    });
+
+    if (!question) {
+      return res.status(404).json({
+        success: false,
+        message: 'No se encontró ninguna pregunta'
+      });
+    }
+
+    // Format response to match frontend expectations
+    const formattedQuestion = {
+      id: question.id,
+      content: question.content,
+      explanation: question.explanation || 'Explicación generada por IA',
+      difficulty: question.difficulty || question.baseQuestion.aiAnalysis?.difficulty || 'MEDIUM',
+      type: 'MULTIPLE_CHOICE',
+      specialty: question.baseQuestion.aiAnalysis?.specialty || 'General',
+      topic: question.baseQuestion.aiAnalysis?.topic || 'General',
+      options: question.alternatives.map(alternative => ({
+        id: alternative.id,
+        text: alternative.text,
+        isCorrect: alternative.isCorrect,
+        order: alternative.order
+      }))
+    };
+
+    return res.json({
+      success: true,
+      question: formattedQuestion
+    });
+  } catch (error) {
+    logger.error('❌ Error in random-question alias:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error al obtener pregunta'
+    });
+  }
+});
