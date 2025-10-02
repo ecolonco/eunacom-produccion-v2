@@ -38,111 +38,6 @@ router.get('/questions', async (req: Request, res: Response) => {
 });
 
 // Get random question (compatible with frontend expectations)
-router.get('/random-question', [
-  query('specialty').optional().isString(),
-  query('difficulty').optional().isIn(['EASY', 'MEDIUM', 'HARD'])
-], async (req: Request, res: Response) => {
-  try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        success: false,
-        message: 'Parámetros inválidos',
-        errors: errors.array()
-      });
-    }
-
-    const { specialty, difficulty } = req.query;
-
-    // Build where clause
-    const whereClause: any = {
-      isActive: true,
-      isReviewed: true
-    };
-
-    if (specialty && specialty !== 'all') {
-      whereClause.specialty = {
-        name: specialty
-      };
-    }
-
-    if (difficulty) {
-      whereClause.difficulty = difficulty;
-    }
-
-    // Get count for proper randomization
-    const totalQuestions = await prisma.questionVariation.count({
-      where: whereClause
-    });
-
-    if (totalQuestions === 0) {
-      return res.status(404).json({
-        success: false,
-        message: 'No se encontraron preguntas con los criterios especificados'
-      });
-    }
-
-    const randomSkip = Math.floor(Math.random() * totalQuestions);
-
-    const question = await prisma.questionVariation.findFirst({
-      where: whereClause,
-      skip: randomSkip,
-      include: {
-        alternatives: {
-          orderBy: { order: 'asc' }
-        },
-        alternatives: {
-          orderBy: { order: "asc" }
-        },
-        baseQuestion: {
-          include: {
-            aiAnalysis: {
-              select: {
-                specialty: true,
-                topic: true,
-                difficulty: true
-              }
-            }
-          }
-        }      }
-    });
-
-    if (!question) {
-      return res.status(404).json({
-        success: false,
-        message: 'No se encontró ninguna pregunta'
-      });
-    }
-
-    // Format response to match frontend expectations
-    const formattedQuestion = {
-      id: question.id,
-      content: question.content,
-      explanation: question.explanation,
-      difficulty: question.difficulty,
-      type: "MULTIPLE_CHOICE",
-      specialty: question.baseQuestion.aiAnalysis?.specialty || "General",
-      topic: question.baseQuestion.aiAnalysis?.topic || "General",
-      alternatives: question.alternatives.map(option => ({
-        id: option.id,
-        text: option.text,
-        isCorrect: option.isCorrect,
-        order: option.order
-      }))
-    };
-
-    return res.json({
-      success: true,
-      question: formattedQuestion
-    });
-  } catch (error) {
-    logger.error('Error fetching random question:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'Error al obtener la pregunta'
-    });
-  }
-});
 
 // Backward compatibility - Keep the old /random endpoint
 router.get('/random', async (req: Request, res: Response) => {
@@ -154,7 +49,7 @@ router.get('/random', async (req: Request, res: Response) => {
         isReviewed: true
       },
       include: {
-        alternatives: {
+        options: {
           orderBy: { order: 'asc' }
         },
         specialty: {
@@ -195,7 +90,7 @@ router.get('/question/:id', async (req: Request, res: Response) => {
     const question = await prisma.question.findUnique({
       where: { id },
       include: {
-        alternatives: {
+        options: {
           orderBy: { order: 'asc' }
         },
         specialty: {
@@ -250,7 +145,7 @@ router.post('/submit-answer', [
     const question = await prisma.question.findUnique({
       where: { id: questionId },
       include: {
-        alternatives: true,
+        options: true,
         specialty: { select: { name: true } },
         topic: { select: { name: true } }
       }
@@ -263,8 +158,8 @@ router.post('/submit-answer', [
       });
     }
 
-    const selectedOption = question.alternatives.find(opt => opt.id === selectedOptionId);
-    const correctOption = question.alternatives.find(opt => opt.isCorrect);
+    const selectedOption = question.options.find(opt => opt.id === selectedOptionId);
+    const correctOption = question.options.find(opt => opt.isCorrect);
 
     if (!selectedOption || !correctOption) {
       return res.status(400).json({
@@ -282,8 +177,8 @@ router.post('/submit-answer', [
       selectedAnswer: selectedOption.text,
       explanation: question.explanation,
       difficulty: question.difficulty,
-      specialty: question.baseQuestion.aiAnalysis?.specialty || "General",
-      topic: question.baseQuestion.aiAnalysis?.topic || "General",
+      specialty: question.specialty.name,
+      topic: question.topic.name,
       timeSpent: timeSpent || 0
     };
 
@@ -322,7 +217,7 @@ router.post('/answer', [
     const question = await prisma.question.findUnique({
       where: { id: questionId },
       include: {
-        alternatives: true
+        options: true
       }
     });
 
@@ -333,8 +228,8 @@ router.post('/answer', [
       });
     }
 
-    const selectedOption = question.alternatives.find(opt => opt.id === selectedOptionId);
-    const correctOption = question.alternatives.find(opt => opt.isCorrect);
+    const selectedOption = question.options.find(opt => opt.id === selectedOptionId);
+    const correctOption = question.options.find(opt => opt.isCorrect);
 
     if (!selectedOption || !correctOption) {
       return res.status(400).json({
@@ -487,7 +382,7 @@ router.get('/ai-random', async (req: Request, res: Response) => {
       type: 'MULTIPLE_CHOICE',
       specialty: question.baseQuestion.aiAnalysis?.specialty || 'General',
       topic: question.baseQuestion.aiAnalysis?.topic || 'General',
-      alternatives: question.alternatives.map(alternative => ({
+      options: question.alternatives.map(alternative => ({
         id: alternative.id,
         text: alternative.text,
         isCorrect: alternative.isCorrect,
@@ -509,26 +404,6 @@ router.get('/ai-random', async (req: Request, res: Response) => {
       success: false,
       message: 'Error al obtener ejercicio de IA',
       error: error.message
-    });
-  }
-});
-
-// REDIRECT: Make /random-question use AI factory
-router.get('/random-question-redirect', async (req: Request, res: Response) => {
-  // Simply redirect to the working AI endpoint
-  try {
-    const aiResponse = await fetch(`${req.protocol}://${req.get('host')}/api/quiz/ai-random`, {
-      headers: {
-        'Authorization': req.headers.authorization || ''
-      }
-    });
-    const data = await aiResponse.json();
-    return res.json(data);
-  } catch (error) {
-    logger.error('Error redirecting to AI endpoint:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'Error al obtener pregunta'
     });
   }
 });
