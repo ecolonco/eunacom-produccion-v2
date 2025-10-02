@@ -71,7 +71,7 @@ router.get('/random-question', [
     }
 
     // Get count for proper randomization
-    const totalQuestions = await prisma.question.count({
+    const totalQuestions = await prisma.questionVariation.count({
       where: whereClause
     });
 
@@ -84,7 +84,7 @@ router.get('/random-question', [
 
     const randomSkip = Math.floor(Math.random() * totalQuestions);
 
-    const question = await prisma.question.findFirst({
+    const question = await prisma.questionVariation.findFirst({
       where: whereClause,
       skip: randomSkip,
       include: {
@@ -141,7 +141,7 @@ router.get('/random-question', [
 router.get('/random', async (req: Request, res: Response) => {
   try {
     // Get random question with options
-    const question = await prisma.question.findFirst({
+    const question = await prisma.questionVariation.findFirst({
       where: {
         isActive: true,
         isReviewed: true
