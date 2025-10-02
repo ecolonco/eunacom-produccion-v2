@@ -649,3 +649,4 @@ const ExerciseEditor: React.FC<{
 
 export default ExerciseManagement;
 // Force redeploy Thu Oct  2 09:55:33 -03 2025
+// Force Vercel redeploy - Thu Oct  2 20:58:24 -03 2025
