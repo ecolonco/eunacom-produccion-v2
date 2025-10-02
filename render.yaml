@@ -1,0 +1,75 @@
+# Configuraci�n completa de Render para EUNACOM
+# Incluye backend API, frontend y base de datos
+
+databases:
+  - name: eunacom-nuevo-db
+    databaseName: eunacom_produccion
+    user: eunacom_user
+    region: oregon
+
+services:
+  # Servicio Backend API
+  - type: web
+    name: eunacom-backend-v3
+    runtime: node
+    region: oregon
+    plan: starter
+    repo: https://github.com/ecolonco/eunacom-nuevo.git
+    branch: main
+    rootDir: .
+    buildCommand: cd backend && npm ci && npx prisma generate && npx prisma migrate deploy && npm run build
+    startCommand: cd backend && npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      - key: DATABASE_URL
+        fromDatabase:
+          name: eunacom-nuevo-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: DEEPSEEK_API_KEY
+        value: sk-8d786ad20758485899b4d587b14b19f2
+      - key: CORS_ORIGIN
+        value: https://eunacom-frontend-v3.onrender.com
+
+  # Servicio Frontend (Static Site)
+  - type: web
+    name: eunacom-frontend-v3
+    runtime: static
+    region: oregon
+    plan: starter
+    repo: https://github.com/ecolonco/eunacom-nuevo.git
+    branch: main
+    rootDir: frontend
+    buildCommand: npm ci && npx vite build --mode production
+    staticPublishPath: ./dist
+    envVars:
+      - key: VITE_API_URL
+        value: https://eunacom-backend-v3.onrender.com
+      - key: VITE_APP_NAME
+        value: EUNACOM Learning Platform
+      - key: VITE_APP_VERSION
+        value: 1.0.0
+      - key: VITE_APP_ENVIRONMENT
+        value: production
+    headers:
+      - path: /*
+        name: X-Frame-Options
+        value: DENY
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+      - path: /*
+        name: Referrer-Policy
+        value: strict-origin-when-cross-origin
+      - path: /*
+        name: Permissions-Policy
+        value: camera=(), microphone=(), geolocation=()
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html

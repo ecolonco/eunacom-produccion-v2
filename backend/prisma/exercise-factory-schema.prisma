@@ -1,0 +1,156 @@
+// Exercise Factory Models - To be integrated into main schema
+
+// Base question uploaded from CSV
+model BaseQuestion {
+  id          String   @id @default(cuid())
+  content     String   // Original question from CSV
+  source      String?  // Source of the question (file name, etc.)
+  uploadedBy  String   // User who uploaded
+
+  // Processing status
+  status      ProcessingStatus @default(PENDING)
+
+  // AI Analysis results
+  aiAnalysis  AIAnalysis?
+
+  // Generated variations
+  variations  QuestionVariation[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("base_questions")
+}
+
+// AI analysis and classification results
+model AIAnalysis {
+  id            String      @id @default(cuid())
+  baseQuestionId String     @unique
+  baseQuestion   BaseQuestion @relation(fields: [baseQuestionId], references: [id], onDelete: Cascade)
+
+  // EUNACOM Taxonomy Classification
+  specialty     String      // e.g., "Cardiología", "Medicina Interna"
+  topic         String      // e.g., "Insuficiencia Cardíaca", "Hipertensión"
+  subtopic      String?     // e.g., "IC con FE reducida", "HTA sistólica"
+
+  // Difficulty assessment
+  baseDifficulty String     // EASY, MEDIUM, HARD
+
+  // Content analysis
+  questionType   String     // CLINICAL_CASE, CONCEPT, PROCEDURE, etc.
+  keywords       String[]   // Medical terms identified
+  learningObjectives String[] // Educational goals
+
+  // Quality metrics
+  confidenceScore Float     // 0-1 confidence in classification
+  reviewNotes     String?   // Any issues or concerns
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("ai_analyses")
+}
+
+// Generated question variations
+model QuestionVariation {
+  id              String       @id @default(cuid())
+  baseQuestionId  String
+  baseQuestion    BaseQuestion @relation(fields: [baseQuestionId], references: [id], onDelete: Cascade)
+
+  // Variation details
+  difficulty      Difficulty   // EASY, MEDIUM, HARD
+  variationNumber Int         // 1-6 (3 easy, 2 medium, 1 hard)
+
+  // Generated content
+  content         String      // Modified question text
+  explanation     String      // Detailed explanation
+
+  // Multiple choice options
+  alternatives    Alternative[]
+
+  // Quality control
+  isApproved      Boolean     @default(false)
+  reviewedBy      String?
+  reviewNotes     String?
+
+  // Final question (if approved)
+  finalQuestionId String?     // Links to Questions table
+
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  @@map("question_variations")
+}
+
+// Multiple choice alternatives for each variation
+model Alternative {
+  id                String           @id @default(cuid())
+  variationId       String
+  variation         QuestionVariation @relation(fields: [variationId], references: [id], onDelete: Cascade)
+
+  text             String           // Alternative text
+  isCorrect        Boolean          @default(false)
+  order            Int             // A, B, C, D (1-4)
+
+  // Explanation for this alternative
+  explanation      String?         // Why this is correct/incorrect
+
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  @@map("alternatives")
+}
+
+// Processing job tracking
+model ProcessingJob {
+  id          String         @id @default(cuid())
+  type        JobType        // CSV_UPLOAD, AI_ANALYSIS, VARIATION_GENERATION
+  status      JobStatus      @default(PENDING)
+
+  // Job details
+  inputData   Json?          // Input parameters
+  outputData  Json?          // Results
+  errorMessage String?       // Error details if failed
+
+  // Progress tracking
+  totalItems   Int           @default(0)
+  processedItems Int         @default(0)
+
+  // Timestamps
+  startedAt    DateTime?
+  completedAt  DateTime?
+  createdAt    DateTime      @default(now())
+
+  @@map("processing_jobs")
+}
+
+enum ProcessingStatus {
+  PENDING
+  ANALYZING
+  GENERATING_VARIATIONS
+  REVIEW_REQUIRED
+  APPROVED
+  REJECTED
+  COMPLETED
+}
+
+enum JobType {
+  CSV_UPLOAD
+  AI_ANALYSIS
+  VARIATION_GENERATION
+  QUALITY_REVIEW
+}
+
+enum JobStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum Difficulty {
+  EASY
+  MEDIUM
+  HARD
+}

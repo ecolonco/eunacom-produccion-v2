@@ -1,0 +1,569 @@
+import { Router, Request, Response } from 'express';
+import { PrismaClient } from '@prisma/client';
+import { body, validationResult, query } from 'express-validator';
+import { logger } from '../utils/logger';
+import { authenticate } from '../middleware/auth.middleware';
+
+const router = Router();
+const prisma = new PrismaClient();
+
+// Apply auth middleware to all routes
+router.use(authenticate);
+
+// GET /api/quiz/random-question - Get a random question for quick practice
+router.get('/random-question', [
+  query('specialty').optional().isString(),
+  query('difficulty').optional().isIn(['EASY', 'MEDIUM', 'HARD'])
+], async (req: Request, res: Response): Promise<Response | void> => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Parámetros inválidos',
+        errors: errors.array()
+      });
+    }
+
+    const { specialty, difficulty } = req.query;
+    const user = (req as any).user;
+
+    // Build where clause
+    const whereClause: any = {
+      isActive: true,
+      isReviewed: true
+    };
+
+    if (specialty && specialty !== 'all') {
+      whereClause.specialty = {
+        name: specialty
+      };
+    }
+
+    if (difficulty) {
+      whereClause.difficulty = difficulty as Difficulty;
+    }
+
+    // Get random question
+    const totalQuestions = await prisma.question.count({
+      where: whereClause
+    });
+
+    if (totalQuestions === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'No se encontraron preguntas con los criterios especificados'
+      });
+    }
+
+    const randomSkip = Math.floor(Math.random() * totalQuestions);
+
+    const question = await prisma.question.findFirst({
+      where: whereClause,
+      skip: randomSkip,
+      include: {
+        options: {
+          orderBy: { order: 'asc' }
+        },
+        specialty: true,
+        topic: true
+      }
+    });
+
+    if (!question) {
+      return res.status(404).json({
+        success: false,
+        message: 'No se encontró ninguna pregunta'
+      });
+    }
+
+    // For quality evaluation, include isCorrect field
+    const sanitizedOptions = question.options.map(option => ({
+      id: option.id,
+      text: option.text,
+      isCorrect: option.isCorrect,
+      order: option.order
+    }));
+
+    // Generate a display ID based on question creation order
+    const questionCount = await prisma.question.count({
+      where: {
+        createdAt: {
+          lte: question.createdAt
+        }
+      }
+    });
+    const displayId = 999 + questionCount;
+
+    res.json({
+      success: true,
+      question: {
+        id: question.id,
+        displayId: displayId,
+        content: question.content,
+        explanation: question.explanation,
+        difficulty: question.difficulty,
+        type: question.type,
+        specialty: question.specialty.name,
+        topic: question.topic.name,
+        options: sanitizedOptions
+      }
+    });
+
+  } catch (error) {
+    logger.error('Error getting random question:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error interno del servidor'
+    });
+  }
+});
+
+// GET /api/quiz/question/:id - Get a specific question by ID
+router.get('/question/:id', async (req: Request, res: Response): Promise<Response | void> => {
+  try {
+    const { id } = req.params;
+    const user = (req as any).user;
+
+    // Validate ID is a number
+    const questionId = parseInt(id, 10);
+    if (isNaN(questionId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'ID de pregunta inválido'
+      });
+    }
+
+    // Get specific question
+    const question = await prisma.question.findUnique({
+      where: {
+        id: questionId
+      },
+      include: {
+        options: {
+          orderBy: { order: 'asc' }
+        },
+        specialty: true,
+        topic: true,
+        createdByUser: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true
+          }
+        }
+      }
+    });
+
+    if (!question) {
+      return res.status(404).json({
+        success: false,
+        message: 'Pregunta no encontrada'
+      });
+    }
+
+    // Generate a display ID based on question creation order
+    const questionCount = await prisma.question.count({
+      where: {
+        createdAt: {
+          lte: question.createdAt
+        }
+      }
+    });
+    const displayId = 999 + questionCount;
+
+    // Return question data
+    res.json({
+      success: true,
+      question: {
+        id: question.id,
+        displayId: displayId,
+        content: question.content,
+        explanation: question.explanation,
+        difficulty: question.difficulty,
+        type: question.type,
+        specialty: question.specialty?.name || 'General',
+        topic: question.topic?.name || 'General',
+        createdBy: question.createdByUser,
+        isActive: question.isActive,
+        isReviewed: question.isReviewed,
+        options: question.options.map(option => ({
+          id: option.id,
+          text: option.text,
+          isCorrect: option.isCorrect,
+          order: option.order
+        }))
+      }
+    });
+
+  } catch (error) {
+    logger.error('Error getting question by ID:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error interno del servidor'
+    });
+  }
+});
+
+// POST /api/quiz/submit-answer - Submit answer for a question
+router.post('/submit-answer', [
+  body('questionId').isString().notEmpty(),
+  body('selectedOptionId').isString().notEmpty(),
+  body('timeSpent').optional().isInt({ min: 0 })
+], async (req: Request, res: Response): Promise<Response | void> => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Datos inválidos',
+        errors: errors.array()
+      });
+    }
+
+    const { questionId, selectedOptionId, timeSpent = 0 } = req.body;
+    const user = (req as any).user;
+
+    // Get question with correct answer
+    const question = await prisma.question.findUnique({
+      where: { id: questionId },
+      include: {
+        options: true,
+        specialty: true,
+        topic: true
+      }
+    });
+
+    if (!question) {
+      return res.status(404).json({
+        success: false,
+        message: 'Pregunta no encontrada'
+      });
+    }
+
+    // Find selected option and correct option
+    const selectedOption = question.options.find(opt => opt.id === selectedOptionId);
+    const correctOption = question.options.find(opt => opt.isCorrect);
+
+    if (!selectedOption || !correctOption) {
+      return res.status(400).json({
+        success: false,
+        message: 'Opción no válida'
+      });
+    }
+
+    const isCorrect = selectedOption.isCorrect;
+
+    // Deduct credits (1 credit per question)
+    if (user.credits < 1) {
+      return res.status(400).json({
+        success: false,
+        message: 'Créditos insuficientes'
+      });
+    }
+
+    // Update user credits
+    await prisma.user.update({
+      where: { id: user.userId },
+      data: {
+        credits: {
+          decrement: 1
+        }
+      }
+    });
+
+    // Record the answer in user progress
+    await prisma.userProgress.create({
+      data: {
+        userId: user.userId,
+        questionId: questionId,
+        selectedOptionId: selectedOptionId,
+        isCorrect: isCorrect,
+        timeSpent: timeSpent,
+        points: isCorrect ? 1 : 0
+      }
+    });
+
+    // Update user metrics
+    const existingMetrics = await prisma.userMetrics.findUnique({
+      where: { userId: user.userId }
+    });
+
+    if (existingMetrics) {
+      const newQuestionsAnswered = existingMetrics.questionsAnswered + 1;
+      const newCorrectAnswers = existingMetrics.correctAnswers + (isCorrect ? 1 : 0);
+      const newCorrectPercentage = Math.round((newCorrectAnswers / newQuestionsAnswered) * 100);
+
+      await prisma.userMetrics.update({
+        where: { userId: user.userId },
+        data: {
+          questionsAnswered: newQuestionsAnswered,
+          correctAnswers: newCorrectAnswers,
+          correctPercentage: newCorrectPercentage,
+          totalStudyTime: existingMetrics.totalStudyTime + timeSpent,
+          lastActivity: new Date()
+        }
+      });
+    } else {
+      // Create initial metrics
+      await prisma.userMetrics.create({
+        data: {
+          userId: user.userId,
+          questionsAnswered: 1,
+          correctAnswers: isCorrect ? 1 : 0,
+          correctPercentage: isCorrect ? 100 : 0,
+          totalStudyTime: timeSpent,
+          studyStreak: 1,
+          lastActivity: new Date()
+        }
+      });
+    }
+
+    // Update specialty progress
+    const specialtyProgress = await prisma.specialtyProgress.findFirst({
+      where: {
+        userId: user.userId,
+        specialtyId: question.specialtyId
+      }
+    });
+
+    if (specialtyProgress) {
+      const newQuestionsAnswered = specialtyProgress.questionsAnswered + 1;
+      const newCorrectAnswers = specialtyProgress.correctAnswers + (isCorrect ? 1 : 0);
+      const newCorrectPercentage = Math.round((newCorrectAnswers / newQuestionsAnswered) * 100);
+
+      await prisma.specialtyProgress.update({
+        where: { id: specialtyProgress.id },
+        data: {
+          questionsAnswered: newQuestionsAnswered,
+          correctAnswers: newCorrectAnswers,
+          correctPercentage: newCorrectPercentage,
+          lastPracticed: new Date()
+        }
+      });
+    } else {
+      await prisma.specialtyProgress.create({
+        data: {
+          userId: user.userId,
+          specialtyId: question.specialtyId,
+          questionsAnswered: 1,
+          correctAnswers: isCorrect ? 1 : 0,
+          correctPercentage: isCorrect ? 100 : 0,
+          lastPracticed: new Date(),
+          strengths: [],
+          weaknesses: [],
+          recommendedActions: []
+        }
+      });
+    }
+
+    res.json({
+      success: true,
+      result: {
+        isCorrect,
+        correctAnswer: correctOption.text,
+        explanation: question.explanation,
+        selectedAnswer: selectedOption.text,
+        points: isCorrect ? 1 : 0,
+        creditsRemaining: user.credits - 1
+      }
+    });
+
+  } catch (error) {
+    logger.error('Error submitting answer:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error interno del servidor'
+    });
+  }
+});
+
+// GET /api/quiz/available-quizzes - Get available quiz simulations
+router.get('/available-quizzes', async (req: Request, res: Response): Promise<Response | void> => {
+  try {
+    const user = (req as any).user;
+
+    const quizzes = await prisma.quiz.findMany({
+      where: {
+        isActive: true,
+        isPublic: true
+      },
+      include: {
+        specialty: true,
+        _count: {
+          select: {
+            questions: true
+          }
+        }
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
+
+    res.json({
+      success: true,
+      quizzes: quizzes.map(quiz => ({
+        id: quiz.id,
+        title: quiz.title,
+        description: quiz.description,
+        questionCount: quiz._count.questions,
+        timeLimit: quiz.timeLimit,
+        passingScore: quiz.passingScore,
+        specialty: quiz.specialty?.name || 'General',
+        creditsRequired: 80 // Default cost for simulation
+      }))
+    });
+
+  } catch (error) {
+    logger.error('Error getting available quizzes:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error interno del servidor'
+    });
+  }
+});
+
+// POST /api/quiz/start-simulation - Start a quiz simulation
+router.post('/start-simulation', [
+  body('quizId').isString().notEmpty()
+], async (req: Request, res: Response): Promise<Response | void> => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Datos inválidos',
+        errors: errors.array()
+      });
+    }
+
+    const { quizId } = req.body;
+    const user = (req as any).user;
+
+    // Check if user has enough credits
+    if (user.credits < 80) {
+      return res.status(400).json({
+        success: false,
+        message: 'Créditos insuficientes. Necesitas 80 créditos para un simulacro.'
+      });
+    }
+
+    // Get quiz with questions
+    const quiz = await prisma.quiz.findUnique({
+      where: { id: quizId },
+      include: {
+        questions: {
+          include: {
+            question: {
+              include: {
+                options: {
+                  orderBy: { order: 'asc' }
+                },
+                specialty: true,
+                topic: true
+              }
+            }
+          },
+          orderBy: { order: 'asc' }
+        },
+        specialty: true
+      }
+    });
+
+    if (!quiz || !quiz.isActive) {
+      return res.status(404).json({
+        success: false,
+        message: 'Quiz no encontrado o no disponible'
+      });
+    }
+
+    // Create quiz result session
+    const quizResult = await prisma.quizResult.create({
+      data: {
+        userId: user.userId,
+        quizId: quizId,
+        startedAt: new Date(),
+        timeLimit: quiz.timeLimit,
+        status: 'IN_PROGRESS'
+      }
+    });
+
+    // Deduct credits
+    await prisma.user.update({
+      where: { id: user.userId },
+      data: {
+        credits: {
+          decrement: 80
+        }
+      }
+    });
+
+    // Return quiz questions without correct answers
+    const questions = quiz.questions.map(qz => ({
+      id: qz.question.id,
+      content: qz.question.content,
+      difficulty: qz.question.difficulty,
+      type: qz.question.type,
+      specialty: qz.question.specialty.name,
+      topic: qz.question.topic.name,
+      points: qz.points,
+      options: qz.question.options.map(opt => ({
+        id: opt.id,
+        text: opt.text,
+        order: opt.order
+      }))
+    }));
+
+    res.json({
+      success: true,
+      session: {
+        id: quizResult.id,
+        quizTitle: quiz.title,
+        timeLimit: quiz.timeLimit,
+        questionCount: questions.length,
+        passingScore: quiz.passingScore,
+        questions: questions,
+        creditsRemaining: user.credits - 80
+      }
+    });
+
+  } catch (error) {
+    logger.error('Error starting simulation:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error interno del servidor'
+    });
+  }
+});
+
+// GET /api/quiz/specialties - Get available specialties for filtering
+router.get('/specialties', async (req: Request, res: Response): Promise<Response | void> => {
+  try {
+    const specialties = await prisma.specialty.findMany({
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        code: true
+      },
+      orderBy: {
+        name: 'asc'
+      }
+    });
+
+    res.json({
+      success: true,
+      specialties
+    });
+
+  } catch (error) {
+    logger.error('Error getting specialties:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error interno del servidor'
+    });
+  }
+});
+
+export { router as quizRoutes };

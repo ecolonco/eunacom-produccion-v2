@@ -1,0 +1,16 @@
+{
+  "name": "eunacom-monorepo",
+  "version": "1.0.0",
+  "description": "EUNACOM Learning Platform - Monorepo",
+  "scripts": {
+    "build": "cd backend && npm ci && npm run build",
+    "build:frontend": "cd frontend && npm ci && npm run build:prod",
+    "start": "cd backend && npm start",
+    "dev": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  }
+}
