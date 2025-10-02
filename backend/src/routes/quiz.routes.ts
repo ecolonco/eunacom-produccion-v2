@@ -141,7 +141,7 @@ router.get('/random-question', [
 router.get('/random', async (req: Request, res: Response) => {
   try {
     // Get random question with options
-    const question = await prisma.questionVariation.findFirst({
+    const question = await prisma.question.findFirst({
       where: {
         isActive: true,
         isReviewed: true
@@ -502,6 +502,26 @@ router.get('/ai-random', async (req: Request, res: Response) => {
       success: false,
       message: 'Error al obtener ejercicio de IA',
       error: error.message
+    });
+  }
+});
+
+// REDIRECT: Make /random-question use AI factory
+router.get('/random-question-redirect', async (req: Request, res: Response) => {
+  // Simply redirect to the working AI endpoint
+  try {
+    const aiResponse = await fetch(`${req.protocol}://${req.get('host')}/api/quiz/ai-random`, {
+      headers: {
+        'Authorization': req.headers.authorization || ''
+      }
+    });
+    const data = await aiResponse.json();
+    return res.json(data);
+  } catch (error) {
+    logger.error('Error redirecting to AI endpoint:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error al obtener pregunta'
     });
   }
 });
