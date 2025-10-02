@@ -88,16 +88,23 @@ router.get('/random-question', [
       where: whereClause,
       skip: randomSkip,
       include: {
-        options: {
+        alternatives: {
           orderBy: { order: 'asc' }
         },
-        specialty: {
-          select: { name: true }
+        alternatives: {
+          orderBy: { order: "asc" }
         },
-        topic: {
-          select: { name: true }
-        }
-      }
+        baseQuestion: {
+          include: {
+            aiAnalysis: {
+              select: {
+                specialty: true,
+                topic: true,
+                difficulty: true
+              }
+            }
+          }
+        }      }
     });
 
     if (!question) {
@@ -113,10 +120,10 @@ router.get('/random-question', [
       content: question.content,
       explanation: question.explanation,
       difficulty: question.difficulty,
-      type: question.type,
-      specialty: question.specialty.name,
-      topic: question.topic.name,
-      options: question.options.map(option => ({
+      type: "MULTIPLE_CHOICE",
+      specialty: question.baseQuestion.aiAnalysis?.specialty || "General",
+      topic: question.baseQuestion.aiAnalysis?.topic || "General",
+      alternatives: question.alternatives.map(option => ({
         id: option.id,
         text: option.text,
         isCorrect: option.isCorrect,
@@ -147,7 +154,7 @@ router.get('/random', async (req: Request, res: Response) => {
         isReviewed: true
       },
       include: {
-        options: {
+        alternatives: {
           orderBy: { order: 'asc' }
         },
         specialty: {
@@ -188,7 +195,7 @@ router.get('/question/:id', async (req: Request, res: Response) => {
     const question = await prisma.question.findUnique({
       where: { id },
       include: {
-        options: {
+        alternatives: {
           orderBy: { order: 'asc' }
         },
         specialty: {
@@ -243,7 +250,7 @@ router.post('/submit-answer', [
     const question = await prisma.question.findUnique({
       where: { id: questionId },
       include: {
-        options: true,
+        alternatives: true,
         specialty: { select: { name: true } },
         topic: { select: { name: true } }
       }
@@ -256,8 +263,8 @@ router.post('/submit-answer', [
       });
     }
 
-    const selectedOption = question.options.find(opt => opt.id === selectedOptionId);
-    const correctOption = question.options.find(opt => opt.isCorrect);
+    const selectedOption = question.alternatives.find(opt => opt.id === selectedOptionId);
+    const correctOption = question.alternatives.find(opt => opt.isCorrect);
 
     if (!selectedOption || !correctOption) {
       return res.status(400).json({
@@ -275,8 +282,8 @@ router.post('/submit-answer', [
       selectedAnswer: selectedOption.text,
       explanation: question.explanation,
       difficulty: question.difficulty,
-      specialty: question.specialty.name,
-      topic: question.topic.name,
+      specialty: question.baseQuestion.aiAnalysis?.specialty || "General",
+      topic: question.baseQuestion.aiAnalysis?.topic || "General",
       timeSpent: timeSpent || 0
     };
 
@@ -315,7 +322,7 @@ router.post('/answer', [
     const question = await prisma.question.findUnique({
       where: { id: questionId },
       include: {
-        options: true
+        alternatives: true
       }
     });
 
@@ -326,8 +333,8 @@ router.post('/answer', [
       });
     }
 
-    const selectedOption = question.options.find(opt => opt.id === selectedOptionId);
-    const correctOption = question.options.find(opt => opt.isCorrect);
+    const selectedOption = question.alternatives.find(opt => opt.id === selectedOptionId);
+    const correctOption = question.alternatives.find(opt => opt.isCorrect);
 
     if (!selectedOption || !correctOption) {
       return res.status(400).json({
@@ -480,7 +487,7 @@ router.get('/ai-random', async (req: Request, res: Response) => {
       type: 'MULTIPLE_CHOICE',
       specialty: question.baseQuestion.aiAnalysis?.specialty || 'General',
       topic: question.baseQuestion.aiAnalysis?.topic || 'General',
-      options: question.alternatives.map(alternative => ({
+      alternatives: question.alternatives.map(alternative => ({
         id: alternative.id,
         text: alternative.text,
         isCorrect: alternative.isCorrect,
