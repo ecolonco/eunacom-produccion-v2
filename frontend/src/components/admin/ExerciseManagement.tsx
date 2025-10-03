@@ -61,13 +61,8 @@ const ExerciseManagement: React.FC<ExerciseManagementProps> = ({ onBack }) => {
   const [showEditModal, setShowEditModal] = useState(false);
 
   const itemsPerPage = 100;
-
-  // API base y cabeceras de autenticación para producción (Vercel)
+  // API base para producción (Vercel)
   const API_BASE = (import.meta as any).env?.VITE_API_URL || 'https://eunacom-backend-v3.onrender.com';
-  const accessToken = (typeof window !== 'undefined') ? localStorage.getItem('accessToken') : null;
-  const authHeaders: HeadersInit = accessToken
-    ? { 'Authorization': `Bearer ${accessToken}` }
-    : {};
 
   useEffect(() => {
     fetchExercises();
@@ -85,10 +80,11 @@ const ExerciseManagement: React.FC<ExerciseManagementProps> = ({ onBack }) => {
         )
       });
 
-      const response = await fetch(`${API_BASE}/api/exercise-management/list?${params}` , {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
+      const response = await fetch(`${API_BASE}/api/exercise-management/list?${params}`, {
         headers: {
           'Content-Type': 'application/json',
-          ...authHeaders
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
         }
       });
       const data = await response.json();
@@ -106,10 +102,11 @@ const ExerciseManagement: React.FC<ExerciseManagementProps> = ({ onBack }) => {
 
   const fetchFilterOptions = async () => {
     try {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
       const response = await fetch(`${API_BASE}/api/exercise-management/filters`, {
         headers: {
           'Content-Type': 'application/json',
-          ...authHeaders
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
         }
       });
       const data = await response.json();
