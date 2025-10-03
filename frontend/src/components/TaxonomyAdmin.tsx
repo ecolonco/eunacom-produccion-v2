@@ -636,7 +636,19 @@ const TaxonomyAdmin: React.FC<TaxonomyAdminProps> = ({ onBack }) => {
             boxShadow: '0 4px 15px rgba(0,0,0,0.1)',
             padding: '20px'
           }}>
-            <h3 style={{ margin: '0 0 20px 0', color: '#333' }}>Especialidades</h3>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '0 0 20px 0', color: '#333' }}>
+              <h3 style={{ margin: 0 }}>Especialidades</h3>
+              <span style={{
+                backgroundColor: '#fff7ed',
+                color: '#9a3412',
+                padding: '6px 12px',
+                borderRadius: '9999px',
+                fontWeight: 700,
+                fontSize: '12px'
+              }}>
+                Total ejercicios: {totalExercises}
+              </span>
+            </div>
             
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               {getMainSpecialties().map((specialty) => (
