@@ -69,6 +69,9 @@ const ExerciseManagement: React.FC<ExerciseManagementProps> = ({ onBack }) => {
   const [showFilters, setShowFilters] = useState(false);
   const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [editLoading, setEditLoading] = useState(false);
+  const [editError, setEditError] = useState('');
+  const [editData, setEditData] = useState<any | null>(null);
 
   const itemsPerPage = 100;
   // API base para producción (Vercel)
@@ -191,16 +194,61 @@ const ExerciseManagement: React.FC<ExerciseManagementProps> = ({ onBack }) => {
     return { colors: 'bg-purple-500 text-white', label: `${count} Revisiones` };
   };
 
-  const handleEditExercise = (exercise: Exercise) => {
+  const handleEditExercise = async (exercise: Exercise) => {
     setSelectedExercise(exercise);
     setShowEditModal(true);
+    setEditLoading(true);
+    setEditError('');
+    try {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
+      const res = await fetch(`${API_BASE}/api/exercise-management/exercise/${exercise.id}`, {
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        }
+      });
+      const json = await res.json();
+      if (!res.ok || !json.success) {
+        throw new Error(json.message || 'No se pudo cargar el ejercicio');
+      }
+      setEditData(json.data);
+    } catch (e: any) {
+      console.error('Error loading exercise detail:', e);
+      setEditError(e?.message || 'Error cargando ejercicio');
+    } finally {
+      setEditLoading(false);
+    }
   };
 
   const handleSaveEdit = async () => {
-    // Implementar lógica de guardado
-    setShowEditModal(false);
-    setSelectedExercise(null);
-    fetchExercises(); // Refrescar lista
+    if (!selectedExercise || !editData) return;
+    try {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
+      const res = await fetch(`${API_BASE}/api/exercise-management/exercise/${selectedExercise.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({
+          content: editData.content,
+          variations: editData.variations.map((v: any) => ({
+            id: v.id,
+            content: v.content,
+            explanation: v.explanation,
+            alternatives: v.alternatives.map((a: any) => ({ id: a.id, text: a.text, isCorrect: a.isCorrect }))
+          }))
+        })
+      });
+      const json = await res.json();
+      if (!res.ok || !json.success) throw new Error(json.message || 'No se pudo guardar');
+      setShowEditModal(false);
+      setSelectedExercise(null);
+      setEditData(null);
+      fetchExercises();
+    } catch (e: any) {
+      alert(e?.message || 'Error al guardar');
+    }
   };
 
   const handleCloseModal = () => {
@@ -473,42 +521,86 @@ const ExerciseManagement: React.FC<ExerciseManagementProps> = ({ onBack }) => {
               </button>
             </div>
 
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Contenido
-                </label>
-                <textarea
-                  defaultValue={selectedExercise.content}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  rows={4}
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
+            {editLoading ? (
+              <div className="text-center text-gray-500">Cargando ejercicio...</div>
+            ) : editError ? (
+              <div className="text-red-600 text-sm">{editError}</div>
+            ) : editData ? (
+              <div className="space-y-6">
+                {/* Base question content */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Especialidad
-                  </label>
-                  <input
-                    type="text"
-                    defaultValue={selectedExercise.specialty}
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Ejercicio madre</label>
+                  <textarea
+                    value={editData.content || ''}
+                    onChange={(e) => setEditData({ ...editData, content: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    rows={3}
                   />
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Tema
-                  </label>
-                  <input
-                    type="text"
-                    defaultValue={selectedExercise.topic}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
+                {/* Variations */}
+                <div className="space-y-4">
+                  <h3 className="font-semibold text-gray-800">Variaciones</h3>
+                  {editData.variations?.map((v: any, idx: number) => (
+                    <div key={v.id} className="border rounded-lg p-4 space-y-3">
+                      <div className="text-sm text-gray-600 font-medium">Variación #{v.variationNumber || idx + 1}</div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">Enunciado</label>
+                        <textarea
+                          value={v.content || ''}
+                          onChange={(e) => {
+                            const nv = [...editData.variations]; nv[idx] = { ...nv[idx], content: e.target.value }; setEditData({ ...editData, variations: nv });
+                          }}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          rows={2}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">Explicación</label>
+                        <textarea
+                          value={v.explanation || ''}
+                          onChange={(e) => {
+                            const nv = [...editData.variations]; nv[idx] = { ...nv[idx], explanation: e.target.value }; setEditData({ ...editData, variations: nv });
+                          }}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          rows={2}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <div className="text-xs text-gray-600 font-medium">Alternativas</div>
+                        {v.alternatives?.map((a: any, aidx: number) => (
+                          <div key={a.id} className="flex items-center gap-3">
+                            <input
+                              type="checkbox"
+                              checked={!!a.isCorrect}
+                              onChange={(e) => {
+                                const nv = [...editData.variations];
+                                const alts = [...nv[idx].alternatives];
+                                alts[aidx] = { ...alts[aidx], isCorrect: e.target.checked };
+                                nv[idx] = { ...nv[idx], alternatives: alts };
+                                setEditData({ ...editData, variations: nv });
+                              }}
+                            />
+                            <input
+                              type="text"
+                              value={a.text || ''}
+                              onChange={(e) => {
+                                const nv = [...editData.variations];
+                                const alts = [...nv[idx].alternatives];
+                                alts[aidx] = { ...alts[aidx], text: e.target.value };
+                                nv[idx] = { ...nv[idx], alternatives: alts };
+                                setEditData({ ...editData, variations: nv });
+                              }}
+                              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
-            </div>
+            ) : null}
 
             <div className="flex justify-end gap-3 mt-6">
               <button
