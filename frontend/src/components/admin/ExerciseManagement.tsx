@@ -89,10 +89,17 @@ const ExerciseManagement: React.FC<ExerciseManagementProps> = ({ onBack }) => {
       });
       const data = await response.json();
 
-      if (data.success) {
-        setExercises(data.exercises);
-        setTotalPages(data.pagination.pages);
-      }
+      // Normalizar respuesta para evitar crash si la API cambia el shape
+      const normalizedExercises: Exercise[] = Array.isArray(data?.exercises)
+        ? data.exercises
+        : (Array.isArray(data?.data?.exercises) ? data.data.exercises : []);
+
+      const normalizedPages: number = Number(
+        data?.pagination?.pages ?? data?.data?.pagination?.pages ?? 1
+      );
+
+      setExercises(normalizedExercises);
+      setTotalPages(isFinite(normalizedPages) && normalizedPages > 0 ? normalizedPages : 1);
     } catch (error) {
       console.error('Error fetching exercises:', error);
     } finally {
@@ -111,9 +118,13 @@ const ExerciseManagement: React.FC<ExerciseManagementProps> = ({ onBack }) => {
       });
       const data = await response.json();
 
-      if (data.success) {
-        setFilterOptions(data.filters);
-      }
+      const fo = data?.filters ?? data?.data?.filters ?? {};
+      setFilterOptions({
+        specialties: Array.isArray(fo.specialties) ? fo.specialties : [],
+        topics: Array.isArray(fo.topics) ? fo.topics : [],
+        statuses: Array.isArray(fo.statuses) ? fo.statuses : [],
+        qaReviewRanges: Array.isArray(fo.qaReviewRanges) ? fo.qaReviewRanges : []
+      });
     } catch (error) {
       console.error('Error fetching filter options:', error);
     }
