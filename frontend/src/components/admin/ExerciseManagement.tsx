@@ -32,6 +32,8 @@ interface Filters {
   status: string;
   qaReviewRange: string;
   searchTerm: string;
+  startDate: string; // yyyy-mm-dd
+  endDate: string;   // yyyy-mm-dd
 }
 
 interface ExerciseManagementProps {
@@ -43,12 +45,20 @@ const ExerciseManagement: React.FC<ExerciseManagementProps> = ({ onBack }) => {
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const today = new Date();
+  const yyyy = today.getFullYear();
+  const mm = String(today.getMonth() + 1).padStart(2, '0');
+  const dd = String(today.getDate()).padStart(2, '0');
+  const todayStr = `${yyyy}-${mm}-${dd}`;
+
   const [filters, setFilters] = useState<Filters>({
     specialty: '',
     topic: '',
     status: '',
     qaReviewRange: '',
-    searchTerm: ''
+    searchTerm: '',
+    startDate: todayStr,
+    endDate: todayStr
   });
   const [filterOptions, setFilterOptions] = useState<FilterOptions>({
     specialties: [],
@@ -141,7 +151,9 @@ const ExerciseManagement: React.FC<ExerciseManagementProps> = ({ onBack }) => {
       topic: '',
       status: '',
       qaReviewRange: '',
-      searchTerm: ''
+      searchTerm: '',
+      startDate: todayStr,
+      endDate: todayStr
     });
     setCurrentPage(1);
   };
@@ -314,7 +326,32 @@ const ExerciseManagement: React.FC<ExerciseManagementProps> = ({ onBack }) => {
                 </div>
               </div>
 
-              <div className="flex justify-end mt-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Fecha Inicio
+              </label>
+              <input
+                type="date"
+                value={filters.startDate}
+                onChange={(e) => handleFilterChange('startDate', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Fecha Fin
+              </label>
+              <input
+                type="date"
+                value={filters.endDate}
+                onChange={(e) => handleFilterChange('endDate', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-end mt-4">
                 <button
                   onClick={clearFilters}
                   className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
@@ -333,7 +370,6 @@ const ExerciseManagement: React.FC<ExerciseManagementProps> = ({ onBack }) => {
               <thead className="bg-gradient-to-r from-blue-600 to-purple-600 text-white">
                 <tr>
                   <th className="px-6 py-4 text-left text-sm font-semibold">ID</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold">Contenido</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold">Especialidad</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold">Tema</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold">Estado</th>
@@ -347,13 +383,6 @@ const ExerciseManagement: React.FC<ExerciseManagementProps> = ({ onBack }) => {
                   <tr key={exercise.id} className={`hover:bg-gray-50 transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
                     <td className="px-6 py-4 text-sm font-mono text-gray-900">
                       #{exercise.sequence_number}
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-900 max-w-xs">
-                      <div className="truncate" title={exercise.content}>
-                        {exercise.content.length > 100 
-                          ? `${exercise.content.substring(0, 100)}...` 
-                          : exercise.content}
-                      </div>
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-900">
                       {exercise.specialty}
