@@ -195,6 +195,7 @@ const ExerciseManagement: React.FC<ExerciseManagementProps> = ({ onBack }) => {
   };
 
   const handleEditExercise = async (exercise: Exercise) => {
+    console.log('Editar ejercicio clic:', exercise);
     setSelectedExercise(exercise);
     setShowEditModal(true);
     setEditLoading(true);
@@ -506,12 +507,12 @@ const ExerciseManagement: React.FC<ExerciseManagementProps> = ({ onBack }) => {
       </div>
 
       {/* Edit Modal */}
-      {showEditModal && selectedExercise && (
+      {showEditModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-2xl w-full mx-4">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-bold text-gray-900">
-                Editar Ejercicio #{selectedExercise.sequence_number}
+                Editar Ejercicio {selectedExercise ? `#${selectedExercise.sequence_number}` : ''}
               </h2>
               <button
                 onClick={handleCloseModal}
