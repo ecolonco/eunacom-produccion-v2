@@ -350,6 +350,30 @@ const TaxonomyInventory: React.FC<TaxonomyInventoryProps> = ({ onBack }) => {
           </div>
         </div>
 
+        {/* Specialties Header with Global Total */}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          margin: '10px 0 15px 0'
+        }}>
+          <h2 style={{ margin: 0, color: 'white' }}>
+            Especialidades
+          </h2>
+          <div style={{
+            backgroundColor: 'white',
+            padding: '8px 14px',
+            borderRadius: '9999px',
+            boxShadow: '0 4px 10px rgba(0,0,0,0.1)',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}>
+            <span style={{ color: '#64748b', fontSize: '13px' }}>Total ejercicios</span>
+            <span style={{ color: '#f59e0b', fontWeight: 'bold' }}>{data.summary.grandTotal}</span>
+          </div>
+        </div>
+
         {/* Specialties List */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
           {data.inventory.map((specialty) => (
