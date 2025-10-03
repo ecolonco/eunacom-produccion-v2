@@ -509,8 +509,20 @@ const ExerciseManagement: React.FC<ExerciseManagementProps> = ({ onBack }) => {
 
       {/* Edit Modal */}
       {showEditModal && createPortal((
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]" role="dialog" aria-modal="true">
-          <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-2xl w-full mx-4">
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0 as any,
+            background: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 99999
+          }}
+          role="dialog"
+          aria-modal="true"
+        >
+          <div style={{ background: '#fff', borderRadius: '16px', boxShadow: '0 10px 40px rgba(0,0,0,0.25)', padding: '32px', maxWidth: '700px', width: '100%', margin: '0 16px' }}>
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-bold text-gray-900">
                 Editar Ejercicio {selectedExercise ? `#${selectedExercise.sequence_number}` : ''}
