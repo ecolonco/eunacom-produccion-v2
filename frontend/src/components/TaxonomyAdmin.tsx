@@ -41,6 +41,7 @@ const TaxonomyAdmin: React.FC<TaxonomyAdminProps> = ({ onBack }) => {
   const [editingTopic, setEditingTopic] = useState<Topic | null>(null);
   const [showSpecialtyForm, setShowSpecialtyForm] = useState(false);
   const [showTopicForm, setShowTopicForm] = useState(false);
+  const [totalExercises, setTotalExercises] = useState<number>(0);
 
   // Form states
   const [specialtyForm, setSpecialtyForm] = useState({
@@ -197,6 +198,9 @@ const TaxonomyAdmin: React.FC<TaxonomyAdminProps> = ({ onBack }) => {
         });
         
         setSpecialties(processedSpecialties);
+        // Calcular total global de ejercicios (variaciones)
+        const grand = processedSpecialties.reduce((acc: number, s: any) => acc + (s.exerciseCount || 0), 0);
+        setTotalExercises(grand);
         console.log('✅ Especialidades con contadores cargadas:', processedSpecialties.length);
       } else {
         setError(result.message || 'Error al cargar especialidades');
@@ -543,6 +547,16 @@ const TaxonomyAdmin: React.FC<TaxonomyAdminProps> = ({ onBack }) => {
               <p style={{ color: '#666', margin: 0 }}>
                 Administra especialidades médicas, temas específicos y visualiza contadores de ejercicios
               </p>
+            </div>
+            <div style={{
+              backgroundColor: '#fff7ed',
+              color: '#9a3412',
+              padding: '10px 16px',
+              borderRadius: '9999px',
+              boxShadow: '0 2px 6px rgba(0,0,0,0.08)',
+              fontWeight: 700
+            }}>
+              Total ejercicios: {totalExercises}
             </div>
             <button
               onClick={onBack}
