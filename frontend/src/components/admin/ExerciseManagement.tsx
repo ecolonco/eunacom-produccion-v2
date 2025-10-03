@@ -3,3 +3,7 @@ import {
   PencilIcon, 
   FunnelIcon, 
   ChevronLeftIcon, 
+  ChevronRightIcon,
+  MagnifyingGlassIcon,
+  XMarkIcon
+} from '@heroicons/react/24/outline';
