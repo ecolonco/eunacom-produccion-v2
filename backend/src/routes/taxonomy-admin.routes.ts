@@ -627,4 +627,4 @@ router.post('/load-official-taxonomy', authenticate, authorize('ADMIN'), async (
   }
 });
 
-export { router as taxonomyAd
+export { router as taxonomyAdminRoutes };
