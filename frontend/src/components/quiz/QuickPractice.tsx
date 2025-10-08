@@ -263,7 +263,7 @@ export const QuickPractice: React.FC<QuickPracticeProps> = ({
           </div>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             {/* Specialty Filter */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -288,24 +288,6 @@ export const QuickPractice: React.FC<QuickPracticeProps> = ({
                     {specialty.name}
                   </option>
                 ))}
-              </select>
-            </div>
-
-            {/* Difficulty Filter */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Dificultad
-              </label>
-              <select
-                value={selectedDifficulty}
-                onChange={(e) => setSelectedDifficulty(e.target.value as any)}
-                disabled={hasAnswered}
-                className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value="all">Todas las dificultades</option>
-                <option value="EASY">Fácil</option>
-                <option value="MEDIUM">Medio</option>
-                <option value="HARD">Difícil</option>
               </select>
             </div>
 

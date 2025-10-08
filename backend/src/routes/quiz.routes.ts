@@ -4,6 +4,7 @@ import { body, validationResult, query } from 'express-validator';
 import { logger } from '../utils/logger';
 import { extractFormattedIdentifier } from '../utils/questionIdentifiers';
 import { authenticate } from '../middleware/auth.middleware';
+import { CreditsService } from '../services/credits.service';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -515,14 +516,24 @@ router.get('/ai-random', async (req: Request, res: Response) => {
 });
 
 // ALIAS: Redirect /random-question to working /ai-random endpoint
-router.get('/random-question', async (req: Request, res: Response) => {
+router.get('/random-question', authenticate, async (req: Request, res: Response) => {
   try {
+    const userId = (req as any).userId;
     const specialtyFilter = normalizeSpecialtyParam(req.query.specialty);
 
     if (specialtyFilter) {
       logger.info(`🔄 Random-question alias requested for specialty: ${specialtyFilter}`);
     } else {
       logger.info('🔄 Random-question alias requested without specialty filter');
+    }
+
+    // Verificar si el usuario tiene créditos suficientes
+    const hasCredits = await CreditsService.hasEnoughCredits(userId, 'SINGLE_RANDOM');
+    if (!hasCredits) {
+      return res.status(403).json({
+        success: false,
+        message: 'No tienes suficientes créditos. Necesitas 1 crédito para practicar.',
+      });
     }
 
     const result = await fetchRandomAiQuestion(specialtyFilter);
@@ -539,6 +550,14 @@ router.get('/random-question', async (req: Request, res: Response) => {
     }
 
     const { formattedQuestion } = result;
+
+    // Descontar 1 crédito al mostrar la pregunta
+    await CreditsService.deductCredits(userId, 'SINGLE_RANDOM', {
+      questionId: formattedQuestion.id,
+      specialty: specialtyFilter,
+    });
+
+    logger.info(`💳 1 crédito descontado para usuario ${userId}`);
 
     return res.json({
       success: true,
