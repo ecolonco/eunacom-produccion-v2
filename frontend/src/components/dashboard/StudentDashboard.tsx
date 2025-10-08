@@ -51,47 +51,46 @@ export const StudentDashboard: React.FC = () => {
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <header className="bg-white rounded-lg shadow-md p-6 mb-8">
-          <div className="flex justify-between items-center gap-4 flex-wrap">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-800">
-                ¡Bienvenido, {user.firstName}!
-              </h1>
-              <p className="text-gray-600 mt-1">
-                🎓 Estudiante • {user.credits} créditos disponibles
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-3">
-              <button
-                onClick={() => setPracticeView('hub')}
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition duration-200"
-              >
-                🎯 Practica ejercicos aleatoriamente
-              </button>
-              <button
-                onClick={() => setPracticeView('random20')}
-                className="px-4 py-2 bg-teal-600 text-white rounded-md hover:bg-teal-700 transition duration-200"
-              >
-                🔢 Generar 20 preguntas
-              </button>
-              <button
-                onClick={() => setPracticeView('specialty')}
-                className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition duration-200"
-              >
-                🏥 Practicar por Especialidad
-              </button>
-              <button
-                onClick={() => setPracticeView('random90')}
-                className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition duration-200"
-              >
-                📋 Simulacro 90 Preguntas
-              </button>
-              <button
-                onClick={() => logout()}
-                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition duration-200"
-              >
-                Cerrar Sesión
-              </button>
-            </div>
+          <div className="text-center mb-6">
+            <h1 className="text-3xl font-bold text-gray-800">
+              ¡Bienvenido, {user.firstName}!
+            </h1>
+            <p className="text-gray-600 mt-1">
+              🎓 Estudiante • {user.credits} créditos disponibles
+            </p>
+          </div>
+          
+          <div className="space-y-3 max-w-md mx-auto">
+            <button
+              onClick={() => setPracticeView('hub')}
+              className="w-full px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition duration-200 font-medium"
+            >
+              🎯 Practica ejercicos aleatoriamente
+            </button>
+            <button
+              onClick={() => setPracticeView('random20')}
+              className="w-full px-6 py-3 bg-teal-600 text-white rounded-md hover:bg-teal-700 transition duration-200 font-medium"
+            >
+              🔢 Generar 20 preguntas
+            </button>
+            <button
+              onClick={() => setPracticeView('specialty')}
+              className="w-full px-6 py-3 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition duration-200 font-medium"
+            >
+              🏥 Practicar por Especialidad
+            </button>
+            <button
+              onClick={() => setPracticeView('random90')}
+              className="w-full px-6 py-3 bg-green-600 text-white rounded-md hover:bg-green-700 transition duration-200 font-medium"
+            >
+              📋 Simulacro 90 Preguntas
+            </button>
+            <button
+              onClick={() => logout()}
+              className="w-full px-6 py-3 bg-red-600 text-white rounded-md hover:bg-red-700 transition duration-200 font-medium"
+            >
+              Cerrar Sesión
+            </button>
           </div>
         </header>
 
