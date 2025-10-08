@@ -25,6 +25,11 @@ const AppContent: React.FC = () => {
     });
   }, [state.isAuthenticated, state.user, state.isLoading]);
 
+  // Debug modal state
+  React.useEffect(() => {
+    console.log('showAuthModal changed:', showAuthModal, 'authMode:', authMode);
+  }, [showAuthModal, authMode]);
+
   React.useEffect(() => {
     // Test API connection
     const testAPI = async () => {
@@ -130,8 +135,10 @@ const AppContent: React.FC = () => {
           <div className="flex justify-center gap-4 mb-8">
             <button
               onClick={() => {
+                console.log('Login button clicked');
                 setAuthMode('login');
                 setShowAuthModal(true);
+                console.log('Modal should be open now');
               }}
               className="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition duration-200 shadow-md"
             >
@@ -139,8 +146,10 @@ const AppContent: React.FC = () => {
             </button>
             <button
               onClick={() => {
+                console.log('Register button clicked');
                 setAuthMode('register');
                 setShowAuthModal(true);
+                console.log('Modal should be open now');
               }}
               className="px-6 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition duration-200 shadow-md"
             >

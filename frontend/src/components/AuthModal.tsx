@@ -15,7 +15,24 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 }) => {
   const [mode, setMode] = useState<'login' | 'register'>(initialMode);
 
-  if (!isOpen) return null;
+  // Update mode when initialMode changes
+  React.useEffect(() => {
+    if (isOpen) {
+      setMode(initialMode);
+    }
+  }, [isOpen, initialMode]);
+
+  // Debug log
+  React.useEffect(() => {
+    console.log('AuthModal - isOpen:', isOpen, 'mode:', mode);
+  }, [isOpen, mode]);
+
+  if (!isOpen) {
+    console.log('AuthModal - returning null (not open)');
+    return null;
+  }
+
+  console.log('AuthModal - rendering modal');
 
   const handleSuccess = () => {
     onClose();
