@@ -1,8 +1,4 @@
 {
-  "buildCommand": "(cd frontend && npm install && npm run build:prod)",
-  "outputDirectory": "frontend/dist",
-  "installCommand": "npm --version",
-  "framework": null,
   "rewrites": [
     {
       "source": "/api/:path*",
