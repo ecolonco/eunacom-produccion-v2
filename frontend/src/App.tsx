@@ -62,50 +62,14 @@ const AppContent: React.FC = () => {
   if (state.isAuthenticated && state.user) {
     console.log('Showing Dashboard for user:', state.user.firstName, 'Role:', state.user.role);
     
-    // Show Exercise Factory button for ADMIN users
-    if (state.user.role === 'ADMIN') {
-      return (
-        <div style={{ padding: '20px' }}>
-          <div style={{ 
-            display: 'flex', 
-            justifyContent: 'space-between', 
-            alignItems: 'center', 
-            marginBottom: '20px',
-            padding: '15px',
-            backgroundColor: '#f8f9fa',
-            borderRadius: '8px'
-          }}>
-            <div>
-              <h2 style={{ margin: 0, color: '#495057' }}>
-                👋 Bienvenido, {state.user.firstName} (Admin)
-              </h2>
-              <p style={{ margin: '5px 0 0 0', color: '#6c757d' }}>
-                Panel de administración EUNACOM
-              </p>
-            </div>
-            <button
-              onClick={() => setCurrentView('exercise-factory')}
-              style={{
-                padding: '12px 24px',
-                backgroundColor: '#007bff',
-                color: 'white',
-                border: 'none',
-                borderRadius: '8px',
-                cursor: 'pointer',
-                fontSize: '16px',
-                fontWeight: 'bold'
-              }}
-            >
-              🏭 Fábrica de Ejercicios
-            </button>
-          </div>
-          <StudentDashboard />
-        </div>
-      );
+    // Show StudentDashboard ONLY for students
+    if (state.user.role === 'STUDENT') {
+      return <StudentDashboard />;
     }
     
-    // Regular student dashboard
-    return <StudentDashboard />;
+    // For ADMIN and other roles, redirect to TestApp4 (simple dashboard with buttons)
+    // This will be replaced with a proper admin dashboard later
+    window.location.reload(); // This will force using TestApp4
   }
 
   // Show loading spinner

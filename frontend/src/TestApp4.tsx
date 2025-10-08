@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { QueryProvider } from './contexts/QueryProvider';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { StudentDashboard } from './components/dashboard/StudentDashboard';
 import ExerciseFactory from './ExerciseFactory';
 import TaxonomyInventory from './components/TaxonomyInventory';
 import TaxonomyAdmin from './components/TaxonomyAdmin';
@@ -1169,6 +1170,11 @@ const SimpleAppContent: React.FC = () => {
   const { state } = useAuth();
 
   if (state.isAuthenticated && state.user) {
+    // Show StudentDashboard with credits for STUDENT role
+    if (state.user.role === 'STUDENT') {
+      return <StudentDashboard />;
+    }
+    // Show SimpleDashboard with buttons for ADMIN and other roles
     return <SimpleDashboard />;
   }
 
