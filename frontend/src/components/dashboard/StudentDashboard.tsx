@@ -7,13 +7,22 @@ import { QuickPractice } from '../quiz/QuickPractice';
 export const StudentDashboard: React.FC = () => {
   const { state, logout } = useAuth();
   const { user } = state;
-  const [practiceView, setPracticeView] = useState<'none' | 'hub' | 'specialty' | 'random20' | 'random90'>('none');
+  const [practiceView, setPracticeView] = useState<'none' | 'hub' | 'random' | 'specialty' | 'random20' | 'random90'>('none');
 
   if (!user) return null;
 
   // If a practice view is open, show it instead of the dashboard
   if (practiceView === 'hub') {
     return <PracticeHub onClose={() => setPracticeView('none')} />;
+  }
+
+  if (practiceView === 'random') {
+    return (
+      <QuickPractice
+        onClose={() => setPracticeView('none')}
+        title="Práctica Aleatoria"
+      />
+    );
   }
 
   if (practiceView === 'specialty') {
@@ -62,7 +71,7 @@ export const StudentDashboard: React.FC = () => {
           
           <div className="space-y-3 max-w-md mx-auto">
             <button
-              onClick={() => setPracticeView('hub')}
+              onClick={() => setPracticeView('random')}
               className="w-full px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition duration-200 font-medium"
             >
               🎯 Practica ejercicios aleatoriamente (1 crédito)
