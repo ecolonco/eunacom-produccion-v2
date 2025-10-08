@@ -1,0 +1,169 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom CSS for EUNACOM Learning Platform */
+
+@layer base {
+  html {
+    @apply scroll-smooth;
+  }
+
+  body {
+    @apply font-sans bg-gray-50 text-gray-900 antialiased;
+  }
+
+  /* Focus styles for accessibility */
+  *:focus {
+    @apply outline-none ring-2 ring-primary-500 ring-offset-2;
+  }
+}
+
+@layer components {
+  /* Button Components */
+  .btn-primary {
+    @apply bg-primary-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-primary-700 focus:ring-primary-500 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-secondary {
+    @apply bg-gray-200 text-gray-900 px-4 py-2 rounded-lg font-medium hover:bg-gray-300 focus:ring-gray-500 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-success {
+    @apply bg-secondary-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-secondary-700 focus:ring-secondary-500 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-danger {
+    @apply bg-accent-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-accent-700 focus:ring-accent-500 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  /* Card Components */
+  .card {
+    @apply bg-white rounded-xl shadow-card border border-gray-200 overflow-hidden;
+  }
+
+  .card-medical {
+    @apply bg-white rounded-xl shadow-medical border border-medical-200 overflow-hidden;
+  }
+
+  /* Form Components */
+  .form-input {
+    @apply w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-colors duration-200;
+  }
+
+  .form-label {
+    @apply block text-sm font-medium text-gray-700 mb-2;
+  }
+
+  .form-error {
+    @apply text-sm text-accent-600 mt-1;
+  }
+
+  /* Medical Question Components */
+  .question-card {
+    @apply card p-6 mb-6 border-l-4 border-l-primary-500;
+  }
+
+  .option-button {
+    @apply w-full text-left p-4 rounded-lg border-2 border-gray-200 hover:border-primary-300 hover:bg-primary-50 transition-all duration-200 cursor-pointer;
+  }
+
+  .option-correct {
+    @apply border-secondary-500 bg-secondary-50 text-secondary-800;
+  }
+
+  .option-incorrect {
+    @apply border-accent-500 bg-accent-50 text-accent-800;
+  }
+
+  .option-selected {
+    @apply border-primary-500 bg-primary-50;
+  }
+
+  /* Progress Components */
+  .progress-bar {
+    @apply w-full bg-gray-200 rounded-full h-2;
+  }
+
+  .progress-fill {
+    @apply bg-primary-600 h-2 rounded-full transition-all duration-300;
+  }
+
+  /* Badge Components */
+  .badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+
+  .badge-primary {
+    @apply badge bg-primary-100 text-primary-800;
+  }
+
+  .badge-success {
+    @apply badge bg-secondary-100 text-secondary-800;
+  }
+
+  .badge-warning {
+    @apply badge bg-yellow-100 text-yellow-800;
+  }
+
+  .badge-danger {
+    @apply badge bg-accent-100 text-accent-800;
+  }
+
+  /* Loading States */
+  .skeleton {
+    @apply animate-pulse bg-gray-200 rounded;
+  }
+
+  .spinner {
+    @apply inline-block h-4 w-4 animate-spin rounded-full border-2 border-solid border-current border-r-transparent motion-reduce:animate-[spin_1.5s_linear_infinite];
+  }
+}
+
+@layer utilities {
+  /* Custom scrollbar */
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: theme('colors.gray.400') theme('colors.gray.100');
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: theme('colors.gray.100');
+    border-radius: 3px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: theme('colors.gray.400');
+    border-radius: 3px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background: theme('colors.gray.500');
+  }
+
+  /* Medical specialty colors */
+  .specialty-cardiology { @apply bg-red-50 border-red-200 text-red-900; }
+  .specialty-pulmonology { @apply bg-blue-50 border-blue-200 text-blue-900; }
+  .specialty-gastroenterology { @apply bg-green-50 border-green-200 text-green-900; }
+  .specialty-neurology { @apply bg-purple-50 border-purple-200 text-purple-900; }
+  .specialty-psychiatry { @apply bg-indigo-50 border-indigo-200 text-indigo-900; }
+  .specialty-emergency { @apply bg-orange-50 border-orange-200 text-orange-900; }
+  .specialty-surgery { @apply bg-gray-50 border-gray-200 text-gray-900; }
+
+  /* Animation utilities */
+  .animate-fade-in {
+    animation: fadeIn 0.5s ease-in-out;
+  }
+
+  .animate-slide-up {
+    animation: slideUp 0.3s ease-out;
+  }
+
+  .animate-bounce-subtle {
+    animation: bounceSubtle 0.6s ease-in-out;
+  }
+}

@@ -1,0 +1,425 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                   String                @id @default(cuid())
+  email                String                @unique
+  username             String?               @unique
+  firstName            String
+  lastName             String
+  passwordHash         String
+  isActive             Boolean               @default(true)
+  isVerified           Boolean               @default(false)
+  role                 UserRole              @default(STUDENT)
+  credits              Int                   @default(50)
+  lastFreeQuestionDate DateTime?
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  quizResults          QuizResult[]
+  refreshTokens        RefreshToken[]
+  specialtyProgress    SpecialtyProgress[]
+  studyRecommendations StudyRecommendation[]
+  metrics              UserMetrics?
+  profile              UserProfile?
+  userProgress         UserProgress[]
+
+  @@map("users")
+}
+
+model UserProfile {
+  id                String    @id @default(cuid())
+  userId            String    @unique
+  medicalSchool     String?
+  graduationYear    Int?
+  specialty         String?
+  examDate          DateTime?
+  studyGoals        String?
+  weeklyStudyHours  Int?
+  preferredLanguage String    @default("es")
+  theme             String    @default("light")
+  notifications     Boolean   @default(true)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_profiles")
+}
+
+model Question {
+  id               String           @id @default(cuid())
+  content          String
+  explanation      String?
+  difficulty       Difficulty       @default(MEDIUM)
+  type             QuestionType     @default(MULTIPLE_CHOICE)
+  specialtyId      String?
+  topicId          String?
+  isActive         Boolean          @default(true)
+  isReviewed       Boolean          @default(false)
+  reviewedBy       String?
+  reviewedAt       DateTime?
+  aiGenerated      Boolean          @default(false)
+  aiPrompt         String?
+  aiConfidence     Float?
+  timesAsked       Int              @default(0)
+  averageScore     Float?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  contentAnalytics ContentAnalytic?
+  options          QuestionOption[]
+  specialty        Specialty?       @relation(fields: [specialtyId], references: [id])
+  topic            Topic?           @relation(fields: [topicId], references: [id])
+  quizQuestions    QuizQuestion[]
+  userProgress     UserProgress[]
+
+  @@map("questions")
+}
+
+model QuestionOption {
+  id         String   @id @default(cuid())
+  questionId String
+  text       String
+  isCorrect  Boolean  @default(false)
+  order      Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@map("question_options")
+}
+
+model Specialty {
+  id                   String                @id @default(cuid())
+  name                 String                @unique
+  description          String?
+  code                 String?               @unique
+  isActive             Boolean               @default(true)
+  parentId             String?
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  questions            Question[]
+  quizzes              Quiz[]
+  parent               Specialty?            @relation("SpecialtyHierarchy", fields: [parentId], references: [id])
+  children             Specialty[]           @relation("SpecialtyHierarchy")
+  specialtyProgress    SpecialtyProgress[]
+  studyRecommendations StudyRecommendation[]
+  topics               Topic[]
+
+  @@map("specialties")
+}
+
+model Topic {
+  id          String     @id @default(cuid())
+  name        String
+  description String?
+  specialtyId String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  questions   Question[]
+  specialty   Specialty? @relation(fields: [specialtyId], references: [id])
+
+  @@unique([name, specialtyId])
+  @@map("topics")
+}
+
+model Quiz {
+  id            String         @id @default(cuid())
+  title         String
+  description   String?
+  type          QuizType       @default(PRACTICE)
+  questionCount Int            @default(10)
+  timeLimit     Int?
+  passingScore  Int?
+  specialtyId   String?
+  difficulty    Difficulty?
+  isActive      Boolean        @default(true)
+  isPublic      Boolean        @default(true)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  questions     QuizQuestion[]
+  results       QuizResult[]
+  specialty     Specialty?     @relation(fields: [specialtyId], references: [id])
+
+  @@map("quizzes")
+}
+
+model QuizQuestion {
+  id         String   @id @default(cuid())
+  quizId     String
+  questionId String
+  order      Int      @default(0)
+  points     Int      @default(1)
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  quiz       Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
+
+  @@unique([quizId, questionId])
+  @@map("quiz_questions")
+}
+
+model QuizResult {
+  id             String    @id @default(cuid())
+  userId         String
+  quizId         String
+  score          Int
+  correctAnswers Int
+  totalQuestions Int
+  timeSpent      Int?
+  completed      Boolean   @default(false)
+  completedAt    DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  quiz           Quiz      @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("quiz_results")
+}
+
+model UserProgress {
+  id            String    @id @default(cuid())
+  userId        String
+  questionId    String
+  attempts      Int       @default(0)
+  correct       Int       @default(0)
+  lastAnswer    Boolean?
+  lastAttemptAt DateTime?
+  easeFactor    Float     @default(2.5)
+  interval      Int       @default(1)
+  repetitions   Int       @default(0)
+  nextReview    DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  question      Question  @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, questionId])
+  @@map("user_progress")
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  isRevoked Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("refresh_tokens")
+}
+
+model UserMetrics {
+  id                String    @id @default(cuid())
+  userId            String    @unique
+  questionsAnswered Int       @default(0)
+  correctAnswers    Int       @default(0)
+  studyStreak       Int       @default(0)
+  totalStudyTime    Int       @default(0)
+  lastActivity      DateTime?
+  averageScore      Float?
+  weeklyProgress    Json?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_metrics")
+}
+
+model SpecialtyProgress {
+  id                  String    @id @default(cuid())
+  userId              String
+  specialtyId         String
+  questionsAnswered   Int       @default(0)
+  correctPercentage   Float     @default(0)
+  difficultyBreakdown Json?
+  lastPracticed       DateTime?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  specialty           Specialty @relation(fields: [specialtyId], references: [id], onDelete: Cascade)
+  user                User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, specialtyId])
+  @@map("specialty_progress")
+}
+
+model StudyRecommendation {
+  id                 String     @id @default(cuid())
+  userId             String
+  specialtyId        String?
+  recommendationType String
+  priority           Int
+  reason             String
+  estimatedTime      Int?
+  isActive           Boolean    @default(true)
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
+  specialty          Specialty? @relation(fields: [specialtyId], references: [id])
+  user               User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("study_recommendations")
+}
+
+model PlatformMetric {
+  id          String   @id @default(cuid())
+  metricType  String
+  metricValue Float
+  metadata    Json?
+  period      String?
+  recordedAt  DateTime @default(now())
+
+  @@map("platform_metrics")
+}
+
+model ContentAnalytic {
+  id               String   @id @default(cuid())
+  questionId       String   @unique
+  totalAttempts    Int      @default(0)
+  correctAttempts  Int      @default(0)
+  averageTime      Float?
+  difficultyRating Float?
+  feedbackScore    Float?
+  popularityScore  Float?
+  lastUpdated      DateTime @default(now())
+  question         Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@map("content_analytics")
+}
+
+model ProcessingJob {
+  id             String    @id @default(cuid())
+  type           String
+  status         String
+  totalItems     Int       @default(0)
+  processedItems Int       @default(0)
+  inputData      Json?
+  outputData     Json?
+  errorMessage   String?
+  startedAt      DateTime?
+  completedAt    DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@map("processing_jobs")
+}
+
+model BaseQuestion {
+  id         String              @id @default(cuid())
+  content    String
+  sourceFile String              @map("source_file")
+  uploadedBy String              @map("uploaded_by")
+  status     String              @default("PENDING")
+  createdAt  DateTime            @default(now()) @map("created_at")
+  updatedAt  DateTime            @updatedAt @map("updated_at")
+  displaySequence Int            @map("display_sequence") @unique @default(dbgenerated("nextval('base_question_display_sequence_seq'::regclass)"))
+  aiAnalysis AIAnalysis?
+  variations QuestionVariation[]
+
+  @@map("base_questions")
+}
+
+model AIAnalysis {
+  id             String       @id @default(cuid())
+  baseQuestionId String       @unique @map("base_question_id")
+  specialty      String
+  topic          String
+  difficulty     String
+  analysisResult String       @map("analysis_result")
+  baseQuestion   BaseQuestion @relation(fields: [baseQuestionId], references: [id], onDelete: Cascade)
+
+  @@map("ai_analysis")
+}
+
+model QuestionVariation {
+  id              String        @id @default(cuid())
+  baseQuestionId  String        @map("base_question_id")
+  difficulty      String
+  variationNumber Int           @map("variation_number")
+  content         String
+  explanation     String
+  displayCode     String?       @map("display_code")
+  alternatives    Alternative[]
+  baseQuestion    BaseQuestion  @relation(fields: [baseQuestionId], references: [id], onDelete: Cascade)
+
+  @@map("question_variations")
+}
+
+model Alternative {
+  id          String            @id @default(cuid())
+  variationId String            @map("variation_id")
+  text        String
+  isCorrect   Boolean           @default(false) @map("is_correct")
+  explanation String?
+  order       Int               @default(0)
+  variation   QuestionVariation @relation(fields: [variationId], references: [id], onDelete: Cascade)
+
+  @@map("alternatives")
+}
+
+model QARun {
+  id         String     @id @default(cuid())
+  startedAt  DateTime   @default(now())
+  finishedAt DateTime?
+  params     Json
+  status     String
+  summary    Json?
+  results    QAResult[]
+
+  @@map("qa_runs")
+}
+
+model QAResult {
+  id                    String    @id @default(cuid())
+  runId                 String
+  baseId                String
+  variationId           String
+  stage                 String
+  labels                Json
+  scores                Json?
+  critique              String?
+  patch                 Json?
+  riskLevel             String?
+  applied               Boolean   @default(false)
+  fixStatus             String?
+  humanReviewRequired   Boolean   @default(false)
+  humanReviewNotes      String?
+  reviewedBy            String?
+  reviewedAt            DateTime?
+  patchConfidence       Decimal?  @db.Decimal(3, 2)
+  createdAt             DateTime  @default(now())
+  run                   QARun     @relation(fields: [runId], references: [id], onDelete: Cascade)
+
+  @@index([humanReviewRequired])
+  @@index([fixStatus])
+  @@index([riskLevel])
+  @@map("qa_results")
+}
+
+enum UserRole {
+  STUDENT
+  ADMIN
+  CONTENT_MANAGER
+  REVIEWER
+}
+
+enum Difficulty {
+  EASY
+  MEDIUM
+  HARD
+}
+
+enum QuestionType {
+  MULTIPLE_CHOICE
+  TRUE_FALSE
+  ESSAY
+}
+
+enum QuizType {
+  PRACTICE
+  SIMULATION
+  REVIEW
+}

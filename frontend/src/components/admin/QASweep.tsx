@@ -83,14 +83,32 @@ export const QASweep: React.FC<QASweepProps> = ({ defaultTab = 'run' }) => {
   console.log('🔍 QASweep component rendered!');
 
   const filteredResults = useMemo(() => {
-    if (!labelFilter.trim()) {
-      return resultItems;
-    }
-    const query = labelFilter.toLowerCase();
-    return resultItems.filter((item) =>
-      (item.labels || []).some((label) => label.toLowerCase().includes(query)) ||
-      (item.critique ?? '').toLowerCase().includes(query)
+    let filtered = resultItems;
+
+    // 1. Excluir automáticamente "pregunta_larga"
+    filtered = filtered.filter((item) =>
+      !(item.labels || []).includes('pregunta_larga')
     );
+
+    // 2. Mostrar solo los que tienen problemas (excluir OK puros)
+    filtered = filtered.filter((item) => {
+      const labels = item.labels || [];
+      // Si solo tiene "ok" o está vacío, no mostrarlo
+      if (labels.length === 0) return false;
+      if (labels.length === 1 && labels[0] === 'ok') return false;
+      return true;
+    });
+
+    // 3. Filtro de búsqueda por texto
+    if (labelFilter.trim()) {
+      const query = labelFilter.toLowerCase();
+      filtered = filtered.filter((item) =>
+        (item.labels || []).some((label) => label.toLowerCase().includes(query)) ||
+        (item.critique ?? '').toLowerCase().includes(query)
+      );
+    }
+
+    return filtered;
   }, [labelFilter, resultItems]);
 
   const fetchRunHistory = async () => {
