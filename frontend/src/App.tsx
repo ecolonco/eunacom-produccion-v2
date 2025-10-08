@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { QueryProvider } from './contexts/QueryProvider';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { AuthModal } from './components/AuthModal';
+import { LoginForm } from './components/LoginForm';
 import { StudentDashboard } from './components/dashboard/StudentDashboard';
 import ExerciseFactory from './ExerciseFactory';
 import './App.css';
@@ -237,6 +238,21 @@ const AppContent: React.FC = () => {
             </div>
           </div>
 
+          {/* Login Form Section */}
+          <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+            <h2 className="text-2xl font-semibold text-gray-800 mb-4 text-center">
+              🔐 Iniciar Sesión
+            </h2>
+            <div className="max-w-md mx-auto">
+              <LoginForm 
+                onSuccess={() => {
+                  // Login handled by AuthContext
+                }}
+                onSwitchToRegister={() => setShowAuthModal(true)}
+              />
+            </div>
+          </div>
+
           {/* Test Credentials */}
           <div className="bg-white rounded-lg shadow-lg p-6">
             <h2 className="text-2xl font-semibold text-gray-800 mb-4">
@@ -252,15 +268,6 @@ const AppContent: React.FC = () => {
                 <p className="text-sm text-gray-600 mb-3">
                   <strong>Password:</strong> admin123
                 </p>
-                <button
-                  onClick={() => {
-                    setAuthMode('login');
-                    setShowAuthModal(true);
-                  }}
-                  className="text-xs bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 transition"
-                >
-                  Usar estas credenciales
-                </button>
               </div>
 
               <div className="p-4 bg-green-50 rounded-lg">
@@ -271,15 +278,6 @@ const AppContent: React.FC = () => {
                 <p className="text-sm text-gray-600 mb-3">
                   <strong>Password:</strong> admin123
                 </p>
-                <button
-                  onClick={() => {
-                    setAuthMode('login');
-                    setShowAuthModal(true);
-                  }}
-                  className="text-xs bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 transition"
-                >
-                  Usar estas credenciales
-                </button>
               </div>
             </div>
           </div>
