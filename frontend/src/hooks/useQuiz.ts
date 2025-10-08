@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { QuizService } from '../services/quizService';
+import { useAuth } from '../contexts/AuthContext';
 
 // Query keys for React Query
 export const QUIZ_QUERY_KEYS = {
@@ -23,6 +24,7 @@ export const useRandomQuestion = (specialty?: string, difficulty?: 'EASY' | 'MED
 // Custom hook to get random question and update credits
 export const useRandomQuestionWithCredits = () => {
   const queryClient = useQueryClient();
+  const { setUserCredits } = useAuth();
 
   return useMutation({
     mutationFn: async ({ specialty, difficulty }: { specialty?: string; difficulty?: string }) => {
@@ -37,6 +39,8 @@ export const useRandomQuestionWithCredits = () => {
       queryClient.setQueryData(['user-credits'], data.credits.remaining);
       // Also update the question in the cache for consistency
       queryClient.setQueryData(['random-question'], data.question);
+      // Sync AuthContext user credits so UI reflects new balance instantly
+      setUserCredits(data.credits.remaining);
     },
     onError: (error) => {
       console.error('useRandomQuestionWithCredits - Error fetching question with credits:', error);

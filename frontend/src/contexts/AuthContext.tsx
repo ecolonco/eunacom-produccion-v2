@@ -31,6 +31,7 @@ export interface AuthContextType {
     username?: string;
   }) => Promise<{ success: boolean; message?: string; user?: User }>;
   refreshAccessToken: () => Promise<boolean>;
+  setUserCredits: (newCredits: number) => void;
 }
 
 // Action types
@@ -250,6 +251,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  // Update only user credits locally
+  const setUserCredits = (newCredits: number) => {
+    if (!state.user) return;
+    const updatedUser: User = { ...state.user, credits: newCredits };
+    dispatch({ type: 'SET_USER', payload: updatedUser });
+  };
+
   // Get current user info
   const getCurrentUser = async () => {
     if (!state.accessToken) {
@@ -293,6 +301,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     logout,
     register,
     refreshAccessToken,
+    setUserCredits,
   };
 
   return (
