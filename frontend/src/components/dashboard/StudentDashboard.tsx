@@ -16,6 +16,7 @@ import {
   QuestionMarkCircleIcon
 } from '@heroicons/react/24/outline';
 
+// Sistema de créditos v2 - Oct 2025
 export const StudentDashboard: React.FC = () => {
   const { state, logout } = useAuth();
   const { user } = state;
