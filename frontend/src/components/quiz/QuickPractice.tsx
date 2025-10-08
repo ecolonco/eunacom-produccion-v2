@@ -255,9 +255,9 @@ export const QuickPractice: React.FC<QuickPracticeProps> = ({
             {onClose && (
               <button
                 onClick={onClose}
-                className="text-gray-500 hover:text-gray-700"
+                className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition duration-200"
               >
-                ×
+                ← Volver al Dashboard
               </button>
             )}
           </div>

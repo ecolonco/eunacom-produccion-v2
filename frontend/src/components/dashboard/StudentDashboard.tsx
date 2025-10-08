@@ -83,12 +83,6 @@ export const StudentDashboard: React.FC = () => {
               🔢 20 Preguntas aleatoriamente (15 créditos)
             </button>
             <button
-              onClick={() => setPracticeView('specialty')}
-              className="w-full px-6 py-3 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition duration-200 font-medium"
-            >
-              🏥 Practicar por Especialidad (1 crédito)
-            </button>
-            <button
               onClick={() => setPracticeView('random90')}
               className="w-full px-6 py-3 bg-green-600 text-white rounded-md hover:bg-green-700 transition duration-200 font-medium"
             >
