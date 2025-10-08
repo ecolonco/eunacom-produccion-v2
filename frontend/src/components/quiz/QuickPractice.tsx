@@ -92,6 +92,8 @@ export const QuickPractice: React.FC<QuickPracticeProps> = ({
   const [showResult, setShowResult] = useState(false);
   const [questionsServed, setQuestionsServed] = useState(0);
   const [sessionFinished, setSessionFinished] = useState(false);
+  // Evita doble solicitud del primer ejercicio (montaje + click rápido)
+  const firstLoadRequestedRef = React.useRef(false);
 
   const { data: specialties } = useSpecialties();
   const specialtyQueryValue =
@@ -124,7 +126,7 @@ export const QuickPractice: React.FC<QuickPracticeProps> = ({
     error: submitError
   } = useSubmitAnswer();
 
-  // Load first question when ready
+  // Load first question when ready (solo una vez)
   useEffect(() => {
     console.log('QuickPractice - Load question effect:', {
       isLoadingQuestion,
@@ -144,6 +146,12 @@ export const QuickPractice: React.FC<QuickPracticeProps> = ({
       return;
     }
 
+    if (firstLoadRequestedRef.current) {
+      console.log('QuickPractice - First load already requested, skipping');
+      return;
+    }
+
+    firstLoadRequestedRef.current = true;
     console.log('QuickPractice - Loading first question...');
     // Load first question automatically
     void handleGetNewQuestion();
