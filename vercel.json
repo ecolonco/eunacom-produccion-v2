@@ -1,7 +1,10 @@
 {
-  "buildCommand": "npm run build:frontend",
+  "github": {
+    "silent": true
+  },
+  "buildCommand": "cd frontend && npm install && npm run build:prod",
   "outputDirectory": "frontend/dist",
-  "installCommand": "echo 'Skipping install, will be done in build'",
+  "installCommand": "npm --version",
   "framework": null,
   "rewrites": [
     {
