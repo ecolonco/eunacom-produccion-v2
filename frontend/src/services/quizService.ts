@@ -10,7 +10,14 @@ import type {
 export class QuizService {
 
   // Get a random question for quick practice
-  static async getRandomQuestion(specialty?: string, difficulty?: 'EASY' | 'MEDIUM' | 'HARD'): Promise<QuizQuestion> {
+  static async getRandomQuestion(specialty?: string, difficulty?: 'EASY' | 'MEDIUM' | 'HARD'): Promise<{
+    question: QuizQuestion;
+    credits: {
+      remaining: number;
+      deducted: number;
+      transaction: any;
+    };
+  }> {
     const params = new URLSearchParams();
     if (specialty && specialty !== 'all') {
       params.append('specialty', specialty);
@@ -20,7 +27,10 @@ export class QuizService {
     }
 
     const response = await apiClient.get(`/api/quiz/random-question?${params.toString()}`);
-    return response.data.question;
+    return {
+      question: response.data.question,
+      credits: response.data.credits
+    };
   }
 
   // Submit answer for a question

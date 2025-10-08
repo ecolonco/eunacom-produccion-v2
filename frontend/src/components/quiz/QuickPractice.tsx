@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardContent, CardTitle } from '../ui/Card';
-import { useRandomQuestion, useSubmitAnswer, useSpecialties } from '../../hooks/useQuiz';
+import { useRandomQuestion, useRandomQuestionWithCredits, useSubmitAnswer, useSpecialties } from '../../hooks/useQuiz';
 import { useAuth } from '../../contexts/AuthContext';
 import {
   PlayIcon,
@@ -98,6 +98,9 @@ export const QuickPractice: React.FC<QuickPracticeProps> = ({
     selectedSpecialty === 'all' || selectedSpecialty === ''
       ? undefined
       : selectedSpecialty;
+  // Use the new hook that handles credits
+  const randomQuestionWithCredits = useRandomQuestionWithCredits();
+
   const {
     data: question,
     refetch: fetchQuestion,
@@ -153,8 +156,13 @@ export const QuickPractice: React.FC<QuickPracticeProps> = ({
     setStartTime(null);
 
     try {
-      const result = await fetchQuestion();
-      if (result.data) {
+      // Use the new hook that handles credits
+      const result = await randomQuestionWithCredits.mutateAsync({
+        specialty: specialtyQueryValue,
+        difficulty: selectedDifficulty === 'all' ? undefined : selectedDifficulty
+      });
+
+      if (result.question) {
         setSessionFinished(false);
         setQuestionsServed((prev) => {
           const next = prev + 1;
@@ -313,15 +321,15 @@ export const QuickPractice: React.FC<QuickPracticeProps> = ({
           <button
             onClick={() => void handleGetNewQuestion()}
             disabled={
-              isLoadingQuestion ||
+              randomQuestionWithCredits.isLoading ||
               isSubmitting ||
               (requireSpecialty && !selectedSpecialty) ||
               (maxQuestions ? sessionFinished : false)
             }
             className="w-full flex items-center justify-center gap-2 py-2 px-4 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <ArrowPathIcon className={`h-4 w-4 ${isLoadingQuestion ? 'animate-spin' : ''}`} />
-            {isLoadingQuestion ? 'Cargando pregunta...' : 'Nueva Pregunta'}
+            <ArrowPathIcon className={`h-4 w-4 ${randomQuestionWithCredits.isLoading ? 'animate-spin' : ''}`} />
+            {randomQuestionWithCredits.isLoading ? 'Cargando pregunta...' : 'Nueva Pregunta'}
           </button>
         </CardContent>
       </Card>

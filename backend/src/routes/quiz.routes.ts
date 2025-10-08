@@ -519,7 +519,7 @@ router.get('/ai-random', async (req: Request, res: Response) => {
 router.get('/random-question', authenticate, async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user?.id;
-    
+
     if (!userId) {
       return res.status(401).json({
         success: false,
@@ -533,15 +533,6 @@ router.get('/random-question', authenticate, async (req: Request, res: Response)
       logger.info(`🔄 Random-question alias requested for specialty: ${specialtyFilter}`);
     } else {
       logger.info('🔄 Random-question alias requested without specialty filter');
-    }
-
-    // Verificar si el usuario tiene créditos suficientes
-    const hasCredits = await CreditsService.hasEnoughCredits(userId, 'SINGLE_RANDOM');
-    if (!hasCredits) {
-      return res.status(403).json({
-        success: false,
-        message: 'No tienes suficientes créditos. Necesitas 1 crédito para practicar.',
-      });
     }
 
     const result = await fetchRandomAiQuestion(specialtyFilter);
@@ -559,18 +550,23 @@ router.get('/random-question', authenticate, async (req: Request, res: Response)
 
     const { formattedQuestion } = result;
 
-    // Descontar 1 crédito al mostrar la pregunta
-    await CreditsService.deductCredits(userId, 'SINGLE_RANDOM', {
+    // Descontar 1 crédito al mostrar la pregunta y obtener el nuevo balance
+    const deductResult = await CreditsService.deductCredits(userId, 'SINGLE_RANDOM', {
       questionId: formattedQuestion.id,
       specialty: specialtyFilter,
     });
 
-    logger.info(`💳 1 crédito descontado para usuario ${userId}`);
+    logger.info(`💳 1 crédito descontado para usuario ${userId}, nuevo balance: ${deductResult.newBalance}`);
 
     return res.json({
       success: true,
       question: formattedQuestion,
       specialtyFilter: specialtyFilter ?? null,
+      credits: {
+        remaining: deductResult.newBalance,
+        deducted: 1,
+        transaction: deductResult.transaction
+      }
     });
   } catch (error: any) {
     logger.error('❌ Error in random-question alias:', error);

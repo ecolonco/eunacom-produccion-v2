@@ -20,6 +20,22 @@ export const useRandomQuestion = (specialty?: string, difficulty?: 'EASY' | 'MED
   });
 };
 
+// Custom hook to get random question and update credits
+export const useRandomQuestionWithCredits = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ specialty, difficulty }: { specialty?: string; difficulty?: string }) => {
+      const result = await QuizService.getRandomQuestion(specialty, difficulty);
+      return result;
+    },
+    onSuccess: (data) => {
+      // Update the credits in the query cache
+      queryClient.setQueryData(['user-credits'], data.credits.remaining);
+    },
+  });
+};
+
 // Submit answer mutation
 export const useSubmitAnswer = () => {
   const queryClient = useQueryClient();
