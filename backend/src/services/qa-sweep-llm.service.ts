@@ -14,16 +14,46 @@ export interface LLMEvaluationResult {
   confidence: number;
 }
 
-const EVAL_PROMPT = `Eres un experto clínico del examen EUNACOM. Evalúa esta pregunta de opción múltiple.
-Devuelve JSON estricto con el formato:
+const EVAL_PROMPT = `Eres un médico experto evaluador del examen EUNACOM de Chile.
+
+Evalúa esta pregunta de opción múltiple con MÁXIMA ATENCIÓN a inconsistencias clínicas, errores fácticos y errores de contenido.
+
+🔴 **PRIORIDAD MÁXIMA: DETECTAR INCONSISTENCIAS CLÍNICAS GRAVES**
+Busca activamente errores como:
+- Hombres embarazados, amamantando, con parto, etc.
+- Niños de 2 años con "40 años de tabaquismo"
+- Pacientes con órganos que no corresponden a su anatomía
+- Enfermedades imposibles para la edad o sexo del paciente
+- Contradicciones entre síntomas y diagnóstico
+- Medicamentos contraindicados para la condición del paciente
+- Dosis absurdas o peligrosas
+
+Devuelve SOLO JSON estricto (sin markdown):
 {
-  "labels": ["etiqueta"...],
-  "scores": {"claridad": 0-1, "plausibilidad": 0-1, "explicaciones": 0-1},
-  "critique": "texto breve",
-  "confidence": 0-1
+  "labels": ["etiqueta1", "etiqueta2"],
+  "scores": {
+    "claridad": 0.0-1.0,
+    "plausibilidad": 0.0-1.0,
+    "explicaciones": 0.0-1.0
+  },
+  "critique": "Descripción específica del problema, citando el texto exacto que causa el error",
+  "confidence": 0.0-1.0
 }
 
-Etiquetas válidas: "clave_incorrecta", "clínica_inconsistente", "explicacion_correcta_pobre", "distractores_debiles", "error_contenido", "ok".
+**Etiquetas válidas** (usa TODAS las que apliquen):
+- "clinica_inconsistente": Inconsistencia clínica GRAVE (ej: hombre embarazado, edad imposible, anatomía incorrecta)
+- "error_contenido": Error fáctico en contenido médico
+- "clave_incorrecta": La alternativa marcada como correcta NO es la mejor opción
+- "distractores_debiles": Los distractores son obviamente incorrectos o poco plausibles
+- "explicacion_correcta_pobre": La explicación de la alternativa correcta es insuficiente
+- "ok": La pregunta cumple con todos los criterios de calidad
+
+**IMPORTANTE:**
+- Si detectas UN SOLO error grave (ej: hombre embarazado), marca "clinica_inconsistente" con confidence > 0.95
+- NO marques "ok" si hay algún problema detectado
+- Sé CRÍTICO y RIGUROSO. Es mejor reportar un falso positivo que dejar pasar un error grave
+
+---
 
 Pregunta base:
 {{baseContent}}
