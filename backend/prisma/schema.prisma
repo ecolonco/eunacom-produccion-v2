@@ -28,6 +28,7 @@ model User {
   metrics              UserMetrics?
   profile              UserProfile?
   userProgress         UserProgress[]
+  creditTransactions   CreditTransaction[]
 
   @@map("users")
 }
@@ -399,11 +400,37 @@ model QAResult {
   @@map("qa_results")
 }
 
+model CreditTransaction {
+  id            String              @id @default(cuid())
+  userId        String
+  amount        Int
+  type          CreditTransactionType
+  packageType   String?
+  description   String
+  balanceBefore Int
+  balanceAfter  Int
+  metadata      Json?
+  createdAt     DateTime            @default(now())
+  user          User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("credit_transactions")
+}
+
 enum UserRole {
   STUDENT
   ADMIN
   CONTENT_MANAGER
   REVIEWER
+}
+
+enum CreditTransactionType {
+  DEDUCTION
+  PURCHASE
+  REFUND
+  BONUS
+  ADMIN_ADJUSTMENT
 }
 
 enum Difficulty {

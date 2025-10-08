@@ -19,7 +19,7 @@ import {
 export const StudentDashboard: React.FC = () => {
   const { state, logout } = useAuth();
   const { user } = state;
-  const [practiceView, setPracticeView] = useState<'none' | 'hub' | 'specialty' | 'random20'>('none');
+  const [practiceView, setPracticeView] = useState<'none' | 'hub' | 'specialty' | 'random20' | 'random90'>('none');
 
   if (!user) return null;
 
@@ -44,6 +44,16 @@ export const StudentDashboard: React.FC = () => {
         onClose={() => setPracticeView('none')}
         maxQuestions={20}
         title="20 Preguntas Aleatorias"
+      />
+    );
+  }
+
+  if (practiceView === 'random90') {
+    return (
+      <QuickPractice
+        onClose={() => setPracticeView('none')}
+        maxQuestions={90}
+        title="90 Preguntas Aleatorias - Simulacro"
       />
     );
   }
@@ -84,6 +94,13 @@ export const StudentDashboard: React.FC = () => {
       color: 'bg-indigo-600 hover:bg-indigo-700',
       action: () => setPracticeView('specialty'),
     },
+    {
+      icon: <DocumentTextIcon className="h-6 w-6" />,
+      title: '90 preguntas - Simulacro completo',
+      description: 'Simula un examen EUNACOM real con 90 preguntas',
+      color: 'bg-green-600 hover:bg-green-700',
+      action: () => setPracticeView('random90'),
+    },
   ];
 
   return (
@@ -118,6 +135,12 @@ export const StudentDashboard: React.FC = () => {
                 className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition duration-200"
               >
                 🏥 Practicar por Especialidad
+              </button>
+              <button
+                onClick={() => setPracticeView('random90')}
+                className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition duration-200"
+              >
+                📋 Simulacro 90 Preguntas
               </button>
               <button
                 onClick={() => logout()}
@@ -175,10 +198,23 @@ export const StudentDashboard: React.FC = () => {
                   <p className="text-sm text-gray-600 mb-4">
                     Créditos disponibles
                   </p>
-                  <div className="text-xs text-gray-500 space-y-1">
-                    <p>• Pregunta individual: 1 crédito</p>
-                    <p>• Simulacro completo: 80 créditos</p>
-                    <p>• Revisión de tema: 15 créditos</p>
+                  <div className="text-xs space-y-2">
+                    <div className="bg-blue-50 border border-blue-200 rounded p-2">
+                      <p className="font-semibold text-blue-700">🎲 Ejercicio aleatorio</p>
+                      <p className="text-gray-600">1 crédito por pregunta</p>
+                    </div>
+                    <div className="bg-indigo-50 border border-indigo-200 rounded p-2">
+                      <p className="font-semibold text-indigo-700">🏥 Por especialidad</p>
+                      <p className="text-gray-600">1 crédito por pregunta</p>
+                    </div>
+                    <div className="bg-teal-50 border border-teal-200 rounded p-2">
+                      <p className="font-semibold text-teal-700">📦 Paquete 20 preguntas</p>
+                      <p className="text-gray-600">15 créditos (25% descuento)</p>
+                    </div>
+                    <div className="bg-green-50 border border-green-200 rounded p-2">
+                      <p className="font-semibold text-green-700">🎁 Simulacro 90 preguntas</p>
+                      <p className="text-gray-600">60 créditos (33% descuento)</p>
+                    </div>
                   </div>
                 </div>
               </CardContent>

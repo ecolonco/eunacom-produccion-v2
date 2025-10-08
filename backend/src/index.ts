@@ -22,6 +22,7 @@ import backupRoutes from './routes/backup.routes';
 import taxonomyInventoryRoutes from './routes/taxonomy-inventory.routes';
 import adminCleanupRoutes from './routes/admin-cleanup.routes';
 import { exerciseManagementRoutes } from './routes/exercise-management.routes';
+import { creditsRoutes } from './routes/credits.routes';
 import { logger } from './utils/logger';
 
 // Load environment variables
@@ -116,6 +117,7 @@ app.use('/health', healthRoutes);
 // API routes
 app.use('/api/auth', authRoutes);
 app.use('/api/quiz', quizRoutes);
+app.use('/api/credits', creditsRoutes);
 app.use('/api/exercise-factory', exerciseFactoryRoutes);
 app.use('/api/taxonomy-admin', taxonomyAdminRoutes);
 app.use('/api/qa-sweep', qaSweepRoutes);
