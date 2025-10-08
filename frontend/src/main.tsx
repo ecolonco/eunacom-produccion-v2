@@ -14,6 +14,6 @@ import './index.css'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <TestApp4 />
+    <App />
   </React.StrictMode>,
 )
