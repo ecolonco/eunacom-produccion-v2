@@ -79,6 +79,13 @@ export const QASweep: React.FC<QASweepProps> = ({ defaultTab = 'run' }) => {
   const [activeTab, setActiveTab] = useState<QATab>(defaultTab);
   const [runHistory, setRunHistory] = useState<QARunListItem[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
+  const [loadingFixes, setLoadingFixes] = useState(false);
+  const [fixStats, setFixStats] = useState<{
+    processed: number;
+    autoFixed: number;
+    pendingReview: number;
+    errors: number;
+  } | null>(null);
 
   console.log('🔍 QASweep component rendered!');
 
@@ -310,6 +317,43 @@ export const QASweep: React.FC<QASweepProps> = ({ defaultTab = 'run' }) => {
     }
   };
 
+  const handleGenerateFixes = async (currentRunId: string) => {
+    if (!currentRunId) {
+      setErrorMessage('No hay un Run ID para generar fixes.');
+      return;
+    }
+    setLoadingFixes(true);
+    setErrorMessage(null);
+    setFixStats(null);
+    try {
+      const token = localStorage.getItem('accessToken');
+      if (!token) throw new Error('Token de autenticación no disponible');
+
+      const response = await fetch(`${API_BASE_URL}/api/qa-sweep-fix/run/${currentRunId}/process`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ autoApply: true, maxAutoFix: 100 })
+      });
+
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(text || `Error ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('✅ Fixes generados:', data);
+      setFixStats(data.stats);
+    } catch (error: any) {
+      console.error('❌ Error generating fixes:', error);
+      setErrorMessage(error.message || 'Error al generar fixes');
+    } finally {
+      setLoadingFixes(false);
+    }
+  };
+
   const handleStageChange = async (value: StageFilter) => {
     setStageFilter(value);
     if (runId) {
@@ -473,7 +517,29 @@ export const QASweep: React.FC<QASweepProps> = ({ defaultTab = 'run' }) => {
           padding: '20px',
           marginBottom: '20px'
         }}>
-          <h4 style={{ color: '#155724', marginTop: 0 }}>📊 Resumen del QA Sweep</h4>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px', flexWrap: 'wrap', gap: '10px' }}>
+            <h4 style={{ color: '#155724', margin: 0 }}>📊 Resumen del QA Sweep</h4>
+            {runSummary.useLLM && !fixStats && (
+              <button
+                onClick={() => handleGenerateFixes(runSummary.runId)}
+                disabled={loadingFixes}
+                style={{
+                  padding: '10px 20px',
+                  backgroundColor: loadingFixes ? '#6c757d' : '#ffc107',
+                  color: '#000',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: loadingFixes ? 'not-allowed' : 'pointer',
+                  fontWeight: 'bold',
+                  fontSize: '14px',
+                  transition: 'all 0.2s',
+                  opacity: loadingFixes ? 0.6 : 1
+                }}
+              >
+                {loadingFixes ? '⏳ Generando fixes...' : '🔧 Generar Fixes (ETAPA 3)'}
+              </button>
+            )}
+          </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(120px, 1fr))', gap: '15px', marginBottom: '15px' }}>
             <SummaryCard title="Total" value={runSummary.total} color="#495057" background="#e9ecef" />
             <SummaryCard title="Aceptados" value={runSummary.accepted} color="#155724" background="#d4edda" />
@@ -486,6 +552,38 @@ export const QASweep: React.FC<QASweepProps> = ({ defaultTab = 'run' }) => {
             <div>LLM: <strong>{runSummary.useLLM ? 'Sí' : 'No'}</strong></div>
             <div>Concurrencia: <strong>{runSummary.concurrency}</strong></div>
           </div>
+          {fixStats && (
+            <div style={{
+              marginTop: '20px',
+              padding: '15px',
+              backgroundColor: '#fff3cd',
+              border: '1px solid #ffc107',
+              borderRadius: '6px'
+            }}>
+              <div style={{ fontWeight: 'bold', marginBottom: '10px', color: '#856404', fontSize: '15px' }}>
+                🔧 Resultado de Fixes Generados:
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '10px', fontSize: '14px', color: '#856404' }}>
+                <div>Procesados: <strong>{fixStats.processed}</strong></div>
+                <div>✅ Auto-aplicados: <strong style={{ color: '#28a745' }}>{fixStats.autoFixed}</strong></div>
+                <div>🔍 Pendientes revisión: <strong style={{ color: '#007bff' }}>{fixStats.pendingReview}</strong></div>
+                <div>❌ Errores: <strong style={{ color: '#dc3545' }}>{fixStats.errors}</strong></div>
+              </div>
+              {fixStats.pendingReview > 0 && (
+                <div style={{
+                  marginTop: '12px',
+                  padding: '10px',
+                  backgroundColor: '#e7f3ff',
+                  borderLeft: '4px solid #007bff',
+                  borderRadius: '4px',
+                  fontSize: '13px',
+                  color: '#004085'
+                }}>
+                  💡 <strong>Tip:</strong> Hay {fixStats.pendingReview} fixes esperando tu revisión. Ve a la pestaña <strong>"🔍 (3) Por Corregir"</strong> para aprobarlos o rechazarlos.
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
 
