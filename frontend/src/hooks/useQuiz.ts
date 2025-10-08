@@ -26,12 +26,20 @@ export const useRandomQuestionWithCredits = () => {
 
   return useMutation({
     mutationFn: async ({ specialty, difficulty }: { specialty?: string; difficulty?: string }) => {
+      console.log('useRandomQuestionWithCredits - Calling QuizService.getRandomQuestion:', { specialty, difficulty });
       const result = await QuizService.getRandomQuestion(specialty, difficulty);
+      console.log('useRandomQuestionWithCredits - Got result:', result);
       return result;
     },
     onSuccess: (data) => {
+      console.log('useRandomQuestionWithCredits - Success:', data);
       // Update the credits in the query cache
       queryClient.setQueryData(['user-credits'], data.credits.remaining);
+      // Also update the question in the cache for consistency
+      queryClient.setQueryData(['random-question'], data.question);
+    },
+    onError: (error) => {
+      console.error('useRandomQuestionWithCredits - Error fetching question with credits:', error);
     },
   });
 };

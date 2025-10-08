@@ -98,18 +98,24 @@ export const QuickPractice: React.FC<QuickPracticeProps> = ({
     selectedSpecialty === 'all' || selectedSpecialty === ''
       ? undefined
       : selectedSpecialty;
-  // Use the new hook that handles credits
+  // Use the hook that handles credits and questions
   const randomQuestionWithCredits = useRandomQuestionWithCredits();
 
-  const {
-    data: question,
-    refetch: fetchQuestion,
-    isLoading: isLoadingQuestion,
-    error: questionError
-  } = useRandomQuestion(
-    specialtyQueryValue,
-    selectedDifficulty === 'all' ? undefined : selectedDifficulty
-  );
+  // Extract question data from the credits hook
+  const question = randomQuestionWithCredits.data?.question;
+  const isLoadingQuestion = randomQuestionWithCredits.isLoading;
+  const questionError = randomQuestionWithCredits.error;
+
+  // Debug logs for question state changes
+  React.useEffect(() => {
+    console.log('QuickPractice - Question state changed:', {
+      question: !!question,
+      isLoadingQuestion,
+      questionError,
+      questionsServed,
+      sessionFinished
+    });
+  }, [question, isLoadingQuestion, questionError, questionsServed, sessionFinished]);
 
   const {
     mutate: submitAnswer,
@@ -120,16 +126,28 @@ export const QuickPractice: React.FC<QuickPracticeProps> = ({
 
   // Load first question when ready
   useEffect(() => {
+    console.log('QuickPractice - Load question effect:', {
+      isLoadingQuestion,
+      hasQuestion: !!question,
+      requireSpecialty,
+      selectedSpecialty,
+      questionsServed
+    });
+
     if (isLoadingQuestion || question) {
+      console.log('QuickPractice - Already loading or has question, skipping');
       return;
     }
 
     if (requireSpecialty && !selectedSpecialty) {
+      console.log('QuickPractice - Requires specialty but none selected');
       return;
     }
 
+    console.log('QuickPractice - Loading first question...');
+    // Load first question automatically
     void handleGetNewQuestion();
-  }, [isLoadingQuestion, question, requireSpecialty, selectedSpecialty]);
+  }, [isLoadingQuestion, question, requireSpecialty, selectedSpecialty, questionsServed]);
 
   useEffect(() => {
     if (!maxQuestions) return;
@@ -141,12 +159,23 @@ export const QuickPractice: React.FC<QuickPracticeProps> = ({
   const handleGetNewQuestion = async (options?: { bypassLimit?: boolean }) => {
     const bypassLimit = options?.bypassLimit ?? false;
 
+    console.log('QuickPractice - handleGetNewQuestion called:', {
+      bypassLimit,
+      maxQuestions,
+      questionsServed,
+      requireSpecialty,
+      selectedSpecialty,
+      specialtyQueryValue
+    });
+
     if (!bypassLimit && maxQuestions && questionsServed >= maxQuestions) {
+      console.log('QuickPractice - Session finished, max questions reached');
       setSessionFinished(true);
       return;
     }
 
     if (requireSpecialty && !selectedSpecialty) {
+      console.log('QuickPractice - Requires specialty but none selected');
       return;
     }
 
@@ -156,22 +185,28 @@ export const QuickPractice: React.FC<QuickPracticeProps> = ({
     setStartTime(null);
 
     try {
+      console.log('QuickPractice - Calling randomQuestionWithCredits.mutateAsync');
       // Use the new hook that handles credits
       const result = await randomQuestionWithCredits.mutateAsync({
         specialty: specialtyQueryValue,
         difficulty: selectedDifficulty === 'all' ? undefined : selectedDifficulty
       });
 
+      console.log('QuickPractice - Got result:', result);
+
       if (result.question) {
+        console.log('QuickPractice - Question loaded successfully');
         setSessionFinished(false);
         setQuestionsServed((prev) => {
           const next = prev + 1;
           return maxQuestions ? Math.min(next, maxQuestions) : next;
         });
         setStartTime(new Date());
+      } else {
+        console.log('QuickPractice - No question in result');
       }
     } catch (error) {
-      console.error('Error fetching new question:', error);
+      console.error('QuickPractice - Error fetching new question:', error);
     }
   };
 

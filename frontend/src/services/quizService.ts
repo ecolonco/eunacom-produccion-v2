@@ -18,6 +18,8 @@ export class QuizService {
       transaction: any;
     };
   }> {
+    console.log('QuizService.getRandomQuestion - Requesting:', { specialty, difficulty });
+
     const params = new URLSearchParams();
     if (specialty && specialty !== 'all') {
       params.append('specialty', specialty);
@@ -26,7 +28,12 @@ export class QuizService {
       params.append('difficulty', difficulty);
     }
 
+    console.log('QuizService.getRandomQuestion - URL:', `/api/quiz/random-question?${params.toString()}`);
+
     const response = await apiClient.get(`/api/quiz/random-question?${params.toString()}`);
+
+    console.log('QuizService.getRandomQuestion - Response:', response.data);
+
     return {
       question: response.data.question,
       credits: response.data.credits
