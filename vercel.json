@@ -1,8 +1,7 @@
 {
-  "buildCommand": "cd frontend && npm install && npm run build:prod",
+  "buildCommand": "npm run build:frontend",
   "outputDirectory": "frontend/dist",
-  "devCommand": "cd frontend && npm run dev",
-  "installCommand": "cd frontend && npm install",
+  "installCommand": "echo 'Skipping install, will be done in build'",
   "framework": null,
   "rewrites": [
     {
