@@ -518,7 +518,15 @@ router.get('/ai-random', async (req: Request, res: Response) => {
 // ALIAS: Redirect /random-question to working /ai-random endpoint
 router.get('/random-question', authenticate, async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).userId;
+    const userId = (req as any).user?.id;
+    
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: 'Usuario no autenticado',
+      });
+    }
+
     const specialtyFilter = normalizeSpecialtyParam(req.query.specialty);
 
     if (specialtyFilter) {
