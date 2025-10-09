@@ -128,7 +128,7 @@ const AppContent: React.FC = () => {
             🩺 EUNACOM Learning Platform
           </h1>
           <p className="text-xl text-gray-600 mb-6">
-            Plataforma de preparación EUNACOM con IA
+            Prepárate para el EUNACOM practicando con ejercicios explicados y contenido curado
           </p>
 
           {/* Auth Buttons */}
@@ -155,6 +155,32 @@ const AppContent: React.FC = () => {
             >
               📝 Registrarse
             </button>
+          </div>
+          {/* Benefits */}
+          <div className="max-w-4xl mx-auto mb-8">
+            <div className="bg-white rounded-lg shadow-lg p-6 border border-blue-100">
+              <h2 className="text-2xl font-semibold text-gray-800 mb-4">Por qué prepararte aquí</h2>
+              <ul className="text-left text-gray-700 space-y-2 list-disc list-inside">
+                <li>Más de <strong>10.000 ejercicios</strong> con <strong>explicación</strong> clara.</li>
+                <li><strong>Prueba gratis</strong>: accede a <strong>10 ejercicios</strong> sin costo.</li>
+                <li><strong>Sólo prepago</strong>: sin contratos ni planes mensuales.</li>
+                <li>Progreso y recomendaciones para optimizar tu estudio.</li>
+              </ul>
+              <div className="mt-6 flex flex-col sm:flex-row gap-3 justify-center">
+                <button
+                  onClick={() => { setAuthMode('register'); setShowAuthModal(true); }}
+                  className="px-6 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition duration-200 shadow-md"
+                >
+                  🚀 Probar 10 ejercicios gratis
+                </button>
+                <button
+                  onClick={() => { setAuthMode('login'); setShowAuthModal(true); }}
+                  className="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition duration-200 shadow-md"
+                >
+                  🔑 Ya tengo cuenta
+                </button>
+              </div>
+            </div>
           </div>
         </header>
 
@@ -204,34 +230,34 @@ const AppContent: React.FC = () => {
           {/* Features Overview */}
           <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
             <h2 className="text-2xl font-semibold text-gray-800 mb-4">
-              🎯 Funcionalidades del MVP
+              🎯 Beneficios clave
             </h2>
 
             <div className="grid md:grid-cols-3 gap-4">
               <div className="p-4 border-2 border-blue-200 rounded-lg">
-                <h3 className="font-semibold text-blue-800 mb-2">👤 Gestión de Usuarios</h3>
+                <h3 className="font-semibold text-blue-800 mb-2">📘 Ejercicios explicados</h3>
                 <ul className="text-sm text-gray-600 space-y-1">
-                  <li>• Registro y autenticación ✅</li>
-                  <li>• Perfiles de estudiante ✅</li>
-                  <li>• Sistema de créditos ✅</li>
+                  <li>• +10.000 ejercicios con explicación</li>
+                  <li>• Dificultades y especialidades médicas</li>
+                  <li>• Revisión y actualización continua</li>
                 </ul>
               </div>
 
               <div className="p-4 border-2 border-green-200 rounded-lg">
-                <h3 className="font-semibold text-green-800 mb-2">📚 Base de Conocimientos</h3>
+                <h3 className="font-semibold text-green-800 mb-2">🆓 Prueba gratis</h3>
                 <ul className="text-sm text-gray-600 space-y-1">
-                  <li>• Especialidades médicas ✅</li>
-                  <li>• Taxonomía de temas ✅</li>
-                  <li>• Preguntas EUNACOM ✅</li>
+                  <li>• 10 ejercicios gratis para evaluar la plataforma</li>
+                  <li>• Sin tarjeta para probar</li>
+                  <li>• Empieza en minutos</li>
                 </ul>
               </div>
 
               <div className="p-4 border-2 border-purple-200 rounded-lg">
-                <h3 className="font-semibold text-purple-800 mb-2">🧠 Sistema de Práctica</h3>
+                <h3 className="font-semibold text-purple-800 mb-2">💳 Prepago flexible</h3>
                 <ul className="text-sm text-gray-600 space-y-1">
-                  <li>• Quizzes adaptativos ✅</li>
-                  <li>• Simulacros EUNACOM ✅</li>
-                  <li>• Seguimiento de progreso ✅</li>
+                  <li>• Sólo pagas por lo que usas</li>
+                  <li>• Sin contratos ni mensualidades</li>
+                  <li>• Control de créditos y consumo</li>
                 </ul>
               </div>
             </div>
