@@ -43,4 +43,66 @@ export const useRandomQuestionWithCredits = () => {
       setUserCredits(data.credits.remaining);
     },
     onError: (error) => {
-      console.error('useRandomQuestionWithCredits - Erro
+      console.error('useRandomQuestionWithCredits - Error fetching question with credits:', error);
+    },
+  });
+};
+
+// Paquete prepago: obtener pregunta sin descontar créditos (porque ya se descontaron al inicio)
+export const useRandomQuestionPrepaid = () => {
+  return useMutation({
+    mutationFn: async ({ specialty, difficulty }: { specialty?: string; difficulty?: string }) => {
+      console.log('useRandomQuestionPrepaid - Calling QuizService.getRandomQuestionNoCredits:', { specialty, difficulty });
+      const result = await QuizService.getRandomQuestionNoCredits(specialty, difficulty);
+      console.log('useRandomQuestionPrepaid - Got result:', result);
+      return result;
+    },
+  });
+};
+
+// Submit answer mutation
+export const useSubmitAnswer = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      questionId,
+      selectedOptionId,
+      timeSpent
+    }: {
+      questionId: string;
+      selectedOptionId: string;
+      timeSpent?: number;
+    }) => QuizService.submitAnswer(questionId, selectedOptionId, timeSpent),
+
+    onSuccess: () => {
+      // Invalidate relevant dashboard queries to update stats
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+    },
+  });
+};
+
+// Get available quizzes
+export const useAvailableQuizzes = () => {
+  return useQuery({
+    queryKey: QUIZ_QUERY_KEYS.availableQuizzes(),
+    queryFn: QuizService.getAvailableQuizzes,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+};
+
+// Start simulation mutation
+export const useStartSimulation = () => {
+  return useMutation({
+    mutationFn: (quizId: string) => QuizService.startSimulation(quizId),
+  });
+};
+
+// Get specialties for filtering
+export const useSpecialties = () => {
+  return useQuery({
+    queryKey: QUIZ_QUERY_KEYS.specialties(),
+    queryFn: QuizService.getSpecialties,
+    staleTime: 30 * 60 * 1000, // 30 minutes - specialties don't change often
+  });
+};

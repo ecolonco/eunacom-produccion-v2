@@ -55,4 +55,48 @@ export class QuizService {
       params.append('difficulty', difficulty);
     }
 
-    cons
+    console.log('QuizService.getRandomQuestionNoCredits - URL:', `/api/quiz/ai-random?${params.toString()}`);
+
+    const response = await apiClient.get(`/api/quiz/ai-random?${params.toString()}`);
+
+    console.log('QuizService.getRandomQuestionNoCredits - Response:', response.data);
+
+    return {
+      question: response.data.question,
+    };
+  }
+
+  // Submit answer for a question
+  static async submitAnswer(
+    questionId: string,
+    selectedOptionId: string,
+    timeSpent?: number
+  ): Promise<QuizResult> {
+    const response = await apiClient.post('/api/quiz/submit-answer', {
+      questionId,
+      selectedOptionId,
+      timeSpent
+    });
+    return response.data.result;
+  }
+
+  // Get available quizzes for simulations
+  static async getAvailableQuizzes(): Promise<AvailableQuiz[]> {
+    const response = await apiClient.get('/api/quiz/available-quizzes');
+    return response.data.quizzes;
+  }
+
+  // Start a quiz simulation
+  static async startSimulation(quizId: string): Promise<QuizSession> {
+    const response = await apiClient.post('/api/quiz/start-simulation', {
+      quizId
+    });
+    return response.data.session;
+  }
+
+  // Get available specialties for filtering
+  static async getSpecialties(): Promise<Specialty[]> {
+    const response = await apiClient.get('/api/quiz/specialties');
+    return response.data.specialties;
+  }
+}

@@ -539,4 +539,61 @@ export const QuickPractice: React.FC<QuickPracticeProps> = ({
                 >
                   Siguiente Pregunta
                 </button>
-      
+              </div>
+            )}
+
+            {submitError && (
+              <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
+                <p className="text-red-600 text-sm">
+                  Error al enviar respuesta: {submitError instanceof Error ? submitError.message : 'Error desconocido'}
+                </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {sessionFinished && maxQuestions && (
+        <Card>
+          <CardContent className="text-center space-y-4">
+            <h3 className="text-lg font-semibold text-gray-800">
+              🎉 ¡Completaste la sesión de {maxQuestions} preguntas!
+            </h3>
+            <p className="text-sm text-gray-600">
+              Puedes revisar tus respuestas o iniciar una nueva sesión cuando quieras.
+            </p>
+            <div className="flex justify-center flex-wrap gap-3">
+              <button
+                onClick={() => {
+                  setQuestionsServed(0);
+                  setSessionFinished(false);
+                  setSelectedOption('');
+                  setHasAnswered(false);
+                  setShowResult(false);
+                  setStartTime(null);
+                  if (requireSpecialty) {
+                    setSelectedSpecialty(defaultSpecialty ?? '');
+                  } else {
+                    setSelectedSpecialty('all');
+                  }
+                  void handleGetNewQuestion({ bypassLimit: true });
+                }}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition duration-200"
+              >
+                🔁 Reiniciar sesión
+              </button>
+              {onClose && (
+                <button
+                  onClick={onClose}
+                  className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition duration-200"
+                >
+                  Volver al dashboard
+                </button>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+};
