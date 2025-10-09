@@ -50,20 +50,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onSwitchToRegis
     }
   };
 
-  const fillDemoCredentials = (type: 'admin' | 'student') => {
-    if (type === 'admin') {
-      setFormData({
-        email: 'admin@eunacom.local',
-        password: 'admin123',
-      });
-    } else {
-      setFormData({
-        email: 'estudiante@eunacom.local',
-        password: 'admin123',
-      });
-    }
-    setError('');
-  };
+  // Eliminado: autocompletado de credenciales de prueba
 
   return (
     <div className="bg-white p-8 rounded-lg shadow-md max-w-md mx-auto">
@@ -119,28 +106,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onSwitchToRegis
         </button>
       </form>
 
-      {/* Demo credentials */}
-      <div className="mt-6 border-t pt-6">
-        <p className="text-sm text-gray-600 mb-3 text-center">
-          Credenciales de prueba:
-        </p>
-        <div className="grid grid-cols-2 gap-2">
-          <button
-            type="button"
-            onClick={() => fillDemoCredentials('admin')}
-            className="px-3 py-2 text-xs bg-blue-50 text-blue-700 border border-blue-200 rounded hover:bg-blue-100 transition duration-200"
-          >
-            👨‍⚕️ Admin
-          </button>
-          <button
-            type="button"
-            onClick={() => fillDemoCredentials('student')}
-            className="px-3 py-2 text-xs bg-green-50 text-green-700 border border-green-200 rounded hover:bg-green-100 transition duration-200"
-          >
-            🎓 Estudiante
-          </button>
-        </div>
-      </div>
+      {/* Eliminado: bloque de credenciales de prueba */}
 
       {onSwitchToRegister && (
         <p className="mt-6 text-center text-sm text-gray-600">
