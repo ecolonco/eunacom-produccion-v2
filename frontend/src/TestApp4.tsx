@@ -5,6 +5,7 @@ import { StudentDashboard } from './components/dashboard/StudentDashboard';
 import ExerciseFactory from './ExerciseFactory';
 import TaxonomyInventory from './components/TaxonomyInventory';
 import TaxonomyAdmin from './components/TaxonomyAdmin';
+import AdminUsersTable from './components/admin/AdminUsersTable';
 import ExerciseManagement from './components/admin/ExerciseManagement';
 import type { Specialty } from './types/dashboard';
 
@@ -971,7 +972,6 @@ const SimpleDashboard: React.FC = () => {
   }
 
   if (showAdminUsers) {
-    const AdminUsersTable = require('./components/admin/AdminUsersTable').default;
     return <AdminUsersTable onBack={() => setShowAdminUsers(false)} />;
   }
 
