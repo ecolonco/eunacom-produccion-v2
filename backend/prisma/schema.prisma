@@ -29,6 +29,7 @@ model User {
   profile              UserProfile?
   userProgress         UserProgress[]
   creditTransactions   CreditTransaction[]
+  emailVerifications   EmailVerification[]
 
   @@map("users")
 }
