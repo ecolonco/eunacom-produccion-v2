@@ -38,7 +38,7 @@ export const VerifyEmail: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
       <div className="bg-white p-8 rounded-lg shadow-lg max-w-md w-full text-center">
-        <h1 className="text-2xl font-bold mb-4">Verificación de correo</n>
+        <h1 className="text-2xl font-bold mb-4">Verificación de correo</h1>
         {status === 'loading' && (
           <p className="text-gray-600">{message}</p>
         )}
