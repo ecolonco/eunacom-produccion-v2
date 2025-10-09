@@ -6,8 +6,8 @@ import { QuickPractice } from '../quiz/QuickPractice';
 
 // Sistema de créditos v2 - Oct 2025
 export const StudentDashboard: React.FC = () => {
-  const { state, logout } = useAuth();
-  const { user, } = state;
+  const { state, logout, setUserCredits } = useAuth();
+  const { user } = state;
   const [practiceView, setPracticeView] = useState<'none' | 'hub' | 'random' | 'specialty' | 'random20' | 'random90'>('none');
   const [isPurchasing, setIsPurchasing] = useState(false);
 
@@ -89,7 +89,9 @@ export const StudentDashboard: React.FC = () => {
                     packageType: 'PACK_20',
                     metadata: { source: 'STUDENT_DASHBOARD' }
                   });
-                  // Actualizar UI y abrir la sesión de 20 preguntas
+                  // Actualizar saldo global
+                  setUserCredits(newBalance);
+                  // Abrir la sesión de 20 preguntas
                   setPracticeView('random20');
                 } catch (err: any) {
                   if (err?.message === 'INSUFFICIENT_CREDITS') {

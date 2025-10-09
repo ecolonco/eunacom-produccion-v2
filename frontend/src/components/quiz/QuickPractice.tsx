@@ -563,6 +563,7 @@ export const QuickPractice: React.FC<QuickPracticeProps> = ({
               Puedes revisar tus respuestas o iniciar una nueva sesión cuando quieras.
             </p>
             <div className="flex justify-center flex-wrap gap-3">
+              {!prepaid && (
               <button
                 onClick={() => {
                   setQuestionsServed(0);
@@ -582,6 +583,7 @@ export const QuickPractice: React.FC<QuickPracticeProps> = ({
               >
                 🔁 Reiniciar sesión
               </button>
+              )}
               {onClose && (
                 <button
                   onClick={onClose}
