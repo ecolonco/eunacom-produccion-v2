@@ -1,12 +1,15 @@
 import { Router, Request, Response } from 'express';
 import bcryptjs from 'bcryptjs';
 import jwt, { SignOptions } from 'jsonwebtoken';
-import { PrismaClient } from '@prisma/client';
+import prisma from '../lib/prisma';
 import { body, validationResult } from 'express-validator';
 import { logger } from '../utils/logger';
+import { VerificationService } from '../services/verification.service';
+import { EmailService, buildVerificationEmail } from '../services/email.service';
+import { CreditsService } from '../services/credits.service';
+import { redis } from '../config/redis';
 
 const router = Router();
-const prisma = new PrismaClient();
 
 // JWT Helper functions
 const generateAccessToken = (userId: string, email: string, role: string): string => {
@@ -64,6 +67,14 @@ router.post('/login', [
       return res.status(401).json({
         success: false,
         message: 'Credenciales inválidas'
+      });
+    }
+
+    // Block login if email not verified
+    if (!user.isVerified) {
+      return res.status(403).json({
+        success: false,
+        message: 'Debes verificar tu correo antes de iniciar sesión.'
       });
     }
 
@@ -129,22 +140,20 @@ router.post('/register', [
 
     const { email, password, firstName, lastName, username } = req.body;
 
-    // Check if user already exists
-    const existingUser = await prisma.user.findUnique({
-      where: { email }
-    });
-
+    // Check if user already exists (neutral response to avoid enumeration)
+    const existingUser = await prisma.user.findUnique({ where: { email } });
     if (existingUser) {
-      return res.status(409).json({
-        success: false,
-        message: 'El usuario ya existe'
+      // If already verified, return generic success
+      return res.status(200).json({
+        success: true,
+        message: 'Si el correo es válido, recibirás un enlace de verificación.'
       });
     }
 
     // Hash password
     const passwordHash = await bcryptjs.hash(password, 12);
 
-    // Create user
+    // Create user with zero credits until verification
     const user = await prisma.user.create({
       data: {
         email,
@@ -152,7 +161,7 @@ router.post('/register', [
         firstName,
         lastName,
         username,
-        credits: parseInt(process.env.FREE_CREDITS_ON_SIGNUP || '50'),
+        credits: 0,
         profile: {
           create: {
             preferredLanguage: 'es',
@@ -166,37 +175,24 @@ router.post('/register', [
       }
     });
 
-    // Generate tokens
-    const accessToken = generateAccessToken(user.id, user.email, user.role);
-    const refreshToken = generateRefreshToken(user.id);
+    // Generate verification token and send email
+    const ttl = parseInt(process.env.EMAIL_TOKEN_TTL_HOURS || '24', 10);
+    const token = await VerificationService.createOrReplaceToken(
+      user.id,
+      ttl,
+      req.ip,
+      req.get('user-agent') || undefined
+    );
+    const appUrl = process.env.APP_URL || 'http://localhost:5173';
+    const verifyUrl = `${appUrl}/verify?token=${token}`;
+    const { subject, html } = buildVerificationEmail(user.email, verifyUrl);
+    await EmailService.sendEmail({ to: user.email, subject, html });
 
-    // Store refresh token in database
-    await prisma.refreshToken.create({
-      data: {
-        token: refreshToken,
-        userId: user.id,
-        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
-      }
-    });
-
-    logger.info(`New user registered: ${user.email}`);
+    logger.info(`New user registered (verification required): ${user.email}`);
 
     res.status(201).json({
       success: true,
-      message: 'Usuario registrado exitosamente',
-      user: {
-        id: user.id,
-        email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        role: user.role,
-        credits: user.credits,
-        profile: user.profile
-      },
-      tokens: {
-        accessToken,
-        refreshToken
-      }
+      message: 'Registro exitoso. Revisa tu correo para confirmar tu cuenta.'
     });
 
   } catch (error) {
@@ -327,3 +323,104 @@ router.get('/me', async (req: Request, res: Response): Promise<Response | void> 
 });
 
 export { router as authRoutes };
+
+// GET /api/auth/verify
+router.get('/verify', async (req: Request, res: Response): Promise<Response | void> => {
+  try {
+    const token = (req.query.token as string) || '';
+    if (!token) {
+      return res.status(400).json({ success: false, message: 'Token requerido' });
+    }
+
+    const consumed = await VerificationService.consumeToken(token);
+    if (!consumed) {
+      return res.status(400).json({ success: false, message: 'Token inválido o expirado' });
+    }
+
+    const user = await prisma.user.findUnique({ where: { id: consumed.userId } });
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'Usuario no encontrado' });
+    }
+
+    if (!user.isVerified) {
+      // Mark verified and grant signup bonus idempotently
+      await prisma.$transaction(async (tx) => {
+        await tx.user.update({ where: { id: user.id }, data: { isVerified: true } });
+
+        const existingBonus = await tx.creditTransaction.findFirst({
+          where: { userId: user.id, type: 'BONUS', description: 'SIGNUP_BONUS' }
+        });
+
+        if (!existingBonus) {
+          // Use CreditsService to add credits (outside tx)
+        }
+      });
+
+      // Add credits (+10) outside the transaction to use service abstraction
+      const existingBonus = await prisma.creditTransaction.findFirst({
+        where: { userId: user.id, type: 'BONUS', description: 'SIGNUP_BONUS' }
+      });
+      if (!existingBonus) {
+        await CreditsService.addCredits(user.id, 10, 'BONUS', 'SIGNUP_BONUS', { reason: 'Email verification bonus' });
+      }
+    }
+
+    return res.json({ success: true, message: 'Email verificado correctamente. Ya puedes iniciar sesión.' });
+  } catch (error) {
+    logger.error('Email verification error:', error);
+    return res.status(500).json({ success: false, message: 'Error interno del servidor' });
+  }
+});
+
+// POST /api/auth/resend-verification
+router.post('/resend-verification', [body('email').isEmail().normalizeEmail()], async (req: Request, res: Response): Promise<Response | void> => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ success: false, message: 'Datos inválidos' });
+    }
+
+    const { email } = req.body as { email: string };
+
+    // Rate limit by email and IP
+    const ip = req.ip || 'unknown';
+    const emailKey = `verify_resend:email:${email}`;
+    const ipKey = `verify_resend:ip:${ip}`;
+    const limit = parseInt(process.env.RESEND_VERIFY_LIMIT || '3', 10);
+    const windowSec = parseInt(process.env.RESEND_VERIFY_WINDOW_SEC || '3600', 10);
+
+    const [emailCount, ipCount] = await Promise.all([
+      redis.incr(emailKey),
+      redis.incr(ipKey),
+    ]);
+    if (emailCount === 1) await redis.expire(emailKey, windowSec);
+    if (ipCount === 1) await redis.expire(ipKey, windowSec);
+
+    if (emailCount > limit || ipCount > limit * 3) {
+      return res.status(429).json({ success: true, message: 'Si el correo es válido, recibirás un enlace de verificación.' });
+    }
+
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user || !user.isActive || user.isVerified) {
+      // Neutral response
+      return res.json({ success: true, message: 'Si el correo es válido, recibirás un enlace de verificación.' });
+    }
+
+    const ttl = parseInt(process.env.EMAIL_TOKEN_TTL_HOURS || '24', 10);
+    const token = await VerificationService.createOrReplaceToken(
+      user.id,
+      ttl,
+      ip,
+      req.get('user-agent') || undefined
+    );
+    const appUrl = process.env.APP_URL || 'http://localhost:5173';
+    const verifyUrl = `${appUrl}/verify?token=${token}`;
+    const { subject, html } = buildVerificationEmail(user.email, verifyUrl);
+    await EmailService.sendEmail({ to: user.email, subject, html });
+
+    return res.json({ success: true, message: 'Si el correo es válido, recibirás un enlace de verificación.' });
+  } catch (error) {
+    logger.error('Resend verification error:', error);
+    return res.json({ success: true, message: 'Si el correo es válido, recibirás un enlace de verificación.' });
+  }
+});

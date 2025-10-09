@@ -418,6 +418,23 @@ model CreditTransaction {
   @@map("credit_transactions")
 }
 
+/// Tokens de verificación de email (single-use)
+model EmailVerification {
+  id               String   @id @default(cuid())
+  userId           String
+  tokenHash        String   @unique
+  expiresAt        DateTime
+  consumedAt       DateTime?
+  createdAt        DateTime @default(now())
+  createdIp        String?
+  createdUserAgent String?
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("email_verifications")
+}
+
 enum UserRole {
   STUDENT
   ADMIN

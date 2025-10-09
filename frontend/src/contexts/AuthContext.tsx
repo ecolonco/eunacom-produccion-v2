@@ -190,15 +190,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
 
       if (data.success) {
-        dispatch({
-          type: 'LOGIN_SUCCESS',
-          payload: {
-            user: data.user,
-            accessToken: data.tokens.accessToken,
-            refreshToken: data.tokens.refreshToken,
-          },
-        });
-        return { success: true, user: data.user };
+        // No iniciar sesión automáticamente. Mostrar mensaje en UI.
+        dispatch({ type: 'SET_LOADING', payload: false });
+        return { success: true };
       } else {
         dispatch({ type: 'LOGIN_FAILURE' });
         return { success: false, message: data.message };

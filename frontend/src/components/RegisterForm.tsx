@@ -16,6 +16,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, onSwitchT
     confirmPassword: '',
   });
   const [error, setError] = useState('');
+  const [info, setInfo] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { register } = useAuth();
@@ -57,6 +58,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, onSwitchT
     e.preventDefault();
     setIsSubmitting(true);
     setError('');
+    setInfo('');
 
     if (!validateForm()) {
       setIsSubmitting(false);
@@ -73,7 +75,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, onSwitchT
       });
 
       if (result.success) {
-        onSuccess?.();
+        setInfo('Registro exitoso. Revisa tu correo para confirmar tu cuenta.');
       } else {
         setError(result.message || 'Error al registrar usuario');
       }
@@ -93,6 +95,11 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, onSwitchT
       {error && (
         <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-md">
           {error}
+        </div>
+      )}
+      {info && (
+        <div className="mb-4 p-3 bg-blue-50 border border-blue-200 text-blue-700 rounded-md">
+          {info}
         </div>
       )}
 

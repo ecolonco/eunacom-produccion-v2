@@ -1,6 +1,7 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App'
+import VerifyEmail from './components/VerifyEmail'
 import SimpleApp from './SimpleApp'
 import TestApp from './TestApp'
 import TestApp2 from './TestApp2'
@@ -12,8 +13,16 @@ import WorkingApp from './WorkingApp'
 import FunctionalApp from './FunctionalApp'
 import './index.css'
 
+function RouterRoot() {
+  const path = window.location.pathname;
+  if (path === '/verify') {
+    return <VerifyEmail />;
+  }
+  return <App />;
+}
+
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <TestApp4 />
+    <RouterRoot />
   </React.StrictMode>,
 )
