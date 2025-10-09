@@ -139,6 +139,9 @@ router.post('/register', [
     }
 
     const { email, password, firstName, lastName, username } = req.body;
+    const cleanUsername = typeof username === 'string' && username.trim().length > 0
+      ? username.trim()
+      : undefined;
 
     // Check if user already exists (neutral response to avoid enumeration)
     const existingUser = await prisma.user.findUnique({ where: { email } });
@@ -154,25 +157,27 @@ router.post('/register', [
     const passwordHash = await bcryptjs.hash(password, 12);
 
     // Create user with zero credits until verification
-    const user = await prisma.user.create({
-      data: {
-        email,
-        passwordHash,
-        firstName,
-        lastName,
-        username,
-        credits: 0,
-        profile: {
-          create: {
-            preferredLanguage: 'es',
-            theme: 'light',
-            notifications: true
-          }
+    const createData: any = {
+      email,
+      passwordHash,
+      firstName,
+      lastName,
+      credits: 0,
+      profile: {
+        create: {
+          preferredLanguage: 'es',
+          theme: 'light',
+          notifications: true
         }
-      },
-      include: {
-        profile: true
       }
+    };
+    if (cleanUsername) {
+      createData.username = cleanUsername;
+    }
+
+    const user = await prisma.user.create({
+      data: createData,
+      include: { profile: true }
     });
 
     // Generate verification token and send email
@@ -196,12 +201,12 @@ router.post('/register', [
       message: 'Registro exitoso. Revisa tu correo para confirmar tu cuenta.'
     });
 
-  } catch (error) {
+  } catch (error: any) {
+    if (error?.code === 'P2002' && Array.isArray(error?.meta?.target) && error.meta.target.includes('username')) {
+      return res.status(409).json({ success: false, message: 'Nombre de usuario ya está en uso' });
+    }
     logger.error('Registration error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error interno del servidor'
-    });
+    res.status(500).json({ success: false, message: 'Error interno del servidor' });
   }
 });
 
