@@ -67,9 +67,29 @@ const AppContent: React.FC = () => {
       return <StudentDashboard />;
     }
     
-    // For ADMIN and other roles, redirect to TestApp4 (simple dashboard with buttons)
-    // This will be replaced with a proper admin dashboard later
-    window.location.reload(); // This will force using TestApp4
+    // Vista simple para ADMIN/otros roles (evitar reload infinito)
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-8">
+        <div className="bg-white shadow-md rounded-lg p-8 max-w-lg w-full text-center">
+          <h2 className="text-2xl font-bold mb-4">Panel Administrativo (temporal)</h2>
+          <p className="text-gray-600 mb-6">Bienvenido, {state.user.firstName}. Esta es una vista provisional para administradores.</p>
+          <div className="space-y-3">
+            <button
+              className="w-full px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              onClick={() => setCurrentView('exercise-factory')}
+            >
+              Ir a Exercise Factory
+            </button>
+            <button
+              className="w-full px-6 py-3 bg-gray-600 text-white rounded-md hover:bg-gray-700"
+              onClick={() => alert('Más secciones de administración próximamente')}
+            >
+              Próximamente: Gestión de contenido
+            </button>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   // Show loading spinner
