@@ -29,6 +29,10 @@ export const AdminUsersTable: React.FC<Props> = ({ onBack }) => {
     setUsers(prev => prev.map(u => u.id === id ? { ...u, [field]: field === 'credits' ? Number(value) : value } as any : u));
   };
 
+  const handleToggle = (id: string, field: 'isActive' | 'isVerified') => {
+    setUsers(prev => prev.map(u => u.id === id ? { ...u, [field]: !u[field] } as any : u));
+  };
+
   const handleSave = async (u: AdminUserDto & { password?: string }) => {
     try {
       const payload: any = {
@@ -37,6 +41,8 @@ export const AdminUsersTable: React.FC<Props> = ({ onBack }) => {
         lastName: u.lastName,
         username: u.username,
         credits: u.credits,
+        isActive: u.isActive,
+        isVerified: u.isVerified,
       };
       if ((u as any).password && (u as any).password!.length >= 6) payload.password = (u as any).password;
       const updated = await AdminUsersService.updateUser(u.id, payload);
@@ -103,6 +109,8 @@ export const AdminUsersTable: React.FC<Props> = ({ onBack }) => {
               <th className="p-2">Apellido</th>
               <th className="p-2">Usuario</th>
               <th className="p-2">Créditos</th>
+              <th className="p-2">Verificado</th>
+              <th className="p-2">Activo</th>
               <th className="p-2">Nueva password</th>
               <th className="p-2">Acciones</th>
             </tr>
@@ -115,6 +123,18 @@ export const AdminUsersTable: React.FC<Props> = ({ onBack }) => {
                 <td className="p-2"><input className="border p-1 rounded w-40" value={u.lastName} onChange={e => handleChange(u.id, 'lastName' as any, e.target.value)} /></td>
                 <td className="p-2"><input className="border p-1 rounded w-40" value={u.username || ''} onChange={e => handleChange(u.id, 'username' as any, e.target.value)} /></td>
                 <td className="p-2"><input type="number" className="border p-1 rounded w-24" value={u.credits} onChange={e => handleChange(u.id, 'credits' as any, e.target.value)} /></td>
+                <td className="p-2">
+                  <label className="inline-flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" checked={u.isVerified} onChange={() => handleToggle(u.id, 'isVerified')} />
+                    <span className={u.isVerified ? 'text-green-700' : 'text-gray-600'}>{u.isVerified ? 'Sí' : 'No'}</span>
+                  </label>
+                </td>
+                <td className="p-2">
+                  <label className="inline-flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" checked={u.isActive} onChange={() => handleToggle(u.id, 'isActive')} />
+                    <span className={u.isActive ? 'text-green-700' : 'text-gray-600'}>{u.isActive ? 'Sí' : 'No'}</span>
+                  </label>
+                </td>
                 <td className="p-2"><input type="password" className="border p-1 rounded w-40" placeholder="(min 6)" onChange={e => handleChange(u.id, 'password' as any, e.target.value)} /></td>
                 <td className="p-2">
                   <button onClick={() => handleSave(u as any)} className="px-3 py-2 bg-blue-600 text-white rounded">Guardar</button>

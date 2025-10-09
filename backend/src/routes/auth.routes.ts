@@ -146,7 +146,26 @@ router.post('/register', [
     // Check if user already exists (neutral response to avoid enumeration)
     const existingUser = await prisma.user.findUnique({ where: { email } });
     if (existingUser) {
-      // If already verified, return generic success
+      // Si el usuario existe y NO está verificado, reemitimos el enlace sin revelar existencia
+      if (!existingUser.isVerified && existingUser.isActive) {
+        try {
+          const ttl = parseInt(process.env.EMAIL_TOKEN_TTL_HOURS || '24', 10);
+          const token = await VerificationService.createOrReplaceToken(
+            existingUser.id,
+            ttl,
+            req.ip,
+            req.get('user-agent') || undefined
+          );
+          const appUrl = process.env.APP_URL || 'http://localhost:5173';
+          const verifyUrl = `${appUrl}/verify?token=${token}`;
+          const { subject, html } = buildVerificationEmail(existingUser.email, verifyUrl);
+          logger.info('Verification link reissued (register existing)', { userId: existingUser.id, email: existingUser.email, verifyUrl });
+          await EmailService.sendEmail({ to: existingUser.email, subject, html });
+        } catch (reissueError) {
+          logger.warn('Could not reissue verification for existing unverified user during register', reissueError);
+        }
+      }
+      // Respuesta neutra en todos los casos
       return res.status(200).json({
         success: true,
         message: 'Si el correo es válido, recibirás un enlace de verificación.'

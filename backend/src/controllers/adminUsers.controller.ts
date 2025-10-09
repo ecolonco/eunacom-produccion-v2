@@ -42,6 +42,7 @@ export class AdminUsersController {
             role: true,
             credits: true,
             isActive: true,
+            isVerified: true,
             createdAt: true,
           },
           take: limit,
@@ -69,13 +70,15 @@ export class AdminUsersController {
   static async updateUser(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
       const { id } = req.params;
-      const { email, firstName, lastName, username, password, credits } = req.body as {
+      const { email, firstName, lastName, username, password, credits, isActive, isVerified } = req.body as {
         email?: string;
         firstName?: string;
         lastName?: string;
         username?: string;
         password?: string;
         credits?: number;
+        isActive?: boolean;
+        isVerified?: boolean;
       };
 
       const data: any = {};
@@ -87,6 +90,8 @@ export class AdminUsersController {
       if (typeof password === 'string' && password.length >= 6) {
         data.passwordHash = await bcrypt.hash(password, 12);
       }
+      if (typeof isActive === 'boolean') data.isActive = isActive;
+      if (typeof isVerified === 'boolean') data.isVerified = isVerified;
 
       if (Object.keys(data).length === 0) {
         res.status(400).json({ success: false, message: 'Sin cambios para actualizar' });
@@ -105,6 +110,7 @@ export class AdminUsersController {
           role: true,
           credits: true,
           isActive: true,
+          isVerified: true,
           createdAt: true,
         },
       });

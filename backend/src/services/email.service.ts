@@ -82,6 +82,17 @@ export class EmailService {
 
 export function buildVerificationEmail(recipientEmail: string, verificationUrl: string): { subject: string; html: string } {
   const subject = 'Confirma tu correo | EUNACOM';
+  const backendBase = process.env.BACKEND_URL || process.env.API_BASE_URL || 'https://eunacom-backend-v3.onrender.com';
+  const tokenParam = (() => {
+    try {
+      const u = new URL(verificationUrl);
+      return u.searchParams.get('token') || '';
+    } catch {
+      const m = verificationUrl.match(/token=([^&]+)/);
+      return m ? m[1] : '';
+    }
+  })();
+  const apiVerifyUrl = `${backendBase.replace(/\/$/, '')}/api/auth/verify?token=${encodeURIComponent(tokenParam)}`;
   const html = `
     <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
       <h2>Confirma tu correo</h2>
@@ -94,6 +105,7 @@ export function buildVerificationEmail(recipientEmail: string, verificationUrl: 
       </p>
       <p>Si el botón no funciona, copia y pega este enlace en tu navegador:</p>
       <p><a href="${verificationUrl}">${verificationUrl}</a></p>
+      <p>Alternativa directa (API): <a href="${apiVerifyUrl}">${apiVerifyUrl}</a></p>
       <p>Este enlace expira en ${process.env.EMAIL_TOKEN_TTL_HOURS || '24'} horas.</p>
     </div>
   `;

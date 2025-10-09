@@ -7,6 +7,7 @@ export interface AdminUserDto {
   role: string;
   credits: number;
   isActive: boolean;
+  isVerified: boolean;
   createdAt: string;
 }
 
@@ -33,7 +34,7 @@ export class AdminUsersService {
     return data.data;
   }
 
-  static async updateUser(id: string, payload: Partial<{ email: string; firstName: string; lastName: string; username: string; password: string; credits: number }>): Promise<AdminUserDto> {
+  static async updateUser(id: string, payload: Partial<{ email: string; firstName: string; lastName: string; username: string; password: string; credits: number; isActive: boolean; isVerified: boolean }>): Promise<AdminUserDto> {
     const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://eunacom-backend-v3.onrender.com'}/api/admin/users/${id}`, {
       method: 'PUT',
       headers: {
