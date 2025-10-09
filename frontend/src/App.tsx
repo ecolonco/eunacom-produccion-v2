@@ -185,47 +185,6 @@ const AppContent: React.FC = () => {
         </header>
 
         <div className="max-w-4xl mx-auto">
-          {/* MVP Status Card */}
-          <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-            <h2 className="text-2xl font-semibold text-gray-800 mb-4">
-              🚀 Estado del MVP
-            </h2>
-
-            <div className="grid md:grid-cols-2 gap-6">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
-                  <span className="font-medium">Backend API</span>
-                  <span className="text-sm">{apiStatus}</span>
-                </div>
-
-                <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
-                  <span className="font-medium">Frontend React</span>
-                  <span className="text-sm">✅ Running</span>
-                </div>
-
-                <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
-                  <span className="font-medium">Database</span>
-                  <span className="text-sm">✅ PostgreSQL + Redis</span>
-                </div>
-
-                <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
-                  <span className="font-medium">Authentication</span>
-                  <span className="text-sm">✅ Fully Functional</span>
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <h3 className="font-semibold text-gray-700">API Information</h3>
-                {apiData && (
-                  <div className="p-4 bg-gray-50 rounded-lg">
-                    <pre className="text-sm text-gray-600">
-                      {JSON.stringify(apiData, null, 2)}
-                    </pre>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
 
           {/* Features Overview */}
           <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
@@ -275,35 +234,6 @@ const AppContent: React.FC = () => {
                 }}
                 onSwitchToRegister={() => setShowAuthModal(true)}
               />
-            </div>
-          </div>
-
-          {/* Test Credentials */}
-          <div className="bg-white rounded-lg shadow-lg p-6">
-            <h2 className="text-2xl font-semibold text-gray-800 mb-4">
-              🔐 Credenciales de Prueba
-            </h2>
-
-            <div className="grid md:grid-cols-2 gap-4">
-              <div className="p-4 bg-blue-50 rounded-lg">
-                <h3 className="font-semibold text-blue-800 mb-2">Administrador</h3>
-                <p className="text-sm text-gray-600 mb-1">
-                  <strong>Email:</strong> admin@eunacom.local
-                </p>
-                <p className="text-sm text-gray-600 mb-3">
-                  <strong>Password:</strong> admin123
-                </p>
-              </div>
-
-              <div className="p-4 bg-green-50 rounded-lg">
-                <h3 className="font-semibold text-green-800 mb-2">Estudiante Demo</h3>
-                <p className="text-sm text-gray-600 mb-1">
-                  <strong>Email:</strong> estudiante@eunacom.local
-                </p>
-                <p className="text-sm text-gray-600 mb-3">
-                  <strong>Password:</strong> admin123
-                </p>
-              </div>
             </div>
           </div>
         </div>
