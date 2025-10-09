@@ -54,6 +54,7 @@ export const StudentDashboard: React.FC = () => {
         onClose={() => setPracticeView('none')}
         maxQuestions={90}
         title="90 Preguntas Aleatorias - Simulacro"
+        prepaid
       />
     );
   }
@@ -108,7 +109,29 @@ export const StudentDashboard: React.FC = () => {
               🔢 20 Preguntas aleatoriamente (15 créditos)
             </button>
             <button
-              onClick={() => setPracticeView('random90')}
+              onClick={async () => {
+                if (isPurchasing) return;
+                try {
+                  setIsPurchasing(true);
+                  // Descontar 60 créditos al inicio
+                  const { newBalance } = await CreditsService.deductCredits({
+                    packageType: 'PACK_90',
+                    metadata: { source: 'STUDENT_DASHBOARD' }
+                  });
+                  // Actualizar saldo global
+                  setUserCredits(newBalance);
+                  // Abrir la sesión de 90 preguntas
+                  setPracticeView('random90');
+                } catch (err: any) {
+                  if (err?.message === 'INSUFFICIENT_CREDITS') {
+                    alert('No tienes suficientes créditos para este paquete (60 créditos).');
+                  } else {
+                    alert('No se pudo procesar la compra del paquete. Intenta nuevamente.');
+                  }
+                } finally {
+                  setIsPurchasing(false);
+                }
+              }}
               className="w-full px-6 py-3 bg-green-600 text-white rounded-md hover:bg-green-700 transition duration-200 font-medium"
             >
               📋 90 preguntas tipo Eunacom (60 créditos)
