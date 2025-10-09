@@ -940,6 +940,7 @@ const SimpleDashboard: React.FC = () => {
   const [showTaxonomyInventory, setShowTaxonomyInventory] = useState(false);
   const [showTaxonomyAdmin, setShowTaxonomyAdmin] = useState(false);
   const [showExerciseManagement, setShowExerciseManagement] = useState(false);
+  const [showAdminUsers, setShowAdminUsers] = useState(false);
 
   if (showPractice) {
     return <RealQuizPractice onBack={() => setShowPractice(false)} />;
@@ -967,6 +968,11 @@ const SimpleDashboard: React.FC = () => {
 
   if (showExerciseManagement) {
     return <ExerciseManagement onBack={() => setShowExerciseManagement(false)} />;
+  }
+
+  if (showAdminUsers) {
+    const AdminUsersTable = require('./components/admin/AdminUsersTable').default;
+    return <AdminUsersTable onBack={() => setShowAdminUsers(false)} />;
   }
 
   return (
@@ -1089,6 +1095,22 @@ const SimpleDashboard: React.FC = () => {
           {/* Show Taxonomy buttons only for ADMIN */}
           {(state.user?.role === 'ADMIN') && (
             <>
+              <button
+                onClick={() => setShowAdminUsers(true)}
+                style={{
+                  width: '100%',
+                  padding: '15px 25px',
+                  backgroundColor: '#4f46e5',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontSize: '16px',
+                  cursor: 'pointer',
+                  marginBottom: '10px'
+                }}
+              >
+                👥 Gestionar Usuarios
+              </button>
               <button
                 onClick={() => setShowTaxonomyInventory(true)}
                 style={{

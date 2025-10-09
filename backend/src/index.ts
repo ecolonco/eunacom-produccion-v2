@@ -11,6 +11,7 @@ import { notFoundHandler } from './middleware/notFound.middleware';
 import { healthRoutes } from './routes/health.routes';
 import { authRoutes } from './routes/auth.routes';
 import quizRoutes from './routes/quiz.routes';
+import { adminUsersRoutes } from './routes/admin-users.routes';
 import { debugRoutes } from './routes/debug.routes';
 import { exerciseFactoryRoutes } from './routes/exercise-factory.routes';
 import { taxonomyAdminRoutes } from './routes/taxonomy-admin.routes';
@@ -117,6 +118,7 @@ app.use('/health', healthRoutes);
 // API routes
 app.use('/api/auth', authRoutes);
 app.use('/api/quiz', quizRoutes);
+app.use('/api/admin', adminUsersRoutes);
 app.use('/api/credits', creditsRoutes);
 app.use('/api/exercise-factory', exerciseFactoryRoutes);
 app.use('/api/taxonomy-admin', taxonomyAdminRoutes);
