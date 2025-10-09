@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardContent, CardTitle } from '../ui/Card';
-import { useRandomQuestion, useRandomQuestionWithCredits, useSubmitAnswer, useSpecialties } from '../../hooks/useQuiz';
+import { useRandomQuestion, useRandomQuestionWithCredits, useRandomQuestionPrepaid, useSubmitAnswer, useSpecialties } from '../../hooks/useQuiz';
 import { useAuth } from '../../contexts/AuthContext';
 import {
   PlayIcon,
@@ -69,6 +69,7 @@ interface QuickPracticeProps {
   defaultSpecialty?: string;
   title?: string;
   maxQuestions?: number;
+  prepaid?: boolean; // Si true, no descuenta por pregunta (paquete ya pagado)
 }
 
 export const QuickPractice: React.FC<QuickPracticeProps> = ({
@@ -77,6 +78,7 @@ export const QuickPractice: React.FC<QuickPracticeProps> = ({
   defaultSpecialty,
   title = 'Práctica Rápida',
   maxQuestions,
+  prepaid = false,
 }) => {
   const { state } = useAuth();
   const { user } = state;
@@ -100,13 +102,20 @@ export const QuickPractice: React.FC<QuickPracticeProps> = ({
     selectedSpecialty === 'all' || selectedSpecialty === ''
       ? undefined
       : selectedSpecialty;
-  // Use the hook that handles credits and questions
+  // Hooks para obtener preguntas según modalidad
   const randomQuestionWithCredits = useRandomQuestionWithCredits();
+  const randomQuestionPrepaid = useRandomQuestionPrepaid();
 
-  // Extract question data from the credits hook
-  const question = randomQuestionWithCredits.data?.question;
-  const isLoadingQuestion = randomQuestionWithCredits.isLoading;
-  const questionError = randomQuestionWithCredits.error;
+  // Estado derivado según modalidad
+  const question = prepaid
+    ? randomQuestionPrepaid.data?.question
+    : randomQuestionWithCredits.data?.question;
+  const isLoadingQuestion = prepaid
+    ? randomQuestionPrepaid.isLoading
+    : randomQuestionWithCredits.isLoading;
+  const questionError = prepaid
+    ? (randomQuestionPrepaid.error as any)
+    : (randomQuestionWithCredits.error as any);
 
   // Debug logs for question state changes
   React.useEffect(() => {
@@ -193,12 +202,20 @@ export const QuickPractice: React.FC<QuickPracticeProps> = ({
     setStartTime(null);
 
     try {
-      console.log('QuickPractice - Calling randomQuestionWithCredits.mutateAsync');
-      // Use the new hook that handles credits
-      const result = await randomQuestionWithCredits.mutateAsync({
+    let result: any;
+    if (prepaid) {
+      console.log('QuickPractice - Calling randomQuestionPrepaid.mutateAsync');
+      result = await randomQuestionPrepaid.mutateAsync({
         specialty: specialtyQueryValue,
         difficulty: selectedDifficulty === 'all' ? undefined : selectedDifficulty
       });
+    } else {
+      console.log('QuickPractice - Calling randomQuestionWithCredits.mutateAsync');
+      result = await randomQuestionWithCredits.mutateAsync({
+        specialty: specialtyQueryValue,
+        difficulty: selectedDifficulty === 'all' ? undefined : selectedDifficulty
+      });
+    }
 
       console.log('QuickPractice - Got result:', result);
 
@@ -371,8 +388,8 @@ export const QuickPractice: React.FC<QuickPracticeProps> = ({
             }
             className="w-full flex items-center justify-center gap-2 py-2 px-4 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <ArrowPathIcon className={`h-4 w-4 ${randomQuestionWithCredits.isLoading ? 'animate-spin' : ''}`} />
-            {randomQuestionWithCredits.isLoading ? 'Cargando pregunta...' : 'Nueva Pregunta'}
+            <ArrowPathIcon className={`h-4 w-4 ${isLoadingQuestion ? 'animate-spin' : ''}`} />
+            {isLoadingQuestion ? 'Cargando pregunta...' : 'Nueva Pregunta'}
           </button>
         </CardContent>
       </Card>
@@ -522,61 +539,4 @@ export const QuickPractice: React.FC<QuickPracticeProps> = ({
                 >
                   Siguiente Pregunta
                 </button>
-              </div>
-            )}
-
-            {submitError && (
-              <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
-                <p className="text-red-600 text-sm">
-                  Error al enviar respuesta: {submitError instanceof Error ? submitError.message : 'Error desconocido'}
-                </p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
-
-      {sessionFinished && maxQuestions && (
-        <Card>
-          <CardContent className="text-center space-y-4">
-            <h3 className="text-lg font-semibold text-gray-800">
-              🎉 ¡Completaste la sesión de {maxQuestions} preguntas!
-            </h3>
-            <p className="text-sm text-gray-600">
-              Puedes revisar tus respuestas o iniciar una nueva sesión cuando quieras.
-            </p>
-            <div className="flex justify-center flex-wrap gap-3">
-              <button
-                onClick={() => {
-                  setQuestionsServed(0);
-                  setSessionFinished(false);
-                  setSelectedOption('');
-                  setHasAnswered(false);
-                  setShowResult(false);
-                  setStartTime(null);
-                  if (requireSpecialty) {
-                    setSelectedSpecialty(defaultSpecialty ?? '');
-                  } else {
-                    setSelectedSpecialty('all');
-                  }
-                  void handleGetNewQuestion({ bypassLimit: true });
-                }}
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition duration-200"
-              >
-                🔁 Reiniciar sesión
-              </button>
-              {onClose && (
-                <button
-                  onClick={onClose}
-                  className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition duration-200"
-                >
-                  Volver al dashboard
-                </button>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-    </div>
-  );
-};
+      

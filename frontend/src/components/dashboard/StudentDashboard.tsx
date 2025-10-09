@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import { CreditsService } from '../../services/credits.service';
 import { PracticeHub } from '../quiz/PracticeHub';
 import { QuickPractice } from '../quiz/QuickPractice';
 
 // Sistema de créditos v2 - Oct 2025
 export const StudentDashboard: React.FC = () => {
   const { state, logout } = useAuth();
-  const { user } = state;
+  const { user, } = state;
   const [practiceView, setPracticeView] = useState<'none' | 'hub' | 'random' | 'specialty' | 'random20' | 'random90'>('none');
+  const [isPurchasing, setIsPurchasing] = useState(false);
 
   if (!user) return null;
 
@@ -41,6 +43,7 @@ export const StudentDashboard: React.FC = () => {
         onClose={() => setPracticeView('none')}
         maxQuestions={20}
         title="20 Preguntas Aleatorias"
+        prepaid
       />
     );
   }
@@ -77,7 +80,27 @@ export const StudentDashboard: React.FC = () => {
               🎯 Practica ejercicios aleatoriamente (1 crédito)
             </button>
             <button
-              onClick={() => setPracticeView('random20')}
+              onClick={async () => {
+                if (isPurchasing) return;
+                try {
+                  setIsPurchasing(true);
+                  // Descontar 15 créditos al inicio
+                  const { newBalance } = await CreditsService.deductCredits({
+                    packageType: 'PACK_20',
+                    metadata: { source: 'STUDENT_DASHBOARD' }
+                  });
+                  // Actualizar UI y abrir la sesión de 20 preguntas
+                  setPracticeView('random20');
+                } catch (err: any) {
+                  if (err?.message === 'INSUFFICIENT_CREDITS') {
+                    alert('No tienes suficientes créditos para este paquete (15 créditos).');
+                  } else {
+                    alert('No se pudo procesar la compra del paquete. Intenta nuevamente.');
+                  }
+                } finally {
+                  setIsPurchasing(false);
+                }
+              }}
               className="w-full px-6 py-3 bg-teal-600 text-white rounded-md hover:bg-teal-700 transition duration-200 font-medium"
             >
               🔢 20 Preguntas aleatoriamente (15 créditos)
