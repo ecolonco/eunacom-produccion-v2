@@ -4,7 +4,7 @@ import { logger } from '../utils/logger';
 
 interface AuthenticatedRequest extends Request {
   user?: {
-    userId: string;
+    id: string;
     role: string;
     email: string;
   };
@@ -17,7 +17,7 @@ export class CreditsController {
    */
   static async getBalance(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
-      const userId = req.user?.userId;
+      const userId = req.user?.id;
 
       if (!userId) {
         res.status(401).json({
@@ -51,7 +51,7 @@ export class CreditsController {
    */
   static async checkCredits(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
-      const userId = req.user?.userId;
+      const userId = req.user?.id;
       const { packageType } = req.body;
 
       if (!userId) {
@@ -98,7 +98,7 @@ export class CreditsController {
    */
   static async deductCredits(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
-      const userId = req.user?.userId;
+      const userId = req.user?.id;
       const { packageType, metadata } = req.body;
 
       if (!userId) {
@@ -165,7 +165,7 @@ export class CreditsController {
    */
   static async getTransactions(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
-      const userId = req.user?.userId;
+      const userId = req.user?.id;
       const limit = parseInt(req.query.limit as string) || 50;
       const offset = parseInt(req.query.offset as string) || 0;
 
@@ -236,7 +236,7 @@ export class CreditsController {
   static async addCredits(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
       const { targetUserId, amount, type, description, metadata } = req.body;
-      const adminUserId = req.user?.userId;
+      const adminUserId = req.user?.id;
       const userRole = req.user?.role;
 
       if (!adminUserId) {
