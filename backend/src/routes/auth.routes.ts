@@ -186,6 +186,7 @@ router.post('/register', [
     const appUrl = process.env.APP_URL || 'http://localhost:5173';
     const verifyUrl = `${appUrl}/verify?token=${token}`;
     const { subject, html } = buildVerificationEmail(user.email, verifyUrl);
+    logger.info('Verification link generated', { userId: user.id, email: user.email, verifyUrl });
     await EmailService.sendEmail({ to: user.email, subject, html });
 
     logger.info(`New user registered (verification required): ${user.email}`);
@@ -416,6 +417,7 @@ router.post('/resend-verification', [body('email').isEmail().normalizeEmail()], 
     const appUrl = process.env.APP_URL || 'http://localhost:5173';
     const verifyUrl = `${appUrl}/verify?token=${token}`;
     const { subject, html } = buildVerificationEmail(user.email, verifyUrl);
+    logger.info('Verification link reissued', { userId: user.id, email: user.email, verifyUrl });
     await EmailService.sendEmail({ to: user.email, subject, html });
 
     return res.json({ success: true, message: 'Si el correo es válido, recibirás un enlace de verificación.' });
