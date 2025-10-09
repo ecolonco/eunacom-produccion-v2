@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { CreditsService, PackageType } from '../services/credits.service';
+import { CreditsService, PackageType, CREDIT_PACKAGES } from '../services/credits.service';
 import { logger } from '../utils/logger';
 
 interface AuthenticatedRequest extends Request {
@@ -62,7 +62,7 @@ export class CreditsController {
         return;
       }
 
-      if (!packageType || !(packageType in CreditsService.getAvailablePackages())) {
+      if (!packageType || !Object.prototype.hasOwnProperty.call(CREDIT_PACKAGES, packageType)) {
         res.status(400).json({
           success: false,
           message: 'Tipo de paquete inválido'
@@ -118,7 +118,7 @@ export class CreditsController {
       }
 
       // Verificar que el paquete existe
-      if (!(packageType in CreditsService.getAvailablePackages())) {
+      if (!Object.prototype.hasOwnProperty.call(CREDIT_PACKAGES, packageType)) {
         res.status(400).json({
           success: false,
           message: 'Tipo de paquete inválido'
