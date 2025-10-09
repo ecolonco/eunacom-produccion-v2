@@ -13,21 +13,41 @@ export class EmailService {
   private static getTransporter(): nodemailer.Transporter | null {
     if (this.transporter) return this.transporter;
 
-    const host = process.env.SMTP_HOST;
-    const port = process.env.SMTP_PORT ? parseInt(process.env.SMTP_PORT) : undefined;
-    const user = process.env.SMTP_USER;
-    const pass = process.env.SMTP_PASS;
+    // Read primary vars (SMTP_*) and fallbacks (EMAIL_* from some providers)
+    const host = process.env.SMTP_HOST || process.env.EMAIL_HOST;
+    const portStr = process.env.SMTP_PORT || process.env.EMAIL_PORT;
+    const user = process.env.SMTP_USER || process.env.EMAIL_HOST_USER;
+    const pass = process.env.SMTP_PASS || process.env.EMAIL_HOST_PASSWORD;
+    const useTlsStr = process.env.EMAIL_USE_TLS; // 'True'|'False' optional
+
+    const port = portStr ? parseInt(portStr, 10) : undefined;
+    const secure = port === 465; // SSL
+    const requireTLS = !secure && (useTlsStr?.toLowerCase() === 'true' || port === 587);
 
     if (!host || !port || !user || !pass) {
-      logger.warn('SMTP not fully configured. Emails will be logged instead of sent.');
+      logger.warn('SMTP not fully configured. Emails will be logged instead of sent.', {
+        hostPresent: !!host,
+        portPresent: !!port,
+        userPresent: !!user,
+        passPresent: !!pass,
+      });
       return null;
     }
+
+    logger.info('Configuring SMTP transporter', {
+      host,
+      port,
+      secure,
+      requireTLS,
+      user: user.replace(/.(?=.{2})/g, '*'),
+    });
 
     this.transporter = nodemailer.createTransport({
       host,
       port,
-      secure: port === 465,
+      secure,
       auth: { user, pass },
+      tls: requireTLS ? { rejectUnauthorized: false } : undefined,
     });
 
     return this.transporter;
@@ -43,8 +63,16 @@ export class EmailService {
     }
 
     try {
+      // Optional connection verification for clearer errors
+      try {
+        await transporter.verify();
+        logger.info('SMTP verified successfully');
+      } catch (verifyError) {
+        logger.warn('SMTP verify failed (continuing to send):', verifyError);
+      }
+
       await transporter.sendMail({ from, to: params.to, subject: params.subject, html: params.html });
-      logger.info('Email sent successfully', { to: params.to, subject: params.subject });
+      logger.info('Email sent successfully', { to: params.to, subject: params.subject, from });
     } catch (error) {
       logger.error('Error sending email:', error);
       throw error;
