@@ -27,21 +27,11 @@ router.post('/flow/create', authenticate as any, async (req: Request, res: Respo
       }
     });
 
-    const buttonToken = process.env.FLOW_BUTTON_TOKEN;
-    
-    if (buttonToken) {
-      // Usar botón pre-creado de Flow
-      const flowButtonUrl = `https://sandbox.flow.cl/btn.php?token=${buttonToken}`;
-      await prisma.payment.update({
-        where: { id: payment.id },
-        data: { payUrl: flowButtonUrl, status: 'PENDING' }
-      });
-      return res.json({ success: true, url: flowButtonUrl, paymentId: payment.id });
-    }
-
-    // Fallback: crear pago vía API (si no hay botón configurado)
+    // Siempre usar la API de Flow para crear pagos específicos con flowOrder
     const appUrl = process.env.APP_URL || 'http://localhost:5173';
     const apiBase = process.env.API_BASE_URL || process.env.BACKEND_URL || 'https://eunacom-backend-v3.onrender.com';
+
+    logger.info('Creating Flow payment', { paymentId: payment.id, userEmail: user.email });
 
     const flow = await FlowService.createPayment({
       commerceOrder: payment.id,
@@ -52,6 +42,8 @@ router.post('/flow/create', authenticate as any, async (req: Request, res: Respo
       urlConfirmation: `${apiBase.replace(/\/$/, '')}/api/payments/flow/webhook`,
     });
 
+    logger.info('Flow payment created', { paymentId: payment.id, flowToken: flow.token, flowOrder: flow.flowOrder });
+
     await prisma.payment.update({
       where: { id: payment.id },
       data: { 
@@ -61,6 +53,8 @@ router.post('/flow/create', authenticate as any, async (req: Request, res: Respo
         status: 'PENDING' 
       }
     });
+
+    logger.info('Payment updated in database', { paymentId: payment.id, flowOrder: flow.flowOrder });
 
     return res.json({ success: true, url: flow.url, token: flow.token, paymentId: payment.id });
   } catch (error) {

@@ -20,6 +20,7 @@ interface Props {
 export const PaymentsTable: React.FC<Props> = ({ onBack }) => {
   const [payments, setPayments] = React.useState<Payment[]>([]);
   const [loading, setLoading] = React.useState(true);
+  const [flowOrderInputs, setFlowOrderInputs] = React.useState<Record<string, string>>({});
 
   const load = async () => {
     try {
@@ -33,6 +34,32 @@ export const PaymentsTable: React.FC<Props> = ({ onBack }) => {
       console.error(e);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const updateFlowOrder = async (paymentId: string, flowOrder: string) => {
+    if (!flowOrder.trim()) {
+      alert('Por favor ingresa un flowOrder válido');
+      return;
+    }
+    try {
+      const res = await fetch(`${API_BASE}/api/admin/payments/${paymentId}/flowOrder`, {
+        method: 'PUT',
+        headers: { 
+          Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ flowOrder: flowOrder.trim() })
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert('FlowOrder actualizado exitosamente');
+        load();
+      } else {
+        alert(`Error: ${data.message || 'Error al actualizar flowOrder'}`);
+      }
+    } catch (e: any) {
+      alert(`Error: ${e?.message || 'Error al actualizar flowOrder'}`);
     }
   };
 
@@ -97,7 +124,27 @@ export const PaymentsTable: React.FC<Props> = ({ onBack }) => {
                     {p.status}
                   </span>
                 </td>
-                <td className="p-2">{p.flowOrder || '-'}</td>
+                <td className="p-2">
+                  {p.flowOrder ? (
+                    p.flowOrder
+                  ) : (
+                    <div className="flex gap-1">
+                      <input
+                        type="text"
+                        placeholder="Ingresar flowOrder"
+                        value={flowOrderInputs[p.id] || ''}
+                        onChange={(e) => setFlowOrderInputs(prev => ({ ...prev, [p.id]: e.target.value }))}
+                        className="px-2 py-1 text-xs border rounded w-32"
+                      />
+                      <button
+                        onClick={() => updateFlowOrder(p.id, flowOrderInputs[p.id] || '')}
+                        className="px-2 py-1 bg-green-600 text-white rounded text-xs hover:bg-green-700"
+                      >
+                        ✓
+                      </button>
+                    </div>
+                  )}
+                </td>
                 <td className="p-2">{new Date(p.createdAt).toLocaleString('es-CL')}</td>
                 <td className="p-2">
                   {p.status === 'PENDING' && (
