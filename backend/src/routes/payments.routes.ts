@@ -347,7 +347,9 @@ router.get('/flow/return', async (req: Request, res: Response) => {
   try {
     logger.info('Flow payment return', { 
       query: req.query,
-      headers: req.headers 
+      headers: req.headers,
+      method: req.method,
+      origin: req.headers.origin
     });
 
     // Flow puede enviar información del pago en query params
@@ -355,9 +357,63 @@ router.get('/flow/return', async (req: Request, res: Response) => {
 
     // Redirigir al frontend con parámetros de éxito
     const frontendUrl = 'https://eunacom-nuevo.vercel.app/?payment=success';
-    res.redirect(frontendUrl);
+    
+    // Enviar respuesta HTML que redirige al frontend
+    res.send(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <title>Redirigiendo...</title>
+        <meta http-equiv="refresh" content="0;url=${frontendUrl}">
+      </head>
+      <body>
+        <p>Redirigiendo...</p>
+        <script>
+          window.location.href = '${frontendUrl}';
+        </script>
+      </body>
+      </html>
+    `);
   } catch (error) {
     logger.error('Error in Flow return:', error);
+    // En caso de error, redirigir de todas formas al frontend
+    res.redirect('https://eunacom-nuevo.vercel.app/?payment=success');
+  }
+});
+
+// POST /api/payments/flow/return - Handle Flow return redirect (POST method)
+router.post('/flow/return', async (req: Request, res: Response) => {
+  try {
+    logger.info('Flow payment return (POST)', { 
+      body: req.body,
+      headers: req.headers,
+      method: req.method,
+      origin: req.headers.origin
+    });
+
+    // Redirigir al frontend con parámetros de éxito
+    const frontendUrl = 'https://eunacom-nuevo.vercel.app/?payment=success';
+    
+    // Enviar respuesta HTML que redirige al frontend
+    res.send(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <title>Redirigiendo...</title>
+        <meta http-equiv="refresh" content="0;url=${frontendUrl}">
+      </head>
+      <body>
+        <p>Redirigiendo...</p>
+        <script>
+          window.location.href = '${frontendUrl}';
+        </script>
+      </body>
+      </html>
+    `);
+  } catch (error) {
+    logger.error('Error in Flow return (POST):', error);
     // En caso de error, redirigir de todas formas al frontend
     res.redirect('https://eunacom-nuevo.vercel.app/?payment=success');
   }

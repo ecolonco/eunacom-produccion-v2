@@ -73,6 +73,9 @@ app.use(cors({
     // Permitir Vercel
     if (origin.includes('vercel.app')) return callback(null, true);
     
+    // Permitir Flow.cl (sandbox y producción)
+    if (origin.includes('flow.cl')) return callback(null, true);
+    
     // Permitir orígenes configurados
     if (corsOrigins.includes(origin)) return callback(null, true);
     
