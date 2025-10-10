@@ -28,7 +28,8 @@ export class FlowService {
     if (!/^https?:\/\//i.test(base)) {
       const v = base.toLowerCase();
       if (v.includes('sandbox')) base = 'https://sandbox.flow.cl/api';
-      else base = 'https://www.flow.cl/api';
+      else if (v.includes('production') || v.includes('prod')) base = 'https://www.flow.cl/api';
+      else base = 'https://www.flow.cl/api'; // Por defecto producción
     }
     const apiBase = base.replace(/\/$/, '');
     if (!apiKey || !apiSecret) {

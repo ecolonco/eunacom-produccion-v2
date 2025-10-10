@@ -27,6 +27,7 @@ router.get('/flow/test-config', authenticate as any, async (req: Request, res: R
       apiBase,
       apiKeyLength: apiKey?.length || 0,
       apiSecretLength: apiSecret?.length || 0,
+      environment: apiBase.includes('sandbox') ? 'SANDBOX' : 'PRODUCTION',
     };
 
     logger.info('Flow configuration test', config);
