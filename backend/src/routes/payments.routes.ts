@@ -127,57 +127,83 @@ router.get('/flow/check/:paymentId', authenticate as any, async (req: Request, r
     const { paymentId } = req.params;
     const user = (req as any).user;
     
+    logger.info('Checking payment status', { paymentId, userId: user?.id, userRole: user?.role });
+    
     const payment = await prisma.payment.findUnique({ where: { id: paymentId } });
     if (!payment) {
+      logger.warn('Payment not found', { paymentId });
       return res.status(404).json({ success: false, message: 'Pago no encontrado' });
     }
     
+    logger.info('Payment found', { 
+      paymentId, 
+      status: payment.status, 
+      flowToken: payment.flowToken, 
+      flowOrder: payment.flowOrder 
+    });
+    
     // Solo el dueño puede consultar
     if (payment.userId !== user?.id && user?.role !== 'ADMIN') {
+      logger.warn('Unauthorized payment check', { paymentId, userId: user?.id, paymentUserId: payment.userId });
       return res.status(403).json({ success: false, message: 'No autorizado' });
     }
     
     // Si ya está pagado, retornar
     if (payment.status === 'PAID') {
+      logger.info('Payment already paid', { paymentId });
       return res.json({ success: true, status: 'PAID', payment });
     }
     
     // Consultar estado en Flow (por token o por flowOrder)
     let flowStatus: any;
     
-    if (payment.flowToken) {
-      flowStatus = await FlowService.getPaymentStatus(payment.flowToken);
-    } else if (payment.flowOrder) {
-      flowStatus = await FlowService.getPaymentStatusByFlowOrder(payment.flowOrder);
-    } else {
-      return res.status(400).json({ success: false, message: 'No se puede verificar este pago (falta flowToken o flowOrder)' });
-    }
-    
-    logger.info('Flow payment status', { paymentId, flowStatus });
-    
-    // Flow status: 1=pendiente, 2=pagado, 3=rechazado, 4=anulado
-    if (flowStatus.status === 2) {
-      // Marcar como pagado y acreditar (idempotente)
-      await prisma.payment.update({
-        where: { id: payment.id },
-        data: { status: 'PAID' }
-      });
-      
-      const existingTx = await prisma.creditTransaction.findFirst({
-        where: { userId: payment.userId, type: 'PURCHASE', description: payment.id }
-      });
-      
-      if (!existingTx) {
-        await CreditsService.addCredits(payment.userId, payment.credits, 'PURCHASE', payment.id, {
-          provider: 'FLOW', amount: payment.amount, flowOrder: payment.flowOrder
-        });
+    try {
+      if (payment.flowToken) {
+        logger.info('Checking payment by token', { paymentId, flowToken: payment.flowToken });
+        flowStatus = await FlowService.getPaymentStatus(payment.flowToken);
+      } else if (payment.flowOrder) {
+        logger.info('Checking payment by flowOrder', { paymentId, flowOrder: payment.flowOrder });
+        flowStatus = await FlowService.getPaymentStatusByFlowOrder(payment.flowOrder);
+      } else {
+        logger.warn('No flowToken or flowOrder available', { paymentId });
+        return res.status(400).json({ success: false, message: 'No se puede verificar este pago (falta flowToken o flowOrder)' });
       }
       
-      return res.json({ success: true, status: 'PAID', credited: true });
+      logger.info('Flow payment status response', { paymentId, flowStatus });
+      
+      // Flow status: 1=pendiente, 2=pagado, 3=rechazado, 4=anulado
+      if (flowStatus.status === 2) {
+        logger.info('Payment confirmed as paid, updating status and crediting', { paymentId });
+        
+        // Marcar como pagado y acreditar (idempotente)
+        await prisma.payment.update({
+          where: { id: payment.id },
+          data: { status: 'PAID' }
+        });
+        
+        const existingTx = await prisma.creditTransaction.findFirst({
+          where: { userId: payment.userId, type: 'PURCHASE', description: payment.id }
+        });
+        
+        if (!existingTx) {
+          logger.info('Crediting user', { userId: payment.userId, credits: payment.credits, paymentId });
+          await CreditsService.addCredits(payment.userId, payment.credits, 'PURCHASE', payment.id, {
+            provider: 'FLOW', amount: payment.amount, flowOrder: payment.flowOrder
+          });
+        } else {
+          logger.info('Credits already added for this payment', { paymentId });
+        }
+        
+        return res.json({ success: true, status: 'PAID', credited: !existingTx });
+      }
+      
+      // Otros estados
+      logger.info('Payment not yet paid', { paymentId, flowStatus: flowStatus.status });
+      return res.json({ success: true, status: flowStatus.status === 1 ? 'PENDING' : 'FAILED', flowStatus });
+    } catch (flowError) {
+      logger.error('Error checking Flow payment status', { paymentId, error: flowError });
+      return res.status(500).json({ success: false, message: 'Error al verificar el pago con Flow' });
     }
-    
-    // Otros estados
-    return res.json({ success: true, status: flowStatus.status === 1 ? 'PENDING' : 'FAILED', flowStatus });
   } catch (error) {
     logger.error('Error checking Flow payment:', error);
     return res.status(500).json({ success: false, message: 'Error al verificar el pago' });

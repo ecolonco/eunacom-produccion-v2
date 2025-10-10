@@ -46,11 +46,16 @@ export const PaymentsTable: React.FC<Props> = ({ onBack }) => {
       if (data.success && data.credited) {
         alert('Pago acreditado exitosamente');
         load();
+      } else if (data.success && data.status === 'PAID') {
+        alert('El pago ya estaba acreditado');
+        load();
+      } else if (data.success) {
+        alert(`Estado: ${data.status || 'PENDING'}. ${data.message || ''}`);
       } else {
-        alert(`Estado: ${data.status || 'PENDING'}`);
+        alert(`Error: ${data.message || 'Error al verificar pago'}`);
       }
     } catch (e: any) {
-      alert(e?.message || 'Error al verificar pago');
+      alert(`Error: ${e?.message || 'Error al verificar pago'}`);
     }
   };
 
