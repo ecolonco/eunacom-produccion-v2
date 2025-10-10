@@ -22,6 +22,7 @@ export class FlowService {
   private static getConfig() {
     const apiKey = process.env.FLOW_API_KEY || '';
     const apiSecret = process.env.FLOW_API_SECRET || '';
+    const commerceId = process.env.FLOW_COMMERCE_ID || '';
     let base = (process.env.FLOW_API_BASE || 'sandbox').trim();
     // Normalizar valores comunes
     if (!/^https?:\/\//i.test(base)) {
@@ -33,7 +34,7 @@ export class FlowService {
     if (!apiKey || !apiSecret) {
       logger.warn('FLOW API not fully configured');
     }
-    return { apiKey, apiSecret, apiBase };
+    return { apiKey, apiSecret, apiBase, commerceId };
   }
 
   private static buildSignature(params: FlowParams, secret: string): string {
@@ -47,8 +48,9 @@ export class FlowService {
   }
 
   private static async post<T>(endpoint: string, body: FlowParams): Promise<T> {
-    const { apiKey, apiSecret, apiBase } = this.getConfig();
+    const { apiKey, apiSecret, apiBase, commerceId } = this.getConfig();
     const params: FlowParams = { ...body, apiKey, apikey: apiKey };
+    if (commerceId) params['commerceId'] = commerceId;
     const s = this.buildSignature(params, apiSecret);
     // Flow espera x-www-form-urlencoded
     const usp = new URLSearchParams();
@@ -71,6 +73,7 @@ export class FlowService {
         // Algunos entornos de Flow aceptan apiKey por cabecera
         'apiKey': String(apiKey),
         'X-Api-Key': String(apiKey),
+        'Accept': 'application/json',
       },
       body: usp.toString(),
     });
