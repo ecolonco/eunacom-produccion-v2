@@ -94,6 +94,7 @@ export class FlowService {
       email: params.email,
       urlReturn: params.urlReturn,
       urlConfirmation: params.urlConfirmation,
+      paymentMethod: 9, // Todos los medios de pago
     };
     const result = await this.post<any>('/payment/create', payload);
     // Flow suele retornar token y url
