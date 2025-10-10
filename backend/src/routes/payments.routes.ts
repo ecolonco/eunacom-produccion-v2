@@ -41,7 +41,12 @@ router.post('/flow/create', authenticate as any, async (req: Request, res: Respo
 
     await prisma.payment.update({
       where: { id: payment.id },
-      data: { flowToken: flow.token, flowOrder: flow.flowOrder || null, payUrl: flow.url, status: 'PENDING' }
+      data: { 
+        flowToken: flow.token, 
+        flowOrder: flow.flowOrder ? String(flow.flowOrder) : null, 
+        payUrl: flow.url, 
+        status: 'PENDING' 
+      }
     });
 
     return res.json({ success: true, url: flow.url, token: flow.token });
@@ -78,7 +83,10 @@ router.post('/flow/webhook', async (req: Request, res: Response) => {
     // Actualizar estado
     await prisma.payment.update({
       where: { id: payment.id },
-      data: { status: String(status || 'PAID') as any, flowOrder: flowOrder || payment.flowOrder }
+      data: { 
+        status: String(status || 'PAID') as any, 
+        flowOrder: flowOrder ? String(flowOrder) : payment.flowOrder 
+      }
     });
 
     if ((status || 'PAID') === 'PAID') {
