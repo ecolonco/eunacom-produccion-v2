@@ -3,6 +3,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { CreditsService } from '../../services/credits.service';
 import { PracticeHub } from '../quiz/PracticeHub';
 import { QuickPractice } from '../quiz/QuickPractice';
+import { PaymentsService } from '../../services/payments.service';
 
 // Sistema de créditos v2 - Oct 2025
 export const StudentDashboard: React.FC = () => {
@@ -74,6 +75,23 @@ export const StudentDashboard: React.FC = () => {
           </div>
           
           <div className="space-y-3 max-w-md mx-auto">
+            <button
+              onClick={async () => {
+                if (isPurchasing) return;
+                try {
+                  setIsPurchasing(true);
+                  const { url } = await PaymentsService.createFlowPayment();
+                  window.location.href = url; // redirigir a Flow
+                } catch (e: any) {
+                  alert(e?.message || 'No se pudo iniciar el pago.');
+                } finally {
+                  setIsPurchasing(false);
+                }
+              }}
+              className="w-full px-6 py-3 bg-amber-600 text-white rounded-md hover:bg-amber-700 transition duration-200 font-medium"
+            >
+              💳 Comprar 400 créditos por $20.000
+            </button>
             <button
               onClick={() => setPracticeView('random')}
               className="w-full px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition duration-200 font-medium"
