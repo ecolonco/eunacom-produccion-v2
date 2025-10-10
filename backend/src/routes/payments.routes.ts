@@ -94,7 +94,7 @@ router.post('/flow/test-create', authenticate as any, async (req: Request, res: 
     const apiBase = process.env.API_BASE_URL || process.env.BACKEND_URL || 'https://eunacom-backend-v3.onrender.com';
 
     // URLs simplificadas para evitar problemas con caracteres especiales
-    const urlReturn = `https://eunacom-nuevo.vercel.app/?payment=success`;
+    const urlReturn = `https://eunacom-backend-v3.onrender.com/api/payments/flow/return`;
     const urlConfirmation = `https://eunacom-backend-v3.onrender.com/api/payments/flow/webhook`;
     
     logger.info('Testing Flow payment creation', { 
@@ -151,7 +151,7 @@ router.post('/flow/create', authenticate as any, async (req: Request, res: Respo
     const apiBase = process.env.API_BASE_URL || process.env.BACKEND_URL || 'https://eunacom-backend-v3.onrender.com';
 
     // URLs simplificadas para evitar problemas con caracteres especiales
-    const urlReturn = `https://eunacom-nuevo.vercel.app/?payment=success`;
+    const urlReturn = `https://eunacom-backend-v3.onrender.com/api/payments/flow/return`;
     const urlConfirmation = `https://eunacom-backend-v3.onrender.com/api/payments/flow/webhook`;
     
     logger.info('Creating Flow payment', { 
@@ -339,6 +339,27 @@ router.get('/flow/check/:paymentId', authenticate as any, async (req: Request, r
   } catch (error) {
     logger.error('Error checking Flow payment:', error);
     return res.status(500).json({ success: false, message: 'Error al verificar el pago' });
+  }
+});
+
+// GET /api/payments/flow/return - Handle Flow return redirect
+router.get('/flow/return', async (req: Request, res: Response) => {
+  try {
+    logger.info('Flow payment return', { 
+      query: req.query,
+      headers: req.headers 
+    });
+
+    // Flow puede enviar información del pago en query params
+    const { token, flowOrder, status } = req.query;
+
+    // Redirigir al frontend con parámetros de éxito
+    const frontendUrl = 'https://eunacom-nuevo.vercel.app/?payment=success';
+    res.redirect(frontendUrl);
+  } catch (error) {
+    logger.error('Error in Flow return:', error);
+    // En caso de error, redirigir de todas formas al frontend
+    res.redirect('https://eunacom-nuevo.vercel.app/?payment=success');
   }
 });
 
