@@ -35,7 +35,7 @@ router.post('/flow/create', authenticate as any, async (req: Request, res: Respo
       subject: 'Compra de 400 créditos',
       amount: PRICE_CLP,
       email: user.email,
-      urlReturn: `${appUrl}/payment/return`,
+      urlReturn: `${appUrl}/?payment=success`,
       urlConfirmation: `${apiBase.replace(/\/$/, '')}/api/payments/flow/webhook`,
     });
 
