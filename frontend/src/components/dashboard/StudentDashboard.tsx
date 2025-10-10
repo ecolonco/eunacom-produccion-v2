@@ -117,7 +117,12 @@ export const StudentDashboard: React.FC = () => {
                   const { url, paymentId } = await PaymentsService.createFlowPayment();
                   // Guardar paymentId para verificar al volver
                   localStorage.setItem('pendingPaymentId', paymentId);
-                  window.location.href = url; // redirigir a Flow
+                  localStorage.setItem('pendingPaymentEmail', user.email);
+                  // Redirigir al botón de Flow con email del usuario
+                  const flowButtonUrl = url.includes('btn.php') 
+                    ? `${url}&email=${encodeURIComponent(user.email)}`
+                    : url;
+                  window.location.href = flowButtonUrl;
                 } catch (e: any) {
                   alert(e?.message || 'No se pudo iniciar el pago.');
                   setIsPurchasing(false);

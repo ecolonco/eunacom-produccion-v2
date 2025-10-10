@@ -27,6 +27,19 @@ router.post('/flow/create', authenticate as any, async (req: Request, res: Respo
       }
     });
 
+    const buttonToken = process.env.FLOW_BUTTON_TOKEN;
+    
+    if (buttonToken) {
+      // Usar botón pre-creado de Flow
+      const flowButtonUrl = `https://sandbox.flow.cl/btn.php?token=${buttonToken}`;
+      await prisma.payment.update({
+        where: { id: payment.id },
+        data: { payUrl: flowButtonUrl, status: 'PENDING' }
+      });
+      return res.json({ success: true, url: flowButtonUrl, paymentId: payment.id });
+    }
+
+    // Fallback: crear pago vía API (si no hay botón configurado)
     const appUrl = process.env.APP_URL || 'http://localhost:5173';
     const apiBase = process.env.API_BASE_URL || process.env.BACKEND_URL || 'https://eunacom-backend-v3.onrender.com';
 
