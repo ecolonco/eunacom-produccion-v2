@@ -21,6 +21,7 @@ const AppContent: React.FC = () => {
   const [apiData, setApiData] = useState<any>(null);
   const [currentView, setCurrentView] = useState<'dashboard' | 'exercise-factory'>('dashboard');
   const [adminView, setAdminView] = useState<'menu' | 'factory' | 'taxonomyInventory' | 'taxonomyAdmin' | 'exerciseManagement' | 'adminUsers' | 'payments'>('menu');
+  const [showPaymentSuccess, setShowPaymentSuccess] = useState(false);
 
   // Debug logging
   React.useEffect(() => {
@@ -36,6 +37,16 @@ const AppContent: React.FC = () => {
   React.useEffect(() => {
     console.log('showAuthModal changed:', showAuthModal, 'authMode:', authMode);
   }, [showAuthModal, authMode]);
+
+  // Check for payment success parameter
+  React.useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('payment') === 'success') {
+      setShowPaymentSuccess(true);
+      // Clean up URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, []);
 
   React.useEffect(() => {
     // Test API connection
@@ -250,6 +261,29 @@ const AppContent: React.FC = () => {
         onClose={() => setShowAuthModal(false)}
         initialMode={authMode}
       />
+
+      {/* Payment Success Modal */}
+      {showPaymentSuccess && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-8 max-w-md mx-4">
+            <div className="text-center">
+              <div className="text-6xl mb-4">✅</div>
+              <h2 className="text-2xl font-bold text-green-600 mb-4">
+                ¡Pago Exitoso!
+              </h2>
+              <p className="text-gray-700 mb-6">
+                Tu pago ha sido procesado correctamente. Los créditos han sido acreditados a tu cuenta.
+              </p>
+              <button
+                onClick={() => setShowPaymentSuccess(false)}
+                className="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition duration-200"
+              >
+                Continuar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

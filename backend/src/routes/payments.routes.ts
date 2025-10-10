@@ -94,7 +94,7 @@ router.post('/flow/test-create', authenticate as any, async (req: Request, res: 
     const apiBase = process.env.API_BASE_URL || process.env.BACKEND_URL || 'https://eunacom-backend-v3.onrender.com';
 
     // URLs simplificadas para evitar problemas con caracteres especiales
-    const urlReturn = `https://eunacom-nuevo.vercel.app/`;
+    const urlReturn = `https://eunacom-nuevo.vercel.app/?payment=success`;
     const urlConfirmation = `https://eunacom-backend-v3.onrender.com/api/payments/flow/webhook`;
     
     logger.info('Testing Flow payment creation', { 
@@ -151,7 +151,7 @@ router.post('/flow/create', authenticate as any, async (req: Request, res: Respo
     const apiBase = process.env.API_BASE_URL || process.env.BACKEND_URL || 'https://eunacom-backend-v3.onrender.com';
 
     // URLs simplificadas para evitar problemas con caracteres especiales
-    const urlReturn = `https://eunacom-nuevo.vercel.app/`;
+    const urlReturn = `https://eunacom-nuevo.vercel.app/?payment=success`;
     const urlConfirmation = `https://eunacom-backend-v3.onrender.com/api/payments/flow/webhook`;
     
     logger.info('Creating Flow payment', { 
