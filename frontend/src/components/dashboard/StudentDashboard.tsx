@@ -16,29 +16,35 @@ export const StudentDashboard: React.FC = () => {
   React.useEffect(() => {
     const checkPendingPayment = async () => {
       const paymentId = localStorage.getItem('pendingPaymentId');
-      if (!paymentId) return;
+      if (!paymentId || !state.isAuthenticated) return;
       
       try {
         const result = await PaymentsService.checkPaymentStatus(paymentId);
         if (result.status === 'PAID' && result.credited) {
           localStorage.removeItem('pendingPaymentId');
           alert('¡Pago exitoso! Se acreditaron 400 créditos.');
-          // Recargar saldo (opcional: llamar a /api/auth/me o recargar página)
           window.location.reload();
         } else if (result.status === 'PENDING') {
-          // Reintentar en 3 segundos
-          setTimeout(checkPendingPayment, 3000);
+          // Reintentar en 5 segundos
+          setTimeout(checkPendingPayment, 5000);
         } else {
           localStorage.removeItem('pendingPaymentId');
         }
-      } catch (e) {
-        console.error('Error checking payment:', e);
-        localStorage.removeItem('pendingPaymentId');
+      } catch (e: any) {
+        // Si falla por auth, reintentar (puede ser token refrescándose)
+        if (e?.message?.includes('401') || e?.message?.includes('autenticación')) {
+          setTimeout(checkPendingPayment, 5000);
+        } else {
+          console.error('Error checking payment:', e);
+          localStorage.removeItem('pendingPaymentId');
+        }
       }
     };
     
-    checkPendingPayment();
-  }, []);
+    if (state.isAuthenticated) {
+      checkPendingPayment();
+    }
+  }, [state.isAuthenticated]);
 
   if (!user) return null;
 
