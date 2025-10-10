@@ -22,7 +22,14 @@ export class FlowService {
   private static getConfig() {
     const apiKey = process.env.FLOW_API_KEY || '';
     const apiSecret = process.env.FLOW_API_SECRET || '';
-    const apiBase = (process.env.FLOW_API_BASE || 'https://sandbox.flow.cl/api').replace(/\/$/, '');
+    let base = (process.env.FLOW_API_BASE || 'sandbox').trim();
+    // Normalizar valores comunes
+    if (!/^https?:\/\//i.test(base)) {
+      const v = base.toLowerCase();
+      if (v.includes('sandbox')) base = 'https://sandbox.flow.cl/api';
+      else base = 'https://www.flow.cl/api';
+    }
+    const apiBase = base.replace(/\/$/, '');
     if (!apiKey || !apiSecret) {
       logger.warn('FLOW API not fully configured');
     }
