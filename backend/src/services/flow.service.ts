@@ -123,8 +123,19 @@ export class FlowService {
       flowOrder: result.flowOrder
     });
     
+    // Construir la URL correcta con el token
+    const token = result.token || result.flowToken;
+    const baseUrl = result.url || result.payUrl || 'https://sandbox.flow.cl/app/web/pay.php';
+    const paymentUrl = baseUrl.includes('token=') ? baseUrl : `${baseUrl}?token=${token}`;
+    
+    logger.info('Constructed payment URL:', { 
+      originalUrl: result.url || result.payUrl,
+      token,
+      finalUrl: paymentUrl 
+    });
+    
     // Flow suele retornar token y url
-    return { token: result.token || result.flowToken, url: result.url || result.payUrl, flowOrder: result.flowOrder };
+    return { token, url: paymentUrl, flowOrder: result.flowOrder };
   }
 
   static verifySignatureFromHeaders(rawBody: string, signatureHeader?: string): boolean {
