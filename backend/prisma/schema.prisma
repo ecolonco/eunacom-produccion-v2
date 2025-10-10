@@ -436,6 +436,35 @@ model EmailVerification {
   @@map("email_verifications")
 }
 
+/// Pagos realizados a través de Flow
+model Payment {
+  id         String         @id @default(cuid())
+  userId     String
+  amount     Int            // en CLP
+  credits    Int            // créditos a otorgar
+  currency   String         @default("CLP")
+  status     PaymentStatus  @default(CREATED)
+  flowToken  String?        @unique
+  flowOrder  String?
+  payUrl     String?
+  metadata   Json?
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+  user       User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("payments")
+}
+
+enum PaymentStatus {
+  CREATED
+  PENDING
+  PAID
+  FAILED
+  CANCELED
+}
+
 enum UserRole {
   STUDENT
   ADMIN
