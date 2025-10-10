@@ -38,6 +38,46 @@ router.get('/flow/test-config', authenticate as any, async (req: Request, res: R
   }
 });
 
+// GET /api/payments/flow/debug-latest - Debug latest payment creation
+router.get('/flow/debug-latest', authenticate as any, async (req: Request, res: Response) => {
+  try {
+    const user = (req as any).user;
+    if (user?.role !== 'ADMIN') {
+      return res.status(403).json({ success: false, message: 'Solo administradores' });
+    }
+
+    // Get latest payment
+    const latestPayment = await prisma.payment.findFirst({
+      orderBy: { createdAt: 'desc' },
+      include: {
+        user: {
+          select: { email: true, firstName: true, lastName: true }
+        }
+      }
+    });
+
+    if (!latestPayment) {
+      return res.json({ success: true, message: 'No hay pagos en la base de datos' });
+    }
+
+    res.json({ 
+      success: true, 
+      latestPayment: {
+        id: latestPayment.id,
+        status: latestPayment.status,
+        flowToken: latestPayment.flowToken,
+        flowOrder: latestPayment.flowOrder,
+        payUrl: latestPayment.payUrl,
+        createdAt: latestPayment.createdAt,
+        user: latestPayment.user
+      }
+    });
+  } catch (error) {
+    logger.error('Error getting latest payment:', error);
+    res.status(500).json({ success: false, message: 'Error al obtener último pago' });
+  }
+});
+
 // POST /api/payments/flow/test-create - Test payment creation without redirect
 router.post('/flow/test-create', authenticate as any, async (req: Request, res: Response) => {
   try {
