@@ -57,7 +57,14 @@ export class FlowService {
       .forEach((k) => usp.append(k, String(params[k])));
     usp.append('s', s);
     const url = `${apiBase}${endpoint}`;
-    const resp = await fetch(url, {
+    const urlWithKey = `${url}?apiKey=${encodeURIComponent(String(apiKey))}`;
+    logger.info('Flow createPayment request', {
+      endpoint,
+      url: urlWithKey,
+      hasApiKey: Boolean(apiKey),
+      bodyKeys: Object.keys(params),
+    });
+    const resp = await fetch(urlWithKey, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
