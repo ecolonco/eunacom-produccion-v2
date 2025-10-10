@@ -10,6 +10,34 @@ const router = Router();
 const PRICE_CLP = 20000;
 const CREDITS_PER_PURCHASE = 400;
 
+// GET /api/payments/flow/test-config - Test Flow configuration
+router.get('/flow/test-config', authenticate as any, async (req: Request, res: Response) => {
+  try {
+    const user = (req as any).user;
+    if (user?.role !== 'ADMIN') {
+      return res.status(403).json({ success: false, message: 'Solo administradores' });
+    }
+
+    const { apiKey, apiSecret, apiBase } = FlowService['getConfig']();
+    
+    // Test basic configuration
+    const config = {
+      hasApiKey: Boolean(apiKey),
+      hasApiSecret: Boolean(apiSecret),
+      apiBase,
+      apiKeyLength: apiKey?.length || 0,
+      apiSecretLength: apiSecret?.length || 0,
+    };
+
+    logger.info('Flow configuration test', config);
+
+    res.json({ success: true, config });
+  } catch (error) {
+    logger.error('Error testing Flow config:', error);
+    res.status(500).json({ success: false, message: 'Error al verificar configuración' });
+  }
+});
+
 // POST /api/payments/flow/create
 router.post('/flow/create', authenticate as any, async (req: Request, res: Response) => {
   try {

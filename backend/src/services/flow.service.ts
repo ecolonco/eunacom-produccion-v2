@@ -65,6 +65,13 @@ export class FlowService {
       url: urlWithKey,
       hasApiKey: Boolean(apiKey),
       bodyKeys: Object.keys(params),
+      bodyContent: usp.toString(),
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'apiKey': String(apiKey),
+        'X-Api-Key': String(apiKey),
+        'Accept': 'application/json',
+      }
     });
     const resp = await fetch(urlWithKey, {
       method: 'POST',
@@ -96,7 +103,26 @@ export class FlowService {
       urlConfirmation: params.urlConfirmation,
       paymentMethod: 9, // Todos los medios de pago
     };
+    
+    logger.info('Creating Flow payment with payload:', {
+      commerceOrder: params.commerceOrder,
+      subject: params.subject,
+      amount: params.amount,
+      email: params.email,
+      urlReturn: params.urlReturn,
+      urlConfirmation: params.urlConfirmation,
+      paymentMethod: 9
+    });
+    
     const result = await this.post<any>('/payment/create', payload);
+    
+    logger.info('Flow payment creation response:', {
+      result,
+      token: result.token || result.flowToken,
+      url: result.url || result.payUrl,
+      flowOrder: result.flowOrder
+    });
+    
     // Flow suele retornar token y url
     return { token: result.token || result.flowToken, url: result.url || result.payUrl, flowOrder: result.flowOrder };
   }
