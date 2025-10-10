@@ -38,6 +38,57 @@ router.get('/flow/test-config', authenticate as any, async (req: Request, res: R
   }
 });
 
+// POST /api/payments/flow/test-create - Test payment creation without redirect
+router.post('/flow/test-create', authenticate as any, async (req: Request, res: Response) => {
+  try {
+    const user = (req as any).user;
+    if (user?.role !== 'ADMIN') {
+      return res.status(403).json({ success: false, message: 'Solo administradores' });
+    }
+
+    if (!user?.id) {
+      return res.status(401).json({ success: false, message: 'No autenticado' });
+    }
+
+    const appUrl = process.env.APP_URL || 'http://localhost:5173';
+    const apiBase = process.env.API_BASE_URL || process.env.BACKEND_URL || 'https://eunacom-backend-v3.onrender.com';
+
+    // URLs simplificadas para evitar problemas con caracteres especiales
+    const urlReturn = `https://eunacom-nuevo.vercel.app/`;
+    const urlConfirmation = `https://eunacom-backend-v3.onrender.com/api/payments/flow/webhook`;
+    
+    logger.info('Testing Flow payment creation', { 
+      userEmail: user.email,
+      urlReturn,
+      urlConfirmation,
+      appUrl,
+      apiBase
+    });
+
+    const flow = await FlowService.createPayment({
+      commerceOrder: `test-${Date.now()}`,
+      subject: 'Test - Compra de 400 créditos',
+      amount: PRICE_CLP,
+      email: user.email,
+      urlReturn,
+      urlConfirmation,
+    });
+
+    logger.info('Flow test payment created', { flowToken: flow.token, flowOrder: flow.flowOrder, url: flow.url });
+
+    res.json({ 
+      success: true, 
+      flowToken: flow.token, 
+      flowOrder: flow.flowOrder,
+      url: flow.url,
+      test: true
+    });
+  } catch (error) {
+    logger.error('Error testing Flow payment creation:', error);
+    res.status(500).json({ success: false, message: 'Error al crear pago de prueba', error: error.message });
+  }
+});
+
 // POST /api/payments/flow/create
 router.post('/flow/create', authenticate as any, async (req: Request, res: Response) => {
   try {
@@ -59,15 +110,26 @@ router.post('/flow/create', authenticate as any, async (req: Request, res: Respo
     const appUrl = process.env.APP_URL || 'http://localhost:5173';
     const apiBase = process.env.API_BASE_URL || process.env.BACKEND_URL || 'https://eunacom-backend-v3.onrender.com';
 
-    logger.info('Creating Flow payment', { paymentId: payment.id, userEmail: user.email });
+    // URLs simplificadas para evitar problemas con caracteres especiales
+    const urlReturn = `https://eunacom-nuevo.vercel.app/`;
+    const urlConfirmation = `https://eunacom-backend-v3.onrender.com/api/payments/flow/webhook`;
+    
+    logger.info('Creating Flow payment', { 
+      paymentId: payment.id, 
+      userEmail: user.email,
+      urlReturn,
+      urlConfirmation,
+      appUrl,
+      apiBase
+    });
 
     const flow = await FlowService.createPayment({
       commerceOrder: payment.id,
       subject: 'Compra de 400 créditos',
       amount: PRICE_CLP,
       email: user.email,
-      urlReturn: `${appUrl}/?payment=success`,
-      urlConfirmation: `${apiBase.replace(/\/$/, '')}/api/payments/flow/webhook`,
+      urlReturn,
+      urlConfirmation,
     });
 
     logger.info('Flow payment created', { paymentId: payment.id, flowToken: flow.token, flowOrder: flow.flowOrder });
@@ -164,10 +226,18 @@ router.get('/flow/check/:paymentId', authenticate as any, async (req: Request, r
       flowOrder: payment.flowOrder 
     });
     
-    // Solo el dueño puede consultar
+    // Solo el dueño puede consultar (o admin)
     if (payment.userId !== user?.id && user?.role !== 'ADMIN') {
-      logger.warn('Unauthorized payment check', { paymentId, userId: user?.id, paymentUserId: payment.userId });
-      return res.status(403).json({ success: false, message: 'No autorizado' });
+      logger.warn('Unauthorized payment check', { 
+        paymentId, 
+        userId: user?.id, 
+        userRole: user?.role,
+        paymentUserId: payment.userId 
+      });
+      return res.status(403).json({ 
+        success: false, 
+        message: 'No autorizado para verificar este pago. Solo el dueño o administrador pueden verificar pagos.' 
+      });
     }
     
     // Si ya está pagado, retornar
