@@ -110,6 +110,24 @@ export class FlowService {
     if (!ok) logger.warn('Invalid Flow webhook signature');
     return ok;
   }
+
+  static async getPaymentStatus(token: string): Promise<any> {
+    const { apiKey, apiSecret, apiBase } = this.getConfig();
+    const params: FlowParams = { apiKey, token };
+    const s = this.buildSignature(params, apiSecret);
+    const query = new URLSearchParams();
+    query.append('apiKey', String(apiKey));
+    query.append('token', token);
+    query.append('s', s);
+    const url = `${apiBase}/payment/getStatus?${query.toString()}`;
+    const resp = await fetch(url);
+    if (!resp.ok) {
+      const text = await resp.text();
+      logger.error('Flow getStatus error', { status: resp.status, text });
+      throw new Error(`Flow getStatus error ${resp.status}`);
+    }
+    return await resp.json();
+  }
 }
 
 

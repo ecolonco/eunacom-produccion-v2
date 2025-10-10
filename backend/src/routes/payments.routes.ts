@@ -49,7 +49,7 @@ router.post('/flow/create', authenticate as any, async (req: Request, res: Respo
       }
     });
 
-    return res.json({ success: true, url: flow.url, token: flow.token });
+    return res.json({ success: true, url: flow.url, token: flow.token, paymentId: payment.id });
   } catch (error) {
     logger.error('Error creating Flow payment:', error);
     return res.status(500).json({ success: false, message: 'No se pudo crear el pago' });
@@ -105,6 +105,64 @@ router.post('/flow/webhook', async (req: Request, res: Response) => {
   } catch (error) {
     logger.error('Error in Flow webhook:', error);
     return res.status(500).json({ success: false });
+  }
+});
+
+// GET /api/payments/flow/check/:paymentId - Check and process payment status
+router.get('/flow/check/:paymentId', authenticate as any, async (req: Request, res: Response) => {
+  try {
+    const { paymentId } = req.params;
+    const user = (req as any).user;
+    
+    const payment = await prisma.payment.findUnique({ where: { id: paymentId } });
+    if (!payment) {
+      return res.status(404).json({ success: false, message: 'Pago no encontrado' });
+    }
+    
+    // Solo el dueño puede consultar
+    if (payment.userId !== user?.id && user?.role !== 'ADMIN') {
+      return res.status(403).json({ success: false, message: 'No autorizado' });
+    }
+    
+    // Si ya está pagado, retornar
+    if (payment.status === 'PAID') {
+      return res.json({ success: true, status: 'PAID', payment });
+    }
+    
+    // Consultar estado en Flow
+    if (!payment.flowToken) {
+      return res.status(400).json({ success: false, message: 'Token de Flow no disponible' });
+    }
+    
+    const flowStatus = await FlowService.getPaymentStatus(payment.flowToken);
+    logger.info('Flow payment status', { paymentId, flowStatus });
+    
+    // Flow status: 1=pendiente, 2=pagado, 3=rechazado, 4=anulado
+    if (flowStatus.status === 2) {
+      // Marcar como pagado y acreditar (idempotente)
+      await prisma.payment.update({
+        where: { id: payment.id },
+        data: { status: 'PAID' }
+      });
+      
+      const existingTx = await prisma.creditTransaction.findFirst({
+        where: { userId: payment.userId, type: 'PURCHASE', description: payment.id }
+      });
+      
+      if (!existingTx) {
+        await CreditsService.addCredits(payment.userId, payment.credits, 'PURCHASE', payment.id, {
+          provider: 'FLOW', amount: payment.amount, flowOrder: payment.flowOrder
+        });
+      }
+      
+      return res.json({ success: true, status: 'PAID', credited: true });
+    }
+    
+    // Otros estados
+    return res.json({ success: true, status: flowStatus.status === 1 ? 'PENDING' : 'FAILED', flowStatus });
+  } catch (error) {
+    logger.error('Error checking Flow payment:', error);
+    return res.status(500).json({ success: false, message: 'Error al verificar el pago' });
   }
 });
 

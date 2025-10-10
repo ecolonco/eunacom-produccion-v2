@@ -12,6 +12,34 @@ export const StudentDashboard: React.FC = () => {
   const [practiceView, setPracticeView] = useState<'none' | 'hub' | 'random' | 'specialty' | 'random20' | 'random90'>('none');
   const [isPurchasing, setIsPurchasing] = useState(false);
 
+  // Verificar pago pendiente al volver de Flow
+  React.useEffect(() => {
+    const checkPendingPayment = async () => {
+      const paymentId = localStorage.getItem('pendingPaymentId');
+      if (!paymentId) return;
+      
+      try {
+        const result = await PaymentsService.checkPaymentStatus(paymentId);
+        if (result.status === 'PAID' && result.credited) {
+          localStorage.removeItem('pendingPaymentId');
+          alert('¡Pago exitoso! Se acreditaron 400 créditos.');
+          // Recargar saldo (opcional: llamar a /api/auth/me o recargar página)
+          window.location.reload();
+        } else if (result.status === 'PENDING') {
+          // Reintentar en 3 segundos
+          setTimeout(checkPendingPayment, 3000);
+        } else {
+          localStorage.removeItem('pendingPaymentId');
+        }
+      } catch (e) {
+        console.error('Error checking payment:', e);
+        localStorage.removeItem('pendingPaymentId');
+      }
+    };
+    
+    checkPendingPayment();
+  }, []);
+
   if (!user) return null;
 
   // If a practice view is open, show it instead of the dashboard
@@ -80,11 +108,12 @@ export const StudentDashboard: React.FC = () => {
                 if (isPurchasing) return;
                 try {
                   setIsPurchasing(true);
-                  const { url } = await PaymentsService.createFlowPayment();
+                  const { url, paymentId } = await PaymentsService.createFlowPayment();
+                  // Guardar paymentId para verificar al volver
+                  localStorage.setItem('pendingPaymentId', paymentId);
                   window.location.href = url; // redirigir a Flow
                 } catch (e: any) {
                   alert(e?.message || 'No se pudo iniciar el pago.');
-                } finally {
                   setIsPurchasing(false);
                 }
               }}
