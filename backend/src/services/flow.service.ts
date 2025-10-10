@@ -59,7 +59,12 @@ export class FlowService {
     const url = `${apiBase}${endpoint}`;
     const resp = await fetch(url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        // Algunos entornos de Flow aceptan apiKey por cabecera
+        'apiKey': String(apiKey),
+        'X-Api-Key': String(apiKey),
+      },
       body: usp.toString(),
     });
     if (!resp.ok) {
