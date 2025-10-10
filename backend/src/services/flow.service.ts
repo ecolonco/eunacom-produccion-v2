@@ -50,10 +50,17 @@ export class FlowService {
     const { apiKey, apiSecret, apiBase } = this.getConfig();
     const params: FlowParams = { ...body, apiKey };
     const s = this.buildSignature(params, apiSecret);
-    const resp = await fetch(`${apiBase}${endpoint}`, {
+    // Flow espera x-www-form-urlencoded
+    const usp = new URLSearchParams();
+    Object.keys(params)
+      .filter((k) => params[k] !== undefined)
+      .forEach((k) => usp.append(k, String(params[k])));
+    usp.append('s', s);
+    const url = `${apiBase}${endpoint}`;
+    const resp = await fetch(url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...params, s }),
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: usp.toString(),
     });
     if (!resp.ok) {
       const text = await resp.text();
