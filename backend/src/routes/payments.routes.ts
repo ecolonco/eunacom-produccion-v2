@@ -142,12 +142,17 @@ router.get('/flow/check/:paymentId', authenticate as any, async (req: Request, r
       return res.json({ success: true, status: 'PAID', payment });
     }
     
-    // Consultar estado en Flow
-    if (!payment.flowToken) {
-      return res.status(400).json({ success: false, message: 'Token de Flow no disponible' });
+    // Consultar estado en Flow (por token o por flowOrder)
+    let flowStatus: any;
+    
+    if (payment.flowToken) {
+      flowStatus = await FlowService.getPaymentStatus(payment.flowToken);
+    } else if (payment.flowOrder) {
+      flowStatus = await FlowService.getPaymentStatusByFlowOrder(payment.flowOrder);
+    } else {
+      return res.status(400).json({ success: false, message: 'No se puede verificar este pago (falta flowToken o flowOrder)' });
     }
     
-    const flowStatus = await FlowService.getPaymentStatus(payment.flowToken);
     logger.info('Flow payment status', { paymentId, flowStatus });
     
     // Flow status: 1=pendiente, 2=pagado, 3=rechazado, 4=anulado

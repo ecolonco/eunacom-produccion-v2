@@ -128,6 +128,24 @@ export class FlowService {
     }
     return await resp.json();
   }
+
+  static async getPaymentStatusByFlowOrder(flowOrder: string): Promise<any> {
+    const { apiKey, apiSecret, apiBase } = this.getConfig();
+    const params: FlowParams = { apiKey, flowOrder };
+    const s = this.buildSignature(params, apiSecret);
+    const query = new URLSearchParams();
+    query.append('apiKey', String(apiKey));
+    query.append('flowOrder', flowOrder);
+    query.append('s', s);
+    const url = `${apiBase}/payment/getStatusByFlowOrder?${query.toString()}`;
+    const resp = await fetch(url);
+    if (!resp.ok) {
+      const text = await resp.text();
+      logger.error('Flow getStatusByFlowOrder error', { status: resp.status, text });
+      throw new Error(`Flow getStatusByFlowOrder error ${resp.status}`);
+    }
+    return await resp.json();
+  }
 }
 
 
