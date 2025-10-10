@@ -2,6 +2,7 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App'
 import VerifyEmail from './components/VerifyEmail'
+import PaymentReturn from './components/PaymentReturn'
 import SimpleApp from './SimpleApp'
 import TestApp from './TestApp'
 import TestApp2 from './TestApp2'
@@ -17,6 +18,9 @@ function RouterRoot() {
   const path = window.location.pathname;
   if (path === '/verify') {
     return <VerifyEmail />;
+  }
+  if (path === '/payment/return') {
+    return <PaymentReturn />;
   }
   return <App />;
 }
