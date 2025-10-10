@@ -48,7 +48,7 @@ export class FlowService {
 
   private static async post<T>(endpoint: string, body: FlowParams): Promise<T> {
     const { apiKey, apiSecret, apiBase } = this.getConfig();
-    const params: FlowParams = { ...body, apiKey };
+    const params: FlowParams = { ...body, apiKey, apikey: apiKey };
     const s = this.buildSignature(params, apiSecret);
     // Flow espera x-www-form-urlencoded
     const usp = new URLSearchParams();
