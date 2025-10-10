@@ -9,6 +9,7 @@ import TaxonomyInventory from './components/TaxonomyInventory';
 import TaxonomyAdmin from './components/TaxonomyAdmin';
 import AdminUsersTable from './components/admin/AdminUsersTable';
 import ExerciseManagement from './components/admin/ExerciseManagement';
+import PaymentsTable from './components/admin/PaymentsTable';
 import './App.css';
 
 // Main App Content Component
@@ -19,7 +20,7 @@ const AppContent: React.FC = () => {
   const [apiStatus, setApiStatus] = useState<string>('Checking...');
   const [apiData, setApiData] = useState<any>(null);
   const [currentView, setCurrentView] = useState<'dashboard' | 'exercise-factory'>('dashboard');
-  const [adminView, setAdminView] = useState<'menu' | 'factory' | 'taxonomyInventory' | 'taxonomyAdmin' | 'exerciseManagement' | 'adminUsers'>('menu');
+  const [adminView, setAdminView] = useState<'menu' | 'factory' | 'taxonomyInventory' | 'taxonomyAdmin' | 'exerciseManagement' | 'adminUsers' | 'payments'>('menu');
 
   // Debug logging
   React.useEffect(() => {
@@ -88,6 +89,9 @@ const AppContent: React.FC = () => {
     if (adminView === 'adminUsers') {
       return <AdminUsersTable onBack={() => setAdminView('menu')} />;
     }
+    if (adminView === 'payments') {
+      return <PaymentsTable onBack={() => setAdminView('menu')} />;
+    }
 
     return (
       <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50 flex items-center justify-center p-8">
@@ -97,6 +101,7 @@ const AppContent: React.FC = () => {
           <div className="space-y-3 text-left">
             <button className="w-full px-6 py-3 bg-green-600 text-white rounded-md hover:bg-green-700" onClick={() => setAdminView('factory')}>🏭 Fábrica de Ejercicios</button>
             <button className="w-full px-6 py-3 bg-indigo-600 text-white rounded-md hover:bg-indigo-700" onClick={() => setAdminView('adminUsers')}>👥 Gestión de Usuarios</button>
+            <button className="w-full px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700" onClick={() => setAdminView('payments')}>💳 Pagos y Transacciones</button>
             <button className="w-full px-6 py-3 bg-purple-600 text-white rounded-md hover:bg-purple-700" onClick={() => setAdminView('taxonomyInventory')}>📊 Inventario de Taxonomía</button>
             <button className="w-full px-6 py-3 bg-amber-600 text-white rounded-md hover:bg-amber-700" onClick={() => setAdminView('taxonomyAdmin')}>⚙️ Gestión de Taxonomía</button>
             <button className="w-full px-6 py-3 bg-emerald-600 text-white rounded-md hover:bg-emerald-700" onClick={() => setAdminView('exerciseManagement')}>📋 Listado de Ejercicios</button>

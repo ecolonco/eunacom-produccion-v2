@@ -25,6 +25,7 @@ import adminCleanupRoutes from './routes/admin-cleanup.routes';
 import { exerciseManagementRoutes } from './routes/exercise-management.routes';
 import { creditsRoutes } from './routes/credits.routes';
 import { paymentsRoutes } from './routes/payments.routes';
+import { adminPaymentsRoutes } from './routes/admin-payments.routes';
 import { logger } from './utils/logger';
 
 // Load environment variables
@@ -122,6 +123,7 @@ app.use('/api/quiz', quizRoutes);
 app.use('/api/admin', adminUsersRoutes);
 app.use('/api/credits', creditsRoutes);
 app.use('/api/payments', paymentsRoutes);
+app.use('/api/admin/payments', adminPaymentsRoutes);
 app.use('/api/exercise-factory', exerciseFactoryRoutes);
 app.use('/api/taxonomy-admin', taxonomyAdminRoutes);
 app.use('/api/qa-sweep', qaSweepRoutes);
