@@ -291,4 +291,67 @@ router.get('/metadata', async (req: Request, res: Response) => {
   }
 });
 
+// POST /api/admin/qa-sweep-2/diagnose-individual - Diagnóstico individual de un ejercicio
+router.post('/diagnose-individual', async (req: Request, res: Response) => {
+  try {
+    const { variationId } = req.body;
+    
+    if (!variationId) {
+      return res.status(400).json({
+        success: false,
+        message: 'ID de variación es requerido'
+      });
+    }
+
+    // Obtener la variación
+    const variation = await prisma.questionVariation.findUnique({
+      where: { id: variationId },
+      include: {
+        alternatives: { orderBy: { order: 'asc' } },
+        baseQuestion: { include: { aiAnalysis: true } }
+      }
+    });
+
+    if (!variation) {
+      return res.status(404).json({
+        success: false,
+        message: 'Variación no encontrada'
+      });
+    }
+
+    // Convertir a formato de ejercicio
+    const qaSweep2Service = new QASweep2Service();
+    const exerciseData = (qaSweep2Service as any).variationToExerciseData(variation);
+
+    // Procesar con OpenAI
+    const openAIService = new (await import('../services/openai.service')).OpenAIService();
+    const result = await openAIService.processExercise(exerciseData);
+
+    // Calcular confidence score
+    const confidenceScore = (qaSweep2Service as any).calculateConfidenceScore(result.evaluation);
+
+    res.json({
+      success: true,
+      data: {
+        variationId: variation.id,
+        exercise: exerciseData,
+        diagnosis: result.evaluation,
+        correction: result.correction,
+        result: result.result,
+        confidenceScore,
+        tokensIn: result.tokensIn,
+        tokensOut: result.tokensOut,
+        latencyMs: result.latencyMs
+      }
+    });
+  } catch (error) {
+    logger.error('Error in individual diagnosis:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al diagnosticar ejercicio individual',
+      error: error.message
+    });
+  }
+});
+
 export default router;

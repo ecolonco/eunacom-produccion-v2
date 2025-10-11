@@ -43,7 +43,7 @@ interface Metadata {
 }
 
 export const QASweep2Panel: React.FC<{ onBack: () => void }> = ({ onBack }) => {
-  const [activeTab, setActiveTab] = useState<'runs' | 'create' | 'stats'>('runs');
+  const [activeTab, setActiveTab] = useState<'runs' | 'create' | 'individual' | 'stats'>('runs');
   const [runs, setRuns] = useState<QASweep2Run[]>([]);
   const [selectedRun, setSelectedRun] = useState<QASweep2Run | null>(null);
   const [results, setResults] = useState<QASweep2Result[]>([]);
@@ -51,6 +51,10 @@ export const QASweep2Panel: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [metadata, setMetadata] = useState<Metadata | null>(null);
+  const [individualDiagnosis, setIndividualDiagnosis] = useState<any>(null);
+  const [showDiagnosisModal, setShowDiagnosisModal] = useState(false);
+  const [diagnosisLoading, setDiagnosisLoading] = useState(false);
+  const [variationIdInput, setVariationIdInput] = useState('');
 
   // Estados para crear nuevo run
   const [newRun, setNewRun] = useState({
@@ -107,6 +111,38 @@ export const QASweep2Panel: React.FC<{ onBack: () => void }> = ({ onBack }) => {
       }
     } catch (error) {
       console.error('Error loading metadata:', error);
+    }
+  };
+
+  const diagnoseIndividual = async () => {
+    if (!variationIdInput.trim()) {
+      alert('Por favor ingresa un ID de variación');
+      return;
+    }
+
+    setDiagnosisLoading(true);
+    try {
+      const response = await fetch(`${API_BASE}/api/admin/qa-sweep-2/diagnose-individual`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+        },
+        body: JSON.stringify({ variationId: variationIdInput.trim() })
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setIndividualDiagnosis(data.data);
+        setShowDiagnosisModal(true);
+      } else {
+        alert(`Error: ${data.message}`);
+      }
+    } catch (error) {
+      console.error('Error in individual diagnosis:', error);
+      alert('Error al diagnosticar ejercicio individual');
+    } finally {
+      setDiagnosisLoading(false);
     }
   };
 
@@ -259,6 +295,16 @@ export const QASweep2Panel: React.FC<{ onBack: () => void }> = ({ onBack }) => {
           ➕ Crear Run
         </button>
         <button
+          onClick={() => setActiveTab('individual')}
+          className={`px-4 py-2 rounded-md transition duration-200 ${
+            activeTab === 'individual' 
+              ? 'bg-blue-600 text-white' 
+              : 'bg-white text-gray-700 hover:bg-gray-100'
+          }`}
+        >
+          🔍 Diagnóstico Individual
+        </button>
+        <button
           onClick={() => setActiveTab('stats')}
           className={`px-4 py-2 rounded-md transition duration-200 ${
             activeTab === 'stats' 
@@ -269,6 +315,41 @@ export const QASweep2Panel: React.FC<{ onBack: () => void }> = ({ onBack }) => {
           📊 Estadísticas
         </button>
       </div>
+
+      {/* Diagnóstico Individual Tab */}
+      {activeTab === 'individual' && (
+        <div className="bg-white shadow-md rounded-lg p-6">
+          <h3 className="text-xl font-bold mb-4">🔍 Diagnóstico Individual</h3>
+          <p className="text-gray-600 mb-4">
+            Ingresa el ID de una variación para diagnosticarla individualmente con IA.
+          </p>
+          
+          <div className="flex gap-4 mb-6">
+            <input
+              type="text"
+              value={variationIdInput}
+              onChange={(e) => setVariationIdInput(e.target.value)}
+              placeholder="ID de variación (ej: figeeubi)"
+              className="flex-1 p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+            <button
+              onClick={diagnoseIndividual}
+              disabled={diagnosisLoading}
+              className={`px-6 py-3 rounded-md font-semibold transition duration-200 ${
+                diagnosisLoading 
+                  ? 'bg-gray-400 cursor-not-allowed' 
+                  : 'bg-blue-600 hover:bg-blue-700 text-white'
+              }`}
+            >
+              {diagnosisLoading ? 'Analizando...' : 'Diagnosticar'}
+            </button>
+          </div>
+
+          <div className="text-sm text-gray-500">
+            <p><strong>💡 Tip:</strong> Puedes obtener IDs de variaciones desde la pestaña "Runs" → "Ver Resultados"</p>
+          </div>
+        </div>
+      )}
 
       {/* Estadísticas Tab */}
       {activeTab === 'stats' && stats && (
@@ -544,6 +625,109 @@ export const QASweep2Panel: React.FC<{ onBack: () => void }> = ({ onBack }) => {
               )}
             </div>
           )}
+        </div>
+      )}
+
+      {/* Modal de Diagnóstico Individual */}
+      {showDiagnosisModal && individualDiagnosis && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-xl font-bold">🔍 Resultado del Diagnóstico Individual</h3>
+                <button
+                  onClick={() => setShowDiagnosisModal(false)}
+                  className="text-gray-500 hover:text-gray-700 text-2xl"
+                >
+                  ×
+                </button>
+              </div>
+
+              <div className="space-y-6">
+                {/* Información del ejercicio */}
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h4 className="font-semibold mb-2">📝 Ejercicio Analizado</h4>
+                  <p><strong>ID:</strong> {individualDiagnosis.variationId}</p>
+                  <p><strong>Especialidad:</strong> {individualDiagnosis.exercise.especialidad}</p>
+                  <p><strong>Tema:</strong> {individualDiagnosis.exercise.tema}</p>
+                  <p><strong>Nivel:</strong> {individualDiagnosis.exercise.nivel}</p>
+                </div>
+
+                {/* Diagnóstico */}
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <h4 className="font-semibold mb-3">🔍 Diagnóstico</h4>
+                  <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-4">
+                    {individualDiagnosis.diagnosis.scorecard && Object.entries(individualDiagnosis.diagnosis.scorecard).map(([key, value]) => (
+                      <div key={key} className="text-center">
+                        <div className="text-xs text-gray-600 capitalize">{key.replace('_', ' ')}</div>
+                        <div className={`font-bold text-lg ${
+                          (value as number) === 0 ? 'text-green-600' :
+                          (value as number) === 1 ? 'text-yellow-600' :
+                          (value as number) === 2 ? 'text-orange-600' : 'text-red-600'
+                        }`}>
+                          {value as number}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="text-sm space-y-1">
+                    <p><strong>Severidad Global:</strong> {individualDiagnosis.diagnosis.severidad_global}</p>
+                    <p><strong>Recomendación:</strong> {individualDiagnosis.diagnosis.recomendacion}</p>
+                    <p><strong>Etiquetas:</strong> {individualDiagnosis.diagnosis.etiquetas?.join(', ') || 'Ninguna'}</p>
+                  </div>
+                </div>
+
+                {/* Corrección (si existe) */}
+                {individualDiagnosis.correction && (
+                  <div className="bg-green-50 p-4 rounded-lg">
+                    <h4 className="font-semibold mb-3">✨ Corrección Sugerida</h4>
+                    <div className="space-y-3">
+                      <div>
+                        <strong>Enunciado Corregido:</strong>
+                        <p className="mt-1 p-2 bg-white rounded border">{individualDiagnosis.correction.enunciado_corregido}</p>
+                      </div>
+                      <div>
+                        <strong>Explicación Global:</strong>
+                        <p className="mt-1 p-2 bg-white rounded border">{individualDiagnosis.correction.explicacion_global}</p>
+                      </div>
+                      {individualDiagnosis.correction.alternativas && (
+                        <div>
+                          <strong>Alternativas Corregidas:</strong>
+                          <div className="mt-2 space-y-2">
+                            {Object.entries(individualDiagnosis.correction.alternativas).map(([letter, text]) => (
+                              <div key={letter} className="flex items-center gap-2">
+                                <span className="font-bold w-6">{letter}.</span>
+                                <span className="flex-1 p-2 bg-white rounded border">{text as string}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Métricas */}
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h4 className="font-semibold mb-2">📊 Métricas</h4>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                    <div>
+                      <strong>Confianza:</strong> {(individualDiagnosis.confidenceScore * 100).toFixed(1)}%
+                    </div>
+                    <div>
+                      <strong>Tokens In:</strong> {individualDiagnosis.tokensIn}
+                    </div>
+                    <div>
+                      <strong>Tokens Out:</strong> {individualDiagnosis.tokensOut}
+                    </div>
+                    <div>
+                      <strong>Latencia:</strong> {individualDiagnosis.latencyMs}ms
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>
