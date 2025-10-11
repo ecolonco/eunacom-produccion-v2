@@ -289,7 +289,10 @@ export class QASweep2Service {
           }
         },
         take: limit,
-        orderBy: { baseQuestion: { displaySequence: 'asc' }, variationNumber: 'asc' }
+        orderBy: [
+          { baseQuestion: { displaySequence: 'asc' } },
+          { variationNumber: 'asc' }
+        ]
       });
 
       logger.info('Variations fetched for analysis', {
