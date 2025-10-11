@@ -1,14 +1,7 @@
-import { Request, Response } from 'express';
+import { Response } from 'express';
+import { AuthenticatedRequest } from '../middleware/auth.middleware';
 import { CreditsService, PackageType, CREDIT_PACKAGES } from '../services/credits.service';
 import { logger } from '../utils/logger';
-
-interface AuthenticatedRequest extends Request {
-  user?: {
-    id: string;
-    role: string;
-    email: string;
-  };
-}
 
 export class CreditsController {
   /**
