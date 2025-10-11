@@ -230,12 +230,12 @@ export class QASweep2Service {
     try {
       let whereConditions: any = {};
 
-      // Filtro por rango de ejercicios base (usando número de ejercicio)
+      // Filtro por rango de ejercicios base (usando displaySequence)
       if (baseQuestionFrom !== undefined || baseQuestionTo !== undefined) {
         // Primero buscar los IDs de los ejercicios base en el rango
         const baseQuestions = await prisma.baseQuestion.findMany({
           where: {
-            exerciseNumber: {
+            displaySequence: {
               ...(baseQuestionFrom !== undefined && { gte: baseQuestionFrom }),
               ...(baseQuestionTo !== undefined && { lte: baseQuestionTo })
             }
@@ -289,7 +289,7 @@ export class QASweep2Service {
           }
         },
         take: limit,
-        orderBy: { baseQuestion: { exerciseNumber: 'asc' }, variationNumber: 'asc' }
+        orderBy: { baseQuestion: { displaySequence: 'asc' }, variationNumber: 'asc' }
       });
 
       logger.info('Variations fetched for analysis', {
