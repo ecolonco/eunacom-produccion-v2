@@ -46,6 +46,11 @@ export const QAControlPanel: React.FC<{ onBack: () => void }> = ({ onBack }) => 
   const [filterLabel, setFilterLabel] = useState('');
   const [filterSpecialty, setFilterSpecialty] = useState('');
   const [filterTopic, setFilterTopic] = useState('');
+  const [appliedFilters, setAppliedFilters] = useState({
+    label: '',
+    specialty: '',
+    topic: ''
+  });
   const [pagination, setPagination] = useState<PaginationInfo>({
     page: 1,
     limit: 100,
@@ -77,9 +82,9 @@ export const QAControlPanel: React.FC<{ onBack: () => void }> = ({ onBack }) => 
         limit: '100'
       });
 
-      if (filterLabel) params.append('label', filterLabel);
-      if (filterSpecialty) params.append('specialty', filterSpecialty);
-      if (filterTopic) params.append('topic', filterTopic);
+      if (appliedFilters.label) params.append('label', appliedFilters.label);
+      if (appliedFilters.specialty) params.append('specialty', appliedFilters.specialty);
+      if (appliedFilters.topic) params.append('topic', appliedFilters.topic);
 
       const response = await fetch(`${API_BASE}/api/admin/qa-control/variations?${params}`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('accessToken')}` }
@@ -103,7 +108,7 @@ export const QAControlPanel: React.FC<{ onBack: () => void }> = ({ onBack }) => 
 
   useEffect(() => {
     loadVariations(1);
-  }, [filterLabel, filterSpecialty, filterTopic]);
+  }, [appliedFilters]);
 
   const handleSelectVariation = (variationId: string) => {
     const newSelected = new Set(selectedVariations);
@@ -161,6 +166,27 @@ export const QAControlPanel: React.FC<{ onBack: () => void }> = ({ onBack }) => 
 
   const handlePageChange = (newPage: number) => {
     loadVariations(newPage);
+  };
+
+  const handleApplyFilters = () => {
+    setAppliedFilters({
+      label: filterLabel,
+      specialty: filterSpecialty,
+      topic: filterTopic
+    });
+    setSelectedVariations(new Set()); // Clear selections when filtering
+  };
+
+  const handleClearFilters = () => {
+    setFilterLabel('');
+    setFilterSpecialty('');
+    setFilterTopic('');
+    setAppliedFilters({
+      label: '',
+      specialty: '',
+      topic: ''
+    });
+    setSelectedVariations(new Set()); // Clear selections when clearing filters
   };
 
   if (loading && variations.length === 0) {
@@ -224,19 +250,45 @@ export const QAControlPanel: React.FC<{ onBack: () => void }> = ({ onBack }) => 
               className="w-full p-2 border rounded"
             />
           </div>
-          <div className="flex items-end">
+          <div className="flex items-end gap-2">
             <button
-              onClick={() => {
-                setFilterLabel('');
-                setFilterSpecialty('');
-                setFilterTopic('');
-              }}
+              onClick={handleApplyFilters}
+              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            >
+              🔍 Filtrar
+            </button>
+            <button
+              onClick={handleClearFilters}
               className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
             >
-              Limpiar Filtros
+              Limpiar
             </button>
           </div>
         </div>
+        
+        {/* Applied Filters Display */}
+        {(appliedFilters.label || appliedFilters.specialty || appliedFilters.topic) && (
+          <div className="mt-3 p-2 bg-blue-50 border border-blue-200 rounded">
+            <div className="text-sm font-medium text-blue-800 mb-1">Filtros aplicados:</div>
+            <div className="flex flex-wrap gap-2">
+              {appliedFilters.label && (
+                <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                  Etiqueta: {appliedFilters.label}
+                </span>
+              )}
+              {appliedFilters.specialty && (
+                <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                  Especialidad: {appliedFilters.specialty}
+                </span>
+              )}
+              {appliedFilters.topic && (
+                <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                  Tema: {appliedFilters.topic}
+                </span>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Statistics */}
