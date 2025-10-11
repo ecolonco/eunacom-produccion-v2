@@ -16,7 +16,7 @@ export class OpenAIService {
 
     this.client = new OpenAI({ apiKey });
     this.modelEval = process.env.MODEL_EVAL || 'gpt-4o-mini';
-    this.modelFix = process.env.MODEL_FIX || 'gpt-4o';
+    this.modelFix = process.env.MODEL_FIX || 'gpt-5';
   }
 
   /**
