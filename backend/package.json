@@ -5,7 +5,7 @@
   "main": "dist/index.js",
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "build": "tsc --noEmitOnError false && prisma generate && (prisma migrate deploy || (prisma migrate resolve --applied 20250927224855_exercise_factory_tables && prisma migrate deploy))",
+    "build": "prisma generate && tsc --noEmitOnError false && (prisma migrate deploy || (prisma migrate resolve --applied 20250927224855_exercise_factory_tables && prisma migrate deploy))",
     "start": "node dist/index.js",
     "start:worker": "node dist/worker/qa-sweep-2.worker.js",
     "prisma:generate": "prisma generate",
