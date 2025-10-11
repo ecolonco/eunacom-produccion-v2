@@ -355,13 +355,13 @@ export class ExerciseFactoryService {
           baseQuestionId: baseQuestion.id,
           specialty: analysis.specialty || 'General',
           topic: analysis.topic || 'Unknown',
-          difficulty: analysis.baseDifficulty || 'MEDIUM',
+          difficulty: analysis.difficulty || 'MEDIUM',
           analysisResult: JSON.stringify(analysis)
         },
         update: {
           specialty: analysis.specialty || 'General',
           topic: analysis.topic || 'Unknown',
-          difficulty: analysis.baseDifficulty || 'MEDIUM',
+          difficulty: analysis.difficulty || 'MEDIUM',
           analysisResult: JSON.stringify(analysis)
         }
       });
@@ -412,8 +412,6 @@ export class ExerciseFactoryService {
           }
           const variation = await this.openAIService.generateQuestionVariation(
             baseQuestion.content,
-            analysis,
-            plan.difficulty as 'EASY' | 'MEDIUM' | 'HARD',
             variationNumber
           );
 

@@ -177,14 +177,22 @@ export class OpenAIService {
   async analyzeQuestion(questionContent: string): Promise<{
     specialty: string;
     topic: string;
-    difficulty: string;
+    subtopic?: string;
+    confidence: number;
+    keywords: string[];
+    learningObjectives: string[];
+    questionType: 'CLINICAL_CASE' | 'CONCEPT' | 'PROCEDURE' | 'DIAGNOSIS' | 'TREATMENT' | 'PREVENTION';
   }> {
     try {
       const systemPrompt = 'Eres un experto en medicina que clasifica preguntas médicas por especialidad, tema y dificultad.';
       const userPrompt = `Analiza esta pregunta médica y determina:
 1. Especialidad médica (ej: OBSTETRICIA Y GINECOLOGÍA, PEDIATRÍA, etc.)
 2. Tema específico (ej: Ginecología, Neumonía, etc.)
-3. Nivel de dificultad (facil, medio, dificil)
+3. Subtema opcional si aplica
+4. Confianza en la clasificación (0-1)
+5. Palabras clave médicas
+6. Objetivos de aprendizaje
+7. Tipo de pregunta médica
 
 Pregunta: ${questionContent}
 
@@ -192,7 +200,11 @@ Responde en formato JSON:
 {
   "specialty": "ESPECIALIDAD",
   "topic": "TEMA",
-  "difficulty": "NIVEL"
+  "subtopic": "SUBTEMA_OPCIONAL",
+  "confidence": 0.95,
+  "keywords": ["palabra1", "palabra2", "palabra3"],
+  "learningObjectives": ["objetivo1", "objetivo2"],
+  "questionType": "CLINICAL_CASE"
 }`;
 
       const result = await this.callOpenAI('gpt-4o-mini', systemPrompt, userPrompt);
