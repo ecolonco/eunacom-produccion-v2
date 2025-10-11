@@ -108,20 +108,27 @@ export class QASweep2Service {
         // Validate names against catalog
         let validSpecialtyName: string | undefined = undefined;
         let validTopicName: string | undefined = undefined;
+        const norm = (s?: string) => (s || '').toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '');
 
         if (desired.specialty) {
-          const spec = await tx.specialty.findFirst({
+          let spec = await tx.specialty.findFirst({
             where: { name: { equals: desired.specialty, mode: 'insensitive' }, isActive: true }
           });
+          if (!spec) {
+            // Fallback: diacritic-insensitive match in JS
+            const allSpecs = await tx.specialty.findMany({ where: { isActive: true } });
+            spec = allSpecs.find(s => norm(s.name) === norm(desired.specialty));
+          }
           if (spec) {
             validSpecialtyName = spec.name;
             if (desired.topic) {
-              const t = await tx.topic.findFirst({
-                where: {
-                  name: { equals: desired.topic, mode: 'insensitive' },
-                  specialtyId: spec.id
-                }
+              let t = await tx.topic.findFirst({
+                where: { name: { equals: desired.topic, mode: 'insensitive' }, specialtyId: spec.id }
               });
+              if (!t) {
+                const allTopics = await tx.topic.findMany({ where: { specialtyId: spec.id } });
+                t = allTopics.find(tp => norm(tp.name) === norm(desired.topic));
+              }
               if (t) validTopicName = t.name;
             }
           }
