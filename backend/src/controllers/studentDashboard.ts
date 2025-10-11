@@ -1,4 +1,5 @@
-import { Request, Response } from 'express';
+import { Response } from 'express';
+import { AuthenticatedRequest } from '../middleware/auth.middleware';
 import { StudentMetricsService } from '../services/studentMetrics';
 import {
   getProgressTrendsSchema,
@@ -9,14 +10,6 @@ import {
   studyRecommendationsResponseSchema,
 } from '../schemas/dashboard';
 import { logger } from '../utils/logger';
-
-interface AuthenticatedRequest extends Request {
-  user?: {
-    userId: string;
-    role: string;
-    email: string;
-  };
-}
 
 export class StudentDashboardController {
   /**
