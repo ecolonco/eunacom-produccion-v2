@@ -687,10 +687,14 @@ export const QASweep2Panel: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                     <div>
                       <h5 className="font-medium mb-2">Explicación Original</h5>
                       <p className="p-2 bg-gray-50 rounded border">{individualDiagnosis.exercise.explicacion_global || '—'}</p>
+                      <p className="text-xs text-gray-600 mt-1">Taxonomía original: {individualDiagnosis.exercise.especialidad} / {individualDiagnosis.exercise.tema}</p>
                     </div>
                     <div>
                       <h5 className="font-medium mb-2">Explicación Corregida</h5>
                       <p className="p-2 bg-green-50 rounded border">{individualDiagnosis.correction?.explicacion_global || '—'}</p>
+                      {(individualDiagnosis.diagnosis?.specialty_sugerida || individualDiagnosis.diagnosis?.tema_sugerido) && (
+                        <p className="text-xs text-gray-600 mt-1">Taxonomía sugerida: {individualDiagnosis.diagnosis?.specialty_sugerida || individualDiagnosis.exercise.especialidad} / {individualDiagnosis.diagnosis?.tema_sugerido || individualDiagnosis.exercise.tema}</p>
+                      )}
                     </div>
                   </div>
 

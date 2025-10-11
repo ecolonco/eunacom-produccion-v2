@@ -40,7 +40,7 @@ export class QASweep2Service {
     return await prisma.$transaction(async (tx) => {
       const original = await tx.questionVariation.findUnique({
         where: { id: variationId },
-        include: { alternatives: true }
+        include: { alternatives: true, baseQuestion: { include: { aiAnalysis: true } } }
       });
       if (!original) throw new Error('Original variation not found');
 
@@ -86,6 +86,27 @@ export class QASweep2Service {
         where: { id: original.id },
         data: { isVisible: false, modifiedAt: new Date() }
       });
+
+      // Optional: update baseQuestion.aiAnalysis if corrections include new taxonomy
+      if (corrections.specialty || corrections.topic) {
+        await tx.baseQuestion.update({
+          where: { id: original.baseQuestionId },
+          data: {
+            aiAnalysis: {
+              upsert: {
+                create: {
+                  specialty: corrections.specialty ?? original.baseQuestion?.aiAnalysis?.specialty ?? 'Unknown',
+                  topic: corrections.topic ?? original.baseQuestion?.aiAnalysis?.topic ?? 'Unknown'
+                },
+                update: {
+                  specialty: corrections.specialty ?? original.baseQuestion?.aiAnalysis?.specialty ?? 'Unknown',
+                  topic: corrections.topic ?? original.baseQuestion?.aiAnalysis?.topic ?? 'Unknown'
+                }
+              }
+            }
+          }
+        });
+      }
 
       return { newVariationId: newVariation.id };
     });

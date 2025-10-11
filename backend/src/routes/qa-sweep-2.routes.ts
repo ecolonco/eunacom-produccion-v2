@@ -327,7 +327,13 @@ router.post('/diagnose-individual', async (req: Request, res: Response) => {
     let newVariationId: string | undefined = undefined;
     if (autoApply && result.correction) {
       const svc = new QASweep2Service();
-      const applied = await svc.applyCorrectionsAsNewVersion(variation.id, result.correction);
+      // Attach classification suggestions if evaluation proposes changes
+      const correctionWithTaxonomy = {
+        ...result.correction,
+        specialty: result.evaluation?.specialty_sugerida || undefined,
+        topic: result.evaluation?.tema_sugerido || undefined
+      };
+      const applied = await svc.applyCorrectionsAsNewVersion(variation.id, correctionWithTaxonomy);
       newVariationId = applied.newVariationId;
     }
 
