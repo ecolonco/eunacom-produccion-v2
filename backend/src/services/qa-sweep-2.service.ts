@@ -424,7 +424,7 @@ export class QASweep2Service {
   }
 
   /**
-   * Procesa una variación individual
+   * Procesa una variación individual con aplicación automática de correcciones
    */
   private async processVariation(runId: string, variation: any): Promise<void> {
     try {
@@ -437,7 +437,56 @@ export class QASweep2Service {
       // Calcular confidence score basado en la evaluación
       const confidenceScore = this.calculateConfidenceScore(result.evaluation);
 
-      // Guardar resultado
+      let newVariationId: string | undefined;
+      let appliedTaxonomy: { specialty: string; topic: string } | undefined;
+
+      // AUTO-APLICAR correcciones si existen
+      if (result.correction) {
+        try {
+          // Preparar corrección con taxonomía sugerida
+          const correctionWithTaxonomy = {
+            ...result.correction,
+            specialty: result.evaluation?.specialty_sugerida || undefined,
+            topic: result.evaluation?.tema_sugerido || undefined
+          };
+
+          // Aplicar como nueva versión
+          const applied = await this.applyCorrectionsAsNewVersion(
+            variation.id,
+            correctionWithTaxonomy
+          );
+          newVariationId = applied.newVariationId;
+
+          // Obtener taxonomía aplicada
+          const refreshed = await prisma.baseQuestion.findUnique({
+            where: { id: variation.baseQuestionId },
+            include: { aiAnalysis: true }
+          });
+          if (refreshed?.aiAnalysis) {
+            appliedTaxonomy = {
+              specialty: refreshed.aiAnalysis.specialty,
+              topic: refreshed.aiAnalysis.topic
+            };
+          }
+
+          logger.info('Correction auto-applied', {
+            runId,
+            originalVariationId: variation.id,
+            newVariationId,
+            result: result.result,
+            taxonomyChanged: !!correctionWithTaxonomy.specialty
+          });
+        } catch (applyError) {
+          logger.error('Failed to auto-apply correction:', {
+            runId,
+            variationId: variation.id,
+            error: applyError.message
+          });
+          // Continuar para guardar el resultado aunque falle la aplicación
+        }
+      }
+
+      // Guardar resultado con información de aplicación
       await prisma.qASweep2Result.create({
         data: {
           runId,
@@ -445,12 +494,17 @@ export class QASweep2Service {
           diagnosis: result.evaluation,
           corrections: result.correction,
           finalLabels: result.evaluation.etiquetas || [],
-          status: result.correction ? 'CORRECTED' : 'ANALYZED',
+          status: newVariationId ? 'APPLIED' : (result.correction ? 'CORRECTED' : 'ANALYZED'),
           aiModelUsed: result.correction ? 'GPT-4o' : 'GPT-4o-mini',
           confidenceScore,
           tokensIn: result.tokensIn,
           tokensOut: result.tokensOut,
-          latencyMs: result.latencyMs
+          latencyMs: result.latencyMs,
+          metadata: {
+            newVariationId,
+            appliedTaxonomy,
+            autoApplied: !!newVariationId
+          }
         }
       });
 
@@ -458,7 +512,8 @@ export class QASweep2Service {
         runId,
         variationId: variation.id,
         result: result.result,
-        confidenceScore
+        confidenceScore,
+        autoApplied: !!newVariationId
       });
     } catch (error) {
       logger.error('Failed to process variation:', {

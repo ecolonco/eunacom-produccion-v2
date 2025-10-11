@@ -530,6 +530,7 @@ model QASweep2Result {
   tokensIn           Int             @map("tokens_in")
   tokensOut          Int             @map("tokens_out")
   latencyMs          Int             @map("latency_ms")
+  metadata           Json?           // Metadata adicional (newVariationId, appliedTaxonomy, etc.)
   createdAt          DateTime        @default(now())
   updatedAt          DateTime        @updatedAt
   run                QASweep2Run     @relation(fields: [runId], references: [id], onDelete: Cascade)
