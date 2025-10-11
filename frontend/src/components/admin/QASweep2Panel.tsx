@@ -52,6 +52,7 @@ export const QASweep2Panel: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   const [creating, setCreating] = useState(false);
   const [metadata, setMetadata] = useState<Metadata | null>(null);
   const [individualDiagnosis, setIndividualDiagnosis] = useState<any>(null);
+  const [autoApply, setAutoApply] = useState(true);
   const [showDiagnosisModal, setShowDiagnosisModal] = useState(false);
   const [diagnosisLoading, setDiagnosisLoading] = useState(false);
   const [variationIdInput, setVariationIdInput] = useState('');
@@ -128,7 +129,7 @@ export const QASweep2Panel: React.FC<{ onBack: () => void }> = ({ onBack }) => {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
         },
-        body: JSON.stringify({ variationId: variationIdInput.trim() })
+        body: JSON.stringify({ variationId: variationIdInput.trim(), autoApply })
       });
 
       const data = await response.json();
@@ -319,7 +320,7 @@ export const QASweep2Panel: React.FC<{ onBack: () => void }> = ({ onBack }) => {
       {/* Diagnóstico Individual Tab */}
       {activeTab === 'individual' && (
         <div className="bg-white shadow-md rounded-lg p-6">
-          <h3 className="text-xl font-bold mb-4">🔍 Diagnóstico Individual</h3>
+          <h3 className="text-xl font-bold mb-4">🔍 Diagnóstico Individual · v2.0.1</h3>
           <p className="text-gray-600 mb-4">
             Ingresa el ID de una variación para diagnosticarla individualmente con IA.
           </p>
@@ -347,6 +348,13 @@ export const QASweep2Panel: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
           <div className="text-sm text-gray-500">
             <p><strong>💡 Tip:</strong> Usa el formato numérico (ej: 505.1) o el ID interno. Puedes obtener IDs desde "Runs" → "Ver Resultados"</p>
+          </div>
+
+          <div className="mt-3">
+            <label className="inline-flex items-center gap-2 text-sm text-gray-700">
+              <input type="checkbox" checked={autoApply} onChange={(e)=>setAutoApply(e.target.checked)} />
+              Aplicar automáticamente las correcciones como nueva versión (oculta original)
+            </label>
           </div>
         </div>
       )}
@@ -652,6 +660,70 @@ export const QASweep2Panel: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                   <p><strong>Especialidad:</strong> {individualDiagnosis.exercise.especialidad}</p>
                   <p><strong>Tema:</strong> {individualDiagnosis.exercise.tema}</p>
                   <p><strong>Nivel:</strong> {individualDiagnosis.exercise.nivel}</p>
+                </div>
+
+                {/* Comparativa Original vs Corregido */}
+                <div className="bg-white p-4 rounded-lg border" data-test="comparativa-block">
+                  <h4 className="font-semibold mb-3">🧪 Comparativa</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <h5 className="font-medium mb-2">Enunciado Original</h5>
+                      <p className="p-2 bg-gray-50 rounded border">{individualDiagnosis.exercise.enunciado}</p>
+                    </div>
+                    <div>
+                      <h5 className="font-medium mb-2">Enunciado Corregido</h5>
+                      <p className="p-2 bg-green-50 rounded border">{individualDiagnosis.correction?.enunciado_corregido || '—'}</p>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <h5 className="font-medium mb-2">Explicación Original</h5>
+                      <p className="p-2 bg-gray-50 rounded border">{individualDiagnosis.exercise.explicacion_global || '—'}</p>
+                    </div>
+                    <div>
+                      <h5 className="font-medium mb-2">Explicación Corregida</h5>
+                      <p className="p-2 bg-green-50 rounded border">{individualDiagnosis.correction?.explicacion_global || '—'}</p>
+                    </div>
+                  </div>
+
+                  <div className="mt-4">
+                    <h5 className="font-medium mb-2">Alternativas</h5>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <h6 className="text-sm text-gray-600 mb-2">Original</h6>
+                        {Object.entries(individualDiagnosis.exercise.alternativas || {}).map(([letter, text]: any) => (
+                          <div key={`orig-${letter}`} className="mb-2">
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold w-6">{letter}.</span>
+                              <span className="flex-1 p-2 bg-gray-50 rounded border">{text}</span>
+                            </div>
+                            {individualDiagnosis.exercise.explicaciones?.[letter] && (
+                              <div className="ml-8 mt-1 text-xs text-gray-600">
+                                {individualDiagnosis.exercise.explicaciones[letter]}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                      <div>
+                        <h6 className="text-sm text-gray-600 mb-2">Corregidas</h6>
+                        {individualDiagnosis.correction?.alternativas && Object.entries(individualDiagnosis.correction.alternativas).map(([letter, text]: any) => (
+                          <div key={`fix-${letter}`} className="mb-2">
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold w-6">{letter}.</span>
+                              <span className="flex-1 p-2 bg-green-50 rounded border">{text as string}</span>
+                            </div>
+                            {individualDiagnosis.correction?.explicaciones?.[letter] && (
+                              <div className="ml-8 mt-1 text-xs text-gray-600">
+                                {individualDiagnosis.correction.explicaciones[letter]}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
                 {/* Diagnóstico */}
