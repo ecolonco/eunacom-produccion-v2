@@ -37,7 +37,48 @@ router.get('/variations', async (req, res) => {
       };
     }
 
-    // Get all variations with pagination
+    // If filtering by label, get QA Results first to find the variation IDs
+    let variationIds: string[] = [];
+    
+    if (label) {
+      // Get QA Results that have the specific label
+      const qaResultsWithLabel = await prisma.qAResult.findMany({
+        where: {
+          labels: {
+            not: null
+          }
+        },
+        select: {
+          variationId: true,
+          labels: true
+        }
+      });
+      
+      // Filter by label in JavaScript
+      const filteredQaResults = qaResultsWithLabel.filter(qa => {
+        if (!qa.labels) return false;
+        const labels = qa.labels as string[];
+        return labels.includes(label as string);
+      });
+      
+      variationIds = filteredQaResults.map(qa => qa.variationId);
+      
+      // If no variations have this label, return empty result
+      if (variationIds.length === 0) {
+        return res.json({
+          success: true,
+          data: {
+            variations: [],
+            total: 0,
+            page: pageNum,
+            limit: limitNum,
+            totalPages: 0
+          }
+        });
+      }
+    }
+
+    // Build variations query
     let variationsQuery: any = {
       include: {
         alternatives: {
@@ -65,29 +106,39 @@ router.get('/variations', async (req, res) => {
       skip: offset
     };
 
+    // Add where conditions
+    let whereConditions: any = {};
+    
+    // If filtering by label, only get those specific variations
+    if (label && variationIds.length > 0) {
+      whereConditions.id = { in: variationIds };
+    }
+    
     // If filtering by specialty or topic, add those filters
     if (specialty || topic) {
-      variationsQuery.where = {
-        baseQuestion: {
-          aiAnalysis: {}
-        }
+      whereConditions.baseQuestion = {
+        aiAnalysis: {}
       };
       
       if (specialty) {
-        variationsQuery.where.baseQuestion.aiAnalysis.specialty = specialty;
+        whereConditions.baseQuestion.aiAnalysis.specialty = specialty;
       }
       if (topic) {
-        variationsQuery.where.baseQuestion.aiAnalysis.topic = topic;
+        whereConditions.baseQuestion.aiAnalysis.topic = topic;
       }
+    }
+    
+    if (Object.keys(whereConditions).length > 0) {
+      variationsQuery.where = whereConditions;
     }
 
     const variations = await prisma.questionVariation.findMany(variationsQuery);
 
     // Get QA Results for these variations
-    const variationIds = variations.map(v => v.id);
+    const currentVariationIds = variations.map(v => v.id);
     const qaResults = await prisma.qAResult.findMany({
       where: {
-        variationId: { in: variationIds }
+        variationId: { in: currentVariationIds }
       },
       select: {
         id: true,
@@ -101,18 +152,8 @@ router.get('/variations', async (req, res) => {
       }
     });
 
-    // Apply label filter if specified
-    let filteredVariations = variations;
-    
-    if (label) {
-      filteredVariations = variations.filter(variation => {
-        const qaResult = qaResults.find(r => r.variationId === variation.id);
-        if (!qaResult || !qaResult.labels) return false;
-        
-        const labels = qaResult.labels as string[];
-        return labels.includes(label as string);
-      });
-    }
+    // No need to filter again since we already filtered by getting the right variations
+    const filteredVariations = variations;
 
     // Transform to the expected format
     const result = filteredVariations.map(variation => {
@@ -135,49 +176,33 @@ router.get('/variations', async (req, res) => {
     });
 
     // Get total count for pagination
-    let totalCountQuery: any = {};
+    let totalCount = 0;
     
-    if (specialty || topic) {
-      totalCountQuery = {
-        baseQuestion: {
-          aiAnalysis: {}
-        }
-      };
-      
-      if (specialty) {
-        totalCountQuery.baseQuestion.aiAnalysis.specialty = specialty;
-      }
-      if (topic) {
-        totalCountQuery.baseQuestion.aiAnalysis.topic = topic;
-      }
-    }
-
-    const totalVariations = await prisma.questionVariation.count({
-      where: totalCountQuery
-    });
-
-    // If filtering by label, we need to count how many have that label
-    let totalCount = totalVariations;
     if (label) {
-      const allVariationsForLabel = await prisma.questionVariation.findMany({
-        where: totalCountQuery,
-        select: { id: true }
-      });
+      // If filtering by label, use the variationIds we already found
+      totalCount = variationIds.length;
+    } else {
+      // If not filtering by label, count all variations with any filters applied
+      let totalCountQuery: any = {};
       
-      const allVariationIds = allVariationsForLabel.map(v => v.id);
-      const qaResultsForCount = await prisma.qAResult.findMany({
-        where: {
-          variationId: { in: allVariationIds }
+      if (specialty || topic) {
+        totalCountQuery = {
+          baseQuestion: {
+            aiAnalysis: {}
+          }
+        };
+        
+        if (specialty) {
+          totalCountQuery.baseQuestion.aiAnalysis.specialty = specialty;
         }
+        if (topic) {
+          totalCountQuery.baseQuestion.aiAnalysis.topic = topic;
+        }
+      }
+
+      totalCount = await prisma.questionVariation.count({
+        where: totalCountQuery
       });
-      
-      // Filter by label in JavaScript since Prisma doesn't support has for JSON arrays consistently
-      const filteredQaResults = qaResultsForCount.filter(qa => {
-        if (!qa.labels) return false;
-        const labels = qa.labels as string[];
-        return labels.includes(label as string);
-      });
-      totalCount = filteredQaResults.length;
     }
 
     res.json({
