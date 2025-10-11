@@ -140,7 +140,7 @@ export async function callLLMEval(item: QAItem): Promise<LLMEvaluationResult | n
       model: 'gpt-4o-mini',
       messages: [{ role: 'user', content: prompt }],
       temperature: 0.2,
-      max_tokens: 800,
+      max_completion_tokens: 800,
       response_format: { type: 'json_object' }
     });
 

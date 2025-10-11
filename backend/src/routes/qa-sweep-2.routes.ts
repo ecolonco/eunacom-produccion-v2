@@ -259,22 +259,14 @@ router.get('/metadata', async (req: Request, res: Response) => {
     const specialties = await prisma.aIAnalysis.findMany({
       select: { specialty: true },
       distinct: ['specialty'],
-      where: {
-        specialty: {
-          not: null
-        }
-      },
+      where: { NOT: { specialty: null as any } },
       orderBy: { specialty: 'asc' }
     });
 
     const topics = await prisma.aIAnalysis.findMany({
       select: { topic: true },
       distinct: ['topic'],
-      where: {
-        topic: {
-          not: null
-        }
-      },
+      where: { NOT: { topic: null as any } },
       orderBy: { topic: 'asc' }
     });
 

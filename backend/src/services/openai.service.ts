@@ -39,7 +39,7 @@ export class OpenAIService {
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt }
         ],
-        max_tokens: 4000
+        max_completion_tokens: 4000
       });
 
       const latencyMs = Date.now() - startTime;

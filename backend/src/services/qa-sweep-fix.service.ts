@@ -74,7 +74,7 @@ export async function generateFixWithLLM(item: QAItem, labels: string[], critiqu
       model: 'gpt-4o-mini',
       messages: [{ role: 'user', content: prompt }],
       temperature: 0.3,
-      max_tokens: 1500,
+      max_completion_tokens: 1500,
       response_format: { type: 'json_object' }
     });
 
