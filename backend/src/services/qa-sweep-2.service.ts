@@ -15,6 +15,7 @@ export interface QASweep2Config {
 
 export interface ExerciseData {
   id: string;
+  displayCode?: string;
   especialidad: string;
   tema: string;
   nivel: string;
@@ -382,8 +383,4 @@ export class QASweep2Service {
 
       logger.info('Corrections applied successfully', { resultId });
     } catch (error) {
-      logger.error('Failed to apply corrections:', error);
-      throw error;
-    }
-  }
-}
+      logger.
