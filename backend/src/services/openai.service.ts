@@ -1,391 +1,224 @@
 import OpenAI from 'openai';
-import { QuestionClassification } from './eunacom-taxonomy';
-import { EunacomTaxonomyDbService } from './eunacom-taxonomy-db.service';
 import { logger } from '../utils/logger';
-
-export interface AIAnalysisResult extends QuestionClassification {
-  baseDifficulty: 'EASY' | 'MEDIUM' | 'HARD';
-  reviewNotes?: string;
-}
-
-export interface QuestionVariationResult {
-  content: string;
-  explanation: string;
-  alternatives: {
-    text: string;
-    isCorrect: boolean;
-    explanation: string;
-  }[];
-}
+import fs from 'fs/promises';
+import path from 'path';
 
 export class OpenAIService {
-  private openai: OpenAI;
+  private client: OpenAI;
+  private modelEval: string;
+  private modelFix: string;
 
   constructor() {
-    const apiKey = process.env.OPENAI_API_KEY || '';
-
-    logger.info(`OpenAI API Key configured: ${apiKey ? 'YES' : 'NO'}`);
-
+    const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) {
-      logger.warn('OPENAI_API_KEY not configured. AI features will be limited.');
-      throw new Error('OpenAI API Key is required');
-    } else {
-      logger.info(`OpenAI API Key length: ${apiKey.length} characters`);
+      throw new Error('OPENAI_API_KEY environment variable is required');
     }
 
-    this.openai = new OpenAI({
-      apiKey: apiKey,
-    });
+    this.client = new OpenAI({ apiKey });
+    this.modelEval = process.env.MODEL_EVAL || 'gpt-4o-mini';
+    this.modelFix = process.env.MODEL_FIX || 'gpt-4o';
   }
 
   /**
-   * Analyze a question using OpenAI to classify it according to EUNACOM taxonomy
+   * Llama a la API de OpenAI con el modelo especificado
    */
-  async analyzeQuestion(questionContent: string): Promise<AIAnalysisResult> {
+  private async callOpenAI(
+    model: string,
+    systemPrompt: string,
+    userPrompt: string,
+    temperature: number = 0.2
+  ): Promise<{ content: any; tokensIn: number; tokensOut: number; latencyMs: number }> {
+    const startTime = Date.now();
+    
     try {
-      logger.info(`Starting OpenAI analysis for question: ${questionContent.substring(0, 100)}...`);
-
-      const prompt = await this.buildAnalysisPrompt(questionContent);
-      const response = await this.makeAIRequest(prompt, 'analysis');
-
-      logger.info(`OpenAI analysis response received: ${response.substring(0, 200)}...`);
-
-      const result = this.parseAnalysisResponse(response);
-      logger.info(`Analysis successful: ${result.specialty} -> ${result.topic}`);
-
-      return result;
-
-    } catch (error) {
-      logger.error('Error in OpenAI question analysis:', error);
-      throw new Error(`AI analysis failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
-  }
-
-  /**
-   * Generate a question variation using OpenAI
-   */
-  async generateQuestionVariation(
-    baseQuestion: string,
-    analysis: QuestionClassification,
-    difficulty: 'EASY' | 'MEDIUM' | 'HARD',
-    variationNumber: number
-  ): Promise<QuestionVariationResult> {
-    try {
-      logger.info(`Generating variation ${variationNumber} with difficulty ${difficulty}...`);
-
-      const prompt = this.buildVariationPrompt(baseQuestion, analysis, difficulty, variationNumber);
-      const response = await this.makeAIRequest(prompt, 'variation');
-
-      logger.info(`OpenAI variation response received: ${response.substring(0, 200)}...`);
-
-      const result = this.parseVariationResponse(response);
-      logger.info(`Variation generated successfully with ${result.alternatives.length} alternatives`);
-
-      return result;
-
-    } catch (error) {
-      logger.error('Error in OpenAI question variation:', error);
-      throw new Error(`Variation generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
-  }
-
-  /**
-   * Make a request to OpenAI API using GPT-5 Mini with Responses API
-   */
-  private async makeAIRequest(prompt: string, type: 'analysis' | 'variation'): Promise<string> {
-    try {
-      logger.info(`Making OpenAI GPT-5 Mini ${type} request...`);
-
-      // Try GPT-5 Mini first with new Responses API
-      try {
-        const systemPrompt = "Eres un experto médico especializado en educación médica chilena y el examen EUNACOM. Responde siempre en español y en formato JSON válido.";
-        const fullInput = `${systemPrompt}\n\n${prompt}`;
-
-        const response = await fetch('https://api.openai.com/v1/responses', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            model: "gpt-5-mini",
-            input: fullInput,
-            reasoning: {
-              effort: type === 'analysis' ? "low" : "minimal" // Low for analysis, minimal for variations
-            },
-            text: {
-              verbosity: "medium" // Balanced output length
-            },
-            max_output_tokens: 2000
-          })
-        });
-
-        if (response.ok) {
-          const data = await response.json() as any;
-          const result = data.output_text || data.choices?.[0]?.message?.content;
-          
-          if (result) {
-            logger.info(`OpenAI GPT-5 Mini ${type} request completed successfully`);
-            return result;
-          }
-        } else {
-          const errorText = await response.text();
-          logger.warn(`GPT-5 Mini failed (${response.status}): ${errorText}, falling back to GPT-4o`);
-        }
-      } catch (gpt5Error) {
-        logger.warn(`GPT-5 Mini request failed: ${gpt5Error instanceof Error ? gpt5Error.message : 'Unknown error'}, falling back to GPT-4o`);
-      }
-
-      // Fallback to GPT-4o with Chat Completions API
-      logger.info(`Using GPT-4o fallback for ${type} request...`);
-      const completion = await this.openai.chat.completions.create({
-        model: "gpt-4o",
+      const response = await this.client.chat.completions.create({
+        model,
+        temperature,
+        response_format: { type: 'json_object' },
         messages: [
-          {
-            role: "system",
-            content: "Eres un experto médico especializado en educación médica chilena y el examen EUNACOM. Responde siempre en español y en formato JSON válido."
-          },
-          {
-            role: "user",
-            content: prompt
-          }
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt }
         ],
-        temperature: type === 'analysis' ? 0.1 : 0.7,
-        max_tokens: 2000,
-        response_format: { type: "json_object" }
+        max_tokens: 4000
       });
 
-      const response = completion.choices[0]?.message?.content;
-
-      if (!response) {
-        throw new Error('No response from OpenAI');
-      }
-
-      logger.info(`OpenAI GPT-4o fallback ${type} request completed successfully`);
-      return response;
-
+      const latencyMs = Date.now() - startTime;
+      const content = JSON.parse(response.choices[0].message.content || '{}');
+      
+      return {
+        content,
+        tokensIn: response.usage?.prompt_tokens || 0,
+        tokensOut: response.usage?.completion_tokens || 0,
+        latencyMs
+      };
     } catch (error) {
-      logger.error(`OpenAI ${type} request failed:`, error);
+      logger.error('OpenAI API call failed:', error);
+      throw new Error(`OpenAI API call failed: ${error}`);
+    }
+  }
+
+  /**
+   * Carga un prompt desde archivo
+   */
+  private async loadPrompt(filename: string): Promise<string> {
+    try {
+      const promptPath = path.join(__dirname, '../../prompts', filename);
+      return await fs.readFile(promptPath, 'utf-8');
+    } catch (error) {
+      logger.error(`Failed to load prompt ${filename}:`, error);
+      throw new Error(`Failed to load prompt: ${filename}`);
+    }
+  }
+
+  /**
+   * Evalúa un ejercicio usando GPT-4o Mini
+   */
+  async evaluateExercise(exerciseJson: any): Promise<{
+    evaluation: any;
+    tokensIn: number;
+    tokensOut: number;
+    latencyMs: number;
+  }> {
+    try {
+      const systemPrompt = 'Eres un auditor clínico multi-especialidad y corrector pedagógico.';
+      const userPrompt = (await this.loadPrompt('evaluacion_gpt4o_mini.txt'))
+        .replace('{{EJERCICIO_ORIGINAL}}', JSON.stringify(exerciseJson, null, 2));
+
+      const result = await this.callOpenAI(this.modelEval, systemPrompt, userPrompt);
+      
+      logger.info('Exercise evaluation completed', {
+        model: this.modelEval,
+        tokensIn: result.tokensIn,
+        tokensOut: result.tokensOut,
+        latencyMs: result.latencyMs
+      });
+
+      return {
+        evaluation: result.content,
+        ...result
+      };
+    } catch (error) {
+      logger.error('Exercise evaluation failed:', error);
       throw error;
     }
   }
 
   /**
-   * Build prompt for question analysis
+   * Pule un ejercicio usando GPT-4o
    */
-  private async buildAnalysisPrompt(questionContent: string): Promise<string> {
-    const taxonomyData = await EunacomTaxonomyDbService.getTaxonomyForAI();
-    
-    // Crear una representación más clara de la taxonomía
-    const taxonomyText = taxonomyData.specialties
-      .map(spec => {
-        const topics = spec.topics.map(topic => `    • ${topic.name}`).join('\n');
-        return `🏥 ${spec.name}\n${topics}`;
-      })
-      .join('\n\n');
-
-    return `Clasifica esta pregunta médica según la taxonomía EUNACOM oficial.
-
-PREGUNTA: "${questionContent}"
-
-TAXONOMÍA EUNACOM (especialidades → temas):
-${taxonomyText}
-
-INSTRUCCIONES:
-1. Lee la pregunta y identifica el concepto médico principal
-2. Busca la ESPECIALIDAD exacta en la lista anterior
-3. Busca el TEMA exacto dentro de esa especialidad
-4. COPIA los nombres EXACTAMENTE como aparecen en la taxonomía
-5. NO inventes nombres nuevos
-
-FORMATO DE RESPUESTA (JSON únicamente):
-{
-  "specialty": "nombre exacto de especialidad",
-  "topic": "nombre exacto de tema", 
-  "confidence": 0.95,
-  "keywords": ["término1", "término2"],
-  "learningObjectives": ["objetivo educativo"],
-  "questionType": "CLINICAL_CASE|CONCEPT|PROCEDURE|DIAGNOSIS|TREATMENT|PREVENTION",
-  "baseDifficulty": "EASY|MEDIUM|HARD",
-  "reviewNotes": "observaciones breves"
-}
-
-CRITERIOS DIFICULTAD:
-• EASY: Conceptos básicos, definiciones
-• MEDIUM: Aplicación clínica, diagnóstico
-• HARD: Casos complejos, múltiples variables`;
-  }
-
-  /**
-   * Build prompt for question variation generation
-   */
-  private buildVariationPrompt(
-    baseQuestion: string,
-    analysis: QuestionClassification,
-    difficulty: 'EASY' | 'MEDIUM' | 'HARD',
-    variationNumber: number
-  ): string {
-    const difficultyDescriptions = {
-      EASY: 'conocimiento básico y conceptos fundamentales',
-      MEDIUM: 'aplicación clínica y diagnóstico diferencial',
-      HARD: 'casos complejos con múltiples variables y juicio clínico avanzado'
-    };
-
-    // Estrategias específicas de diversificación por número de variación
-    const variationStrategies = {
-      1: 'Cambia la presentación del caso (edad, género, comorbilidades diferentes)',
-      2: 'Enfócate en un aspecto diagnóstico diferente (laboratorio vs imagen vs examen físico)',
-      3: 'Modifica el contexto clínico (urgencias vs consulta vs hospitalización)',
-      4: 'Cambia el enfoque temporal (agudo vs crónico vs seguimiento)',
-      5: 'Varía las complicaciones o factores de riesgo presentes',
-      6: 'Enfócate en manejo terapéutico o preventivo en lugar de diagnóstico'
-    };
-
-    const strategy = variationStrategies[variationNumber as keyof typeof variationStrategies] || 'Crea una variación única y diferente';
-
-    return `
-Eres un experto en educación médica y en el examen EUNACOM chileno. 
-Recibirás una PREGUNTA BASE (solo el enunciado). 
-Tu tarea es transformarla en un ejercicio completo con 4 variaciones de alta calidad, siguiendo las siguientes reglas.
-
-PREGUNTA BASE: "${baseQuestion}"
-
-CLASIFICACIÓN:
-- Especialidad: ${analysis.specialty}
-- Tema: ${analysis.topic}
-- Dificultad: MEDIUM (aplicación clínica con foco en manejo inmediato)
-
-GENERAR VARIACIÓN #${variationNumber}:
-- Estrategia específica: ${strategy}
-
-⚖️ REGLAS FUNDAMENTALES:
-1. **ENFOQUE CLÍNICO**: Todas las variaciones deben formularse como casos clínicos breves y realistas.
-2. **CONTEXTO COMPLETO**: Incluir edad, sexo, antecedentes relevantes y hallazgos clínicos/paraclínicos típicos del cuadro.
-3. **URGENCIA Y MANEJO INMEDIATO**: El foco debe estar en la conducta más inmediata o crítica en contexto de urgencia.
-   - ❌ No generar preguntas sobre confirmación diagnóstica, estudios de laboratorio, prevención o manejo crónico, salvo que la PREGUNTA BASE lo pida explícitamente.
-   - Nunca dar a entender que debe "esperarse" un resultado antes de actuar en una urgencia vital.
-4. **PRÁCTICA CHILENA**: Respuesta correcta alineada con guías clínicas del MINSAL y protocolos hospitalarios de Chile.
-5. **ALTERNATIVAS**:
-   - Exactamente 4 opciones plausibles.
-   - 1 correcta (acción inmediata indicada).
-   - 3 distractores clínicamente verosímiles, que representen errores comunes.
-   - Variar los distractores entre variaciones (no repetir siempre los mismos).
-   - ❌ Nunca incluir como distractores exámenes de laboratorio, medidas crónicas, preventivas o irreales.
-6. **EXPLICACIONES**:
-   - Explicar claramente por qué la opción correcta es la indicada.
-   - Explicar por qué cada distractor es incorrecto (ej: efecto tardío, no corresponde en urgencia, es medida secundaria, es diagnóstico diferencial descartado).
-   - Lenguaje claro, riguroso y didáctico.
-7. **DIVERSIDAD**:
-   - Cambiar en cada variación aspectos del caso: edad, sexo, comorbilidades, hallazgos clínicos, contexto (hospital rural, UCI, pediatría, postoperatorio, etc.).
-   - Puede añadirse un factor de confusión frecuente (uso de fármacos, transfusión, rabdomiólisis, antecedentes sociales o laborales), pero debe quedar claro que la primera medida inmediata no cambia.
-
-📦 FORMATO DE RESPUESTA (JSON):
-{
-  "content": "pregunta variada completa",
-  "explanation": "explicación general del caso y la respuesta correcta",
-  "alternatives": [
-    {
-      "text": "opción A",
-      "isCorrect": true,
-      "explanation": "por qué es la opción correcta"
-    },
-    {
-      "text": "opción B",
-      "isCorrect": false,
-      "explanation": "por qué es incorrecta en este escenario"
-    },
-    {
-      "text": "opción C",
-      "isCorrect": false,
-      "explanation": "por qué es incorrecta en este escenario"
-    },
-    {
-      "text": "opción D",
-      "isCorrect": false,
-      "explanation": "por qué es incorrecta en este escenario"
-    }
-  ]
-}
-
-🛡️ ESTÁNDARES DE CALIDAD:
-- Caso clínico realista con contexto de urgencia claro
-- Distractores diversos y verosímiles entre variaciones
-- Explicaciones completas para todas las alternativas
-- Fidelidad a guías clínicas chilenas
-- Máxima diversidad en escenarios y presentaciones
-- Responder SOLO con JSON válido, sin texto adicional
-`;
-  }
-
-  /**
-   * Parse the analysis response from OpenAI
-   */
-  private parseAnalysisResponse(response: string): AIAnalysisResult {
+  async polishExercise(exerciseJson: any, evaluation: any): Promise<{
+    correction: any;
+    tokensIn: number;
+    tokensOut: number;
+    latencyMs: number;
+  }> {
     try {
-      const parsed = JSON.parse(response);
+      const systemPrompt = 'Eres un médico revisor y redactor pedagógico.';
+      const userPrompt = (await this.loadPrompt('pulido_gpt4o.txt'))
+        .replace('{{EJERCICIO_ORIGINAL}}', JSON.stringify(exerciseJson, null, 2))
+        .replace('{{SALIDA_EVALUACION}}', JSON.stringify(evaluation, null, 2));
 
-      // Validate required fields
-      const required = ['specialty', 'topic', 'confidence', 'questionType', 'baseDifficulty'];
-      for (const field of required) {
-        if (!parsed[field]) {
-          throw new Error(`Missing required field: ${field}`);
-        }
-      }
+      const result = await this.callOpenAI(this.modelFix, systemPrompt, userPrompt);
+      
+      logger.info('Exercise polishing completed', {
+        model: this.modelFix,
+        tokensIn: result.tokensIn,
+        tokensOut: result.tokensOut,
+        latencyMs: result.latencyMs
+      });
 
       return {
-        specialty: parsed.specialty,
-        topic: parsed.topic,
-        subtopic: parsed.subtopic || '',
-        confidence: Math.max(0, Math.min(1, parsed.confidence)),
-        keywords: Array.isArray(parsed.keywords) ? parsed.keywords : [],
-        learningObjectives: Array.isArray(parsed.learningObjectives) ? parsed.learningObjectives : [],
-        questionType: parsed.questionType,
-        baseDifficulty: parsed.baseDifficulty,
-        reviewNotes: parsed.reviewNotes || ''
+        correction: result.content,
+        ...result
       };
-
     } catch (error) {
-      logger.error('Error parsing OpenAI analysis response:', error);
-      logger.error('Raw response:', response);
-      throw new Error(`Invalid analysis response: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      logger.error('Exercise polishing failed:', error);
+      throw error;
     }
   }
 
   /**
-   * Parse the variation response from OpenAI
+   * Reescribe profundamente un ejercicio usando GPT-4o
    */
-  private parseVariationResponse(response: string): QuestionVariationResult {
+  async rewriteExercise(exerciseJson: any, evaluation: any): Promise<{
+    correction: any;
+    tokensIn: number;
+    tokensOut: number;
+    latencyMs: number;
+  }> {
     try {
-      const parsed = JSON.parse(response);
+      const systemPrompt = 'Eres un revisor clínico experto (todas las especialidades) y redactor pedagógico.';
+      const userPrompt = (await this.loadPrompt('reescritura_profunda_gpt4o.txt'))
+        .replace('{{EJERCICIO_ORIGINAL}}', JSON.stringify(exerciseJson, null, 2))
+        .replace('{{SALIDA_EVALUACION}}', JSON.stringify(evaluation, null, 2));
 
-      // Validate required fields
-      if (!parsed.content || !parsed.explanation || !Array.isArray(parsed.alternatives)) {
-        throw new Error('Missing required fields in variation response');
-      }
-
-      if (parsed.alternatives.length !== 4) {
-        throw new Error('Variation must have exactly 4 alternatives');
-      }
-
-      const correctCount = parsed.alternatives.filter((alt: any) => alt.isCorrect).length;
-      if (correctCount !== 1) {
-        throw new Error('Variation must have exactly 1 correct alternative');
-      }
+      const result = await this.callOpenAI(this.modelFix, systemPrompt, userPrompt);
+      
+      logger.info('Exercise deep rewrite completed', {
+        model: this.modelFix,
+        tokensIn: result.tokensIn,
+        tokensOut: result.tokensOut,
+        latencyMs: result.latencyMs
+      });
 
       return {
-        content: parsed.content,
-        explanation: parsed.explanation,
-        alternatives: parsed.alternatives.map((alt: any) => ({
-          text: alt.text,
-          isCorrect: Boolean(alt.isCorrect),
-          explanation: alt.explanation || ''
-        }))
+        correction: result.content,
+        ...result
       };
-
     } catch (error) {
-      logger.error('Error parsing OpenAI variation response:', error);
-      logger.error('Raw response:', response);
-      throw new Error(`Invalid variation response: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      logger.error('Exercise deep rewrite failed:', error);
+      throw error;
     }
+  }
+
+  /**
+   * Procesa un ejercicio completo según la política de decisión
+   */
+  async processExercise(exerciseJson: any): Promise<{
+    evaluation: any;
+    correction?: any;
+    result: 'NO_CAMBIOS' | 'PULIDO' | 'REESCRITO';
+    tokensIn: number;
+    tokensOut: number;
+    latencyMs: number;
+  }> {
+    // 1. Evaluación
+    const evaluationResult = await this.evaluateExercise(exerciseJson);
+    const evaluation = evaluationResult.evaluation;
+
+    // 2. Decisión basada en severidad
+    const severity = evaluation.severidad_global || 0;
+    const safetyRisk = evaluation.scorecard?.riesgo_seguridad || 0;
+
+    let correction: any = undefined;
+    let result: 'NO_CAMBIOS' | 'PULIDO' | 'REESCRITO' = 'NO_CAMBIOS';
+
+    // 3. Aplicar política de decisión
+    if (severity === 0) {
+      result = 'NO_CAMBIOS';
+    } else if (severity === 1 && safetyRisk < 2) {
+      // Pulido
+      const polishResult = await this.polishExercise(exerciseJson, evaluation);
+      correction = polishResult.correction;
+      result = 'PULIDO';
+    } else {
+      // Reescritura profunda
+      const rewriteResult = await this.rewriteExercise(exerciseJson, evaluation);
+      correction = rewriteResult.correction;
+      result = 'REESCRITO';
+    }
+
+    const totalTokensIn = evaluationResult.tokensIn + (correction ? 0 : 0);
+    const totalTokensOut = evaluationResult.tokensOut + (correction ? 0 : 0);
+    const totalLatencyMs = evaluationResult.latencyMs + (correction ? 0 : 0);
+
+    return {
+      evaluation,
+      correction,
+      result,
+      tokensIn: totalTokensIn,
+      tokensOut: totalTokensOut,
+      latencyMs: totalLatencyMs
+    };
   }
 }

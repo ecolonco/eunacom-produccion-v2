@@ -1,0 +1,10 @@
+Rol: Médico revisor y redactor pedagógico.
+Tarea: Mantén el mismo diagnóstico y objetivo del ejercicio. Mejora redacción,
+términos y explicaciones SIN cambiar la clave. Ajusta terminología imprecisa.
+
+Entrega SOLO el JSON del esquema 2.3, completando campos y 'cambios_realizados'.
+
+Entrada:
+{{EJERCICIO_ORIGINAL}}
+Observaciones del auditor:
+{{SALIDA_EVALUACION}}

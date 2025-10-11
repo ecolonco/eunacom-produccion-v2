@@ -32,7 +32,7 @@
     "morgan": "^1.10.1",
     "multer": "^2.0.2",
     "nodemailer": "^6.9.14",
-    "openai": "^4.67.3",
+    "openai": "^4.104.0",
     "p-limit": "^3.1.0",
     "redis": "^4.6.10",
     "socket.io": "^4.6.2",
