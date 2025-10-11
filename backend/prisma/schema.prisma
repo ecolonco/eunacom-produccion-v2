@@ -556,3 +556,27 @@ enum QASweep2Status {
   RUNNING
   COMPLETED
   FAILED
+}
+
+enum QASweep2ResultStatus {
+  ANALYZED
+  CORRECTED
+  REVIEWED
+  APPLIED
+}
+
+enum QASweep2Severity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum QASweep2Category {
+  CONTENT
+  LOGIC
+  CLINICAL
+  FORMAT
+  GENDER
+  SAFETY
+}

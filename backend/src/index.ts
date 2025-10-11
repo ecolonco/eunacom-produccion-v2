@@ -27,7 +27,7 @@ import { creditsRoutes } from './routes/credits.routes';
 import { paymentsRoutes } from './routes/payments.routes';
 import { adminPaymentsRoutes } from './routes/admin-payments.routes';
 import adminQaControlRoutes from './routes/admin-qa-control.routes';
-import qaSweep2Routes from './routes/qa-sweep-2.routes';
+import qaSweep2Routes, { qaSweep2Routes as qaSweep2NamedRoutes } from './routes/qa-sweep-2.routes';
 import { logger } from './utils/logger';
 
 // Load environment variables
