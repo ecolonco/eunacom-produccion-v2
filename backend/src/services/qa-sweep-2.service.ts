@@ -88,28 +88,69 @@ export class QASweep2Service {
       });
 
       // Optional: update baseQuestion.aiAnalysis if corrections include new taxonomy
-      if (corrections.specialty || corrections.topic) {
-        await tx.baseQuestion.update({
-          where: { id: original.baseQuestionId },
-          data: {
-            aiAnalysis: {
-              upsert: {
-                create: {
-                  specialty: corrections.specialty ?? original.baseQuestion?.aiAnalysis?.specialty ?? 'Unknown',
-                  topic: corrections.topic ?? original.baseQuestion?.aiAnalysis?.topic ?? 'Unknown',
-                  difficulty: original.baseQuestion?.aiAnalysis?.difficulty ?? 'MEDIUM',
-                  analysisResult: 'QA_SWEEP_2_RECLASSIFIED'
-                },
-                update: {
-                  specialty: corrections.specialty ?? original.baseQuestion?.aiAnalysis?.specialty ?? 'Unknown',
-                  topic: corrections.topic ?? original.baseQuestion?.aiAnalysis?.topic ?? 'Unknown',
-                  difficulty: original.baseQuestion?.aiAnalysis?.difficulty ?? 'MEDIUM',
-                  analysisResult: 'QA_SWEEP_2_RECLASSIFIED'
+      // Validate against Specialty/Topic tables; apply only if valid
+      const inferTaxonomy = (): { specialty?: string; topic?: string } => {
+        const text = `${original.content} ${corrections?.enunciado_corregido || ''}`.toLowerCase();
+        if (text.includes('citolog') && text.includes('anal')) {
+          // Caso típico de VPH/citología anal
+          return { specialty: 'Medicina Interna', topic: 'Infectologia' };
+        }
+        return {};
+      };
+
+      const desired: { specialty?: string; topic?: string } = {
+        specialty: corrections?.specialty,
+        topic: corrections?.topic,
+        ...(!corrections?.specialty && !corrections?.topic ? inferTaxonomy() : {})
+      };
+
+      if (desired.specialty || desired.topic) {
+        // Validate names against catalog
+        let validSpecialtyName: string | undefined = undefined;
+        let validTopicName: string | undefined = undefined;
+
+        if (desired.specialty) {
+          const spec = await tx.specialty.findFirst({
+            where: { name: { equals: desired.specialty, mode: 'insensitive' }, isActive: true }
+          });
+          if (spec) {
+            validSpecialtyName = spec.name;
+            if (desired.topic) {
+              const t = await tx.topic.findFirst({
+                where: {
+                  name: { equals: desired.topic, mode: 'insensitive' },
+                  specialtyId: spec.id
+                }
+              });
+              if (t) validTopicName = t.name;
+            }
+          }
+        }
+
+        // Apply only if at least specialty is valid; topic optional
+        if (validSpecialtyName) {
+          await tx.baseQuestion.update({
+            where: { id: original.baseQuestionId },
+            data: {
+              aiAnalysis: {
+                upsert: {
+                  create: {
+                    specialty: validSpecialtyName,
+                    topic: validTopicName ?? original.baseQuestion?.aiAnalysis?.topic ?? 'Unknown',
+                    difficulty: original.baseQuestion?.aiAnalysis?.difficulty ?? 'MEDIUM',
+                    analysisResult: 'QA_SWEEP_2_RECLASSIFIED'
+                  },
+                  update: {
+                    specialty: validSpecialtyName,
+                    topic: validTopicName ?? original.baseQuestion?.aiAnalysis?.topic ?? 'Unknown',
+                    difficulty: original.baseQuestion?.aiAnalysis?.difficulty ?? 'MEDIUM',
+                    analysisResult: 'QA_SWEEP_2_RECLASSIFIED'
+                  }
                 }
               }
             }
-          }
-        });
+          });
+        }
       }
 
       return { newVariationId: newVariation.id };
