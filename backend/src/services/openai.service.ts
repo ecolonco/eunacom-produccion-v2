@@ -82,19 +82,35 @@ export class OpenAIService {
     try {
       const systemPrompt = 'Eres un auditor clínico multi-especialidad y corrector pedagógico.';
       const userPrompt = (await this.loadPrompt('evaluacion_gpt4o_mini.txt'))
-        .replace('{{EJERCICIO_ORIGINAL}}', JSON.stringify(exerciseJson, null, 2));
+        .replace('{{EJERCICIO_ORIGINAL}}', JSON.stringify(exerciseJson, null, 2))
+        .replace('{{ID_DEL_EJERCICIO}}', exerciseJson.id || 'unknown');
 
       const result = await this.callOpenAI(this.modelEval, systemPrompt, userPrompt);
+      
+      // Validar que la respuesta tenga la estructura esperada
+      if (!result.content || typeof result.content !== 'object') {
+        logger.error('Invalid OpenAI evaluation response format:', result.content);
+        throw new Error('Respuesta de evaluación de OpenAI no válida');
+      }
+      
+      // Asegurar que tenga los campos requeridos
+      const evaluation = result.content as any;
+      if (!evaluation.scorecard || !evaluation.etiquetas || evaluation.severidad_global === undefined || !evaluation.recomendacion) {
+        logger.error('Missing required fields in evaluation:', evaluation);
+        throw new Error('Campos requeridos faltantes en la evaluación');
+      }
       
       logger.info('Exercise evaluation completed', {
         model: this.modelEval,
         tokensIn: result.tokensIn,
         tokensOut: result.tokensOut,
-        latencyMs: result.latencyMs
+        latencyMs: result.latencyMs,
+        severity: evaluation.severidad_global,
+        recommendation: evaluation.recomendacion
       });
 
       return {
-        evaluation: result.content,
+        evaluation: evaluation,
         ...result
       };
     } catch (error) {
@@ -210,7 +226,21 @@ Responde en formato JSON:
 }`;
 
       const result = await this.callOpenAI('gpt-4o-mini', systemPrompt, userPrompt);
-      return result.content;
+      
+      // Validar que la respuesta tenga la estructura esperada
+      if (!result.content || typeof result.content !== 'object') {
+        logger.error('Invalid OpenAI response format:', result.content);
+        throw new Error('Respuesta de OpenAI no válida');
+      }
+      
+      // Asegurar que tenga los campos requeridos
+      const evaluation = result.content as any;
+      if (!evaluation.scorecard || !evaluation.etiquetas || evaluation.severidad_global === undefined || !evaluation.recomendacion) {
+        logger.error('Missing required fields in evaluation:', evaluation);
+        throw new Error('Campos requeridos faltantes en la evaluación');
+      }
+      
+      return evaluation;
     } catch (error) {
       logger.error('Question analysis failed:', error);
       throw error;
