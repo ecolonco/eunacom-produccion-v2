@@ -256,7 +256,7 @@ router.get('/stats', async (req: Request, res: Response) => {
 // GET /api/admin/qa-sweep-2/metadata - Get available specialties and topics
 router.get('/metadata', async (req: Request, res: Response) => {
   try {
-    const specialties = await prisma.aiAnalysis.findMany({
+    const specialties = await prisma.aIAnalysis.findMany({
       select: { specialty: true },
       distinct: ['specialty'],
       where: {
@@ -267,7 +267,7 @@ router.get('/metadata', async (req: Request, res: Response) => {
       orderBy: { specialty: 'asc' }
     });
 
-    const topics = await prisma.aiAnalysis.findMany({
+    const topics = await prisma.aIAnalysis.findMany({
       select: { topic: true },
       distinct: ['topic'],
       where: {
