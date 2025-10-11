@@ -25,21 +25,18 @@ export class OpenAIService {
   private async callOpenAI(
     model: string,
     systemPrompt: string,
-    userPrompt: string,
-    temperature: number = 0.2
+    userPrompt: string
   ): Promise<{ content: any; tokensIn: number; tokensOut: number; latencyMs: number }> {
     const startTime = Date.now();
     
     try {
       const response = await this.client.chat.completions.create({
         model,
-        temperature,
         response_format: { type: 'json_object' },
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt }
-        ],
-        max_completion_tokens: 4000
+        ]
       });
 
       const latencyMs = Date.now() - startTime;
