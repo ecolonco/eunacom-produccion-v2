@@ -34,6 +34,64 @@ export class QASweep2Service {
   }
 
   /**
+   * Crea una nueva versión de la variación aplicando correcciones y desactiva la anterior
+   */
+  async applyCorrectionsAsNewVersion(variationId: string, corrections: any): Promise<{ newVariationId: string }> {
+    return await prisma.$transaction(async (tx) => {
+      const original = await tx.questionVariation.findUnique({
+        where: { id: variationId },
+        include: { alternatives: true }
+      });
+      if (!original) throw new Error('Original variation not found');
+
+      const parentVersionId = original.parentVersionId ?? original.id;
+      const nextVersion = (original.version ?? 1) + 1;
+
+      // Crear nueva versión visible
+      const newVariation = await tx.questionVariation.create({
+        data: {
+          baseQuestionId: original.baseQuestionId,
+          difficulty: original.difficulty,
+          variationNumber: original.variationNumber,
+          content: corrections.enunciado_corregido ?? original.content,
+          explanation: corrections.explicacion_global ?? original.explanation,
+          displayCode: original.displayCode,
+          version: nextVersion,
+          isVisible: true,
+          modifiedAt: new Date(),
+          parentVersionId
+        }
+      });
+
+      // Crear alternativas corregidas
+      const letters = ['A', 'B', 'C', 'D'];
+      for (let i = 0; i < letters.length; i++) {
+        const letter = letters[i];
+        const text = corrections.alternativas?.[letter] ?? original.alternatives[i]?.text ?? '';
+        const isCorrect = (corrections.respuesta_correcta ?? '').toUpperCase() === letter;
+        const explanation = corrections.explicaciones?.[letter] ?? original.alternatives[i]?.explanation ?? null;
+        await tx.alternative.create({
+          data: {
+            variationId: newVariation.id,
+            text,
+            isCorrect,
+            explanation,
+            order: i
+          }
+        });
+      }
+
+      // Desactivar original
+      await tx.questionVariation.update({
+        where: { id: original.id },
+        data: { isVisible: false, modifiedAt: new Date() }
+      });
+
+      return { newVariationId: newVariation.id };
+    });
+  }
+
+  /**
    * Crea un nuevo run de QA Sweep 2.0
    */
   async createRun(config: QASweep2Config): Promise<string> {

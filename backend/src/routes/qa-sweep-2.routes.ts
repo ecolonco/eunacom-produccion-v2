@@ -286,7 +286,7 @@ router.get('/metadata', async (req: Request, res: Response) => {
 // POST /api/admin/qa-sweep-2/diagnose-individual - Diagnóstico individual de un ejercicio
 router.post('/diagnose-individual', async (req: Request, res: Response) => {
   try {
-    const { variationId } = req.body;
+    const { variationId, autoApply } = req.body;
     
     if (!variationId) {
       return res.status(400).json({
@@ -324,6 +324,13 @@ router.post('/diagnose-individual', async (req: Request, res: Response) => {
     const openAIService = new (await import('../services/openai.service')).OpenAIService();
     const result = await openAIService.processExercise(exerciseData);
 
+    let newVariationId: string | undefined = undefined;
+    if (autoApply && result.correction) {
+      const svc = new QASweep2Service();
+      const applied = await svc.applyCorrectionsAsNewVersion(variation.id, result.correction);
+      newVariationId = applied.newVariationId;
+    }
+
     // Calcular confidence score
     const confidenceScore = (qaSweep2Service as any).calculateConfidenceScore(result.evaluation);
 
@@ -335,6 +342,7 @@ router.post('/diagnose-individual', async (req: Request, res: Response) => {
         diagnosis: result.evaluation,
         correction: result.correction,
         result: result.result,
+        newVariationId,
         confidenceScore,
         tokensIn: result.tokensIn,
         tokensOut: result.tokensOut,
