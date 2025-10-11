@@ -276,6 +276,10 @@ export class QASweep2Service {
         }
       }
 
+      // Filtrar solo variaciones visibles (originales, no correcciones)
+      whereConditions.isVisible = true;
+      whereConditions.version = 1; // Solo versiones originales
+
       const variations = await prisma.questionVariation.findMany({
         where: whereConditions,
         include: {
@@ -288,11 +292,11 @@ export class QASweep2Service {
             }
           }
         },
-        take: limit,
         orderBy: [
           { baseQuestion: { displaySequence: 'asc' } },
           { variationNumber: 'asc' }
         ]
+        // NO usar 'take' aquí para obtener TODAS las variaciones del rango
       });
 
       logger.info('Variations fetched for analysis', {
