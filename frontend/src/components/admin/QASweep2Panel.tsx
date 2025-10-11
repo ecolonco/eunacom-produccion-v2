@@ -147,6 +147,24 @@ export const QASweep2Panel: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     }
   };
 
+  const openVariationJson = async (variationId: string) => {
+    try {
+      const resp = await fetch(`${API_BASE}/api/admin/qa-sweep-2/variations/${variationId}` ,{
+        headers: { Authorization: `Bearer ${localStorage.getItem('accessToken')}` }
+      });
+      const json = await resp.json();
+      if (!json.success) {
+        alert(`No se pudo abrir la variación: ${json.message || 'Error desconocido'}`);
+        return;
+      }
+      const blob = new Blob([JSON.stringify(json.data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      window.open(url, '_blank');
+    } catch (e) {
+      alert('Error al abrir variación aplicada');
+    }
+  };
+
   const loadRunResults = async (runId: string) => {
     try {
       const response = await fetch(`${API_BASE}/api/admin/qa-sweep-2/runs/${runId}/results`, {
@@ -675,9 +693,9 @@ export const QASweep2Panel: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                       <p className="p-2 bg-green-50 rounded border">{individualDiagnosis.correction?.enunciado_corregido || '—'}</p>
                       {individualDiagnosis.newVariationId && (
                         <div className="text-xs mt-1">
-                          <a className="text-blue-600 underline" href={`${API_BASE}/api/admin/qa-sweep-2/variations/${individualDiagnosis.newVariationId}`} target="_blank" rel="noreferrer">
+                          <button className="text-blue-600 underline" onClick={()=>openVariationJson(individualDiagnosis.newVariationId)}>
                             Ver nueva versión (ID: {individualDiagnosis.newVariationId})
-                          </a>
+                          </button>
                         </div>
                       )}
                     </div>
@@ -735,13 +753,13 @@ export const QASweep2Panel: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                           </div>
                         ))}
                       </div>
-                      {individualDiagnosis.newVariationId && (
-                        <div className="text-xs mt-1">
-                            <a className="text-blue-600 underline" href={`${API_BASE}/api/admin/qa-sweep-2/variations/${individualDiagnosis.newVariationId}`} target="_blank" rel="noreferrer">
-                            Abrir variación aplicada (ID: {individualDiagnosis.newVariationId})
-                          </a>
-                        </div>
-                      )}
+                        {individualDiagnosis.newVariationId && (
+                          <div className="text-xs mt-1">
+                            <button className="text-blue-600 underline" onClick={()=>openVariationJson(individualDiagnosis.newVariationId)}>
+                              Abrir variación aplicada (ID: {individualDiagnosis.newVariationId})
+                            </button>
+                          </div>
+                        )}
                     </div>
                   </div>
                 </div>
