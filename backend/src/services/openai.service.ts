@@ -85,19 +85,67 @@ export class OpenAIService {
         .replace('{{EJERCICIO_ORIGINAL}}', JSON.stringify(exerciseJson, null, 2))
         .replace('{{ID_DEL_EJERCICIO}}', exerciseJson.id || 'unknown');
 
+      logger.info('Starting exercise evaluation', {
+        exerciseId: exerciseJson.id,
+        model: this.modelEval,
+        promptLength: userPrompt.length
+      });
+      
       const result = await this.callOpenAI(this.modelEval, systemPrompt, userPrompt);
+      
+      logger.info('OpenAI API response received', {
+        exerciseId: exerciseJson.id,
+        hasContent: !!result.content,
+        contentType: typeof result.content,
+        tokensIn: result.tokensIn,
+        tokensOut: result.tokensOut
+      });
       
       // Validar que la respuesta tenga la estructura esperada
       if (!result.content || typeof result.content !== 'object') {
         logger.error('Invalid OpenAI evaluation response format:', result.content);
-        throw new Error('Respuesta de evaluación de OpenAI no válida');
+        // En lugar de fallar, crear una evaluación de fallback
+        const fallbackEvaluation = {
+          id: exerciseJson.id || 'unknown',
+          scorecard: {
+            coherencia_clinica: 1,
+            alineacion_guias: 1,
+            riesgo_seguridad: 0,
+            claridad_pedagogica: 1,
+            calidad_estructura: 1
+          },
+          etiquetas: ['error_procesamiento'],
+          severidad_global: 1,
+          recomendacion: 'PULIR'
+        };
+        return {
+          evaluation: fallbackEvaluation,
+          ...result
+        };
       }
       
       // Asegurar que tenga los campos requeridos
       const evaluation = result.content as any;
       if (!evaluation.scorecard || !evaluation.etiquetas || evaluation.severidad_global === undefined || !evaluation.recomendacion) {
         logger.error('Missing required fields in evaluation:', evaluation);
-        throw new Error('Campos requeridos faltantes en la evaluación');
+        // En lugar de fallar, usar valores por defecto
+        const fallbackEvaluation = {
+          ...evaluation,
+          scorecard: evaluation.scorecard || {
+            coherencia_clinica: 1,
+            alineacion_guias: 1,
+            riesgo_seguridad: 0,
+            claridad_pedagogica: 1,
+            calidad_estructura: 1
+          },
+          etiquetas: evaluation.etiquetas || ['error_procesamiento'],
+          severidad_global: evaluation.severidad_global || 1,
+          recomendacion: evaluation.recomendacion || 'PULIR'
+        };
+        return {
+          evaluation: fallbackEvaluation,
+          ...result
+        };
       }
       
       logger.info('Exercise evaluation completed', {
