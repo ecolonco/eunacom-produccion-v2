@@ -172,6 +172,82 @@ export class OpenAIService {
   }
 
   /**
+   * Analiza una pregunta para determinar especialidad y tema
+   */
+  async analyzeQuestion(questionContent: string): Promise<{
+    specialty: string;
+    topic: string;
+    difficulty: string;
+  }> {
+    try {
+      const systemPrompt = 'Eres un experto en medicina que clasifica preguntas médicas por especialidad, tema y dificultad.';
+      const userPrompt = `Analiza esta pregunta médica y determina:
+1. Especialidad médica (ej: OBSTETRICIA Y GINECOLOGÍA, PEDIATRÍA, etc.)
+2. Tema específico (ej: Ginecología, Neumonía, etc.)
+3. Nivel de dificultad (facil, medio, dificil)
+
+Pregunta: ${questionContent}
+
+Responde en formato JSON:
+{
+  "specialty": "ESPECIALIDAD",
+  "topic": "TEMA",
+  "difficulty": "NIVEL"
+}`;
+
+      const result = await this.callOpenAI('gpt-4o-mini', systemPrompt, userPrompt);
+      return result.content;
+    } catch (error) {
+      logger.error('Question analysis failed:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Genera una variación de pregunta
+   */
+  async generateQuestionVariation(originalQuestion: string, variationNumber: number): Promise<{
+    content: string;
+    explanation: string;
+    alternatives: Array<{
+      text: string;
+      isCorrect: boolean;
+      explanation: string;
+    }>;
+  }> {
+    try {
+      const systemPrompt = 'Eres un experto en medicina que crea variaciones de preguntas médicas manteniendo la misma competencia pero cambiando el contexto.';
+      const userPrompt = `Crea la variación ${variationNumber} de esta pregunta médica:
+
+Pregunta original: ${originalQuestion}
+
+Mantén:
+- La misma competencia médica
+- El mismo nivel de dificultad
+- Una sola respuesta correcta
+- Distractores plausibles
+
+Responde en formato JSON:
+{
+  "content": "NUEVA_PREGUNTA",
+  "explanation": "EXPLICACION_GLOBAL",
+  "alternatives": [
+    {"text": "Alternativa A", "isCorrect": false, "explanation": "Explicación A"},
+    {"text": "Alternativa B", "isCorrect": true, "explanation": "Explicación B"},
+    {"text": "Alternativa C", "isCorrect": false, "explanation": "Explicación C"},
+    {"text": "Alternativa D", "isCorrect": false, "explanation": "Explicación D"}
+  ]
+}`;
+
+      const result = await this.callOpenAI('gpt-4o', systemPrompt, userPrompt);
+      return result.content;
+    } catch (error) {
+      logger.error('Question variation generation failed:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Procesa un ejercicio completo según la política de decisión
    */
   async processExercise(exerciseJson: any): Promise<{

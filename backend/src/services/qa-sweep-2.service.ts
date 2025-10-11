@@ -149,7 +149,7 @@ export class QASweep2Service {
         throw new Error('Run not found');
       }
 
-      const config = run.config as QASweep2Config;
+      const config = run.config as unknown as QASweep2Config;
 
       // Obtener variaciones para análisis
       let variations;
