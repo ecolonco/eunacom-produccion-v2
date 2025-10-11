@@ -345,6 +345,10 @@ model QuestionVariation {
   content         String
   explanation     String
   displayCode     String?       @map("display_code")
+  version         Int           @default(1)
+  isVisible       Boolean       @default(true) @map("is_visible")
+  modifiedAt      DateTime?     @map("modified_at")
+  parentVersionId String?       @map("parent_version_id")
   alternatives    Alternative[]
   baseQuestion    BaseQuestion  @relation(fields: [baseQuestionId], references: [id], onDelete: Cascade)
 

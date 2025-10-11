@@ -303,9 +303,14 @@ router.post('/diagnose-individual', async (req: Request, res: Response) => {
       });
     }
 
-    // Obtener la variación
-    const variation = await prisma.questionVariation.findUnique({
-      where: { id: variationId },
+    // Buscar por displayCode (formato: 505.1) o por ID interno
+    const variation = await prisma.questionVariation.findFirst({
+      where: {
+        OR: [
+          { displayCode: variationId },
+          { id: variationId }
+        ]
+      },
       include: {
         alternatives: { orderBy: { order: 'asc' } },
         baseQuestion: { include: { aiAnalysis: true } }

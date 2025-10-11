@@ -329,7 +329,7 @@ export const QASweep2Panel: React.FC<{ onBack: () => void }> = ({ onBack }) => {
               type="text"
               value={variationIdInput}
               onChange={(e) => setVariationIdInput(e.target.value)}
-              placeholder="ID de variación (ej: figeeubi)"
+              placeholder="ID de variación (ej: 505.1)"
               className="flex-1 p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
             <button
@@ -346,7 +346,7 @@ export const QASweep2Panel: React.FC<{ onBack: () => void }> = ({ onBack }) => {
           </div>
 
           <div className="text-sm text-gray-500">
-            <p><strong>💡 Tip:</strong> Puedes obtener IDs de variaciones desde la pestaña "Runs" → "Ver Resultados"</p>
+            <p><strong>💡 Tip:</strong> Usa el formato numérico (ej: 505.1) o el ID interno. Puedes obtener IDs desde "Runs" → "Ver Resultados"</p>
           </div>
         </div>
       )}
@@ -647,7 +647,8 @@ export const QASweep2Panel: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                 {/* Información del ejercicio */}
                 <div className="bg-gray-50 p-4 rounded-lg">
                   <h4 className="font-semibold mb-2">📝 Ejercicio Analizado</h4>
-                  <p><strong>ID:</strong> {individualDiagnosis.variationId}</p>
+                  <p><strong>ID Interno:</strong> {individualDiagnosis.variationId}</p>
+                  <p><strong>Display Code:</strong> {individualDiagnosis.exercise.displayCode || 'N/A'}</p>
                   <p><strong>Especialidad:</strong> {individualDiagnosis.exercise.especialidad}</p>
                   <p><strong>Tema:</strong> {individualDiagnosis.exercise.tema}</p>
                   <p><strong>Nivel:</strong> {individualDiagnosis.exercise.nivel}</p>

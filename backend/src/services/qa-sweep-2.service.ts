@@ -118,6 +118,7 @@ export class QASweep2Service {
 
     return {
       id: variation.id,
+      displayCode: variation.displayCode,
       especialidad: variation.baseQuestion.aiAnalysis?.specialty || 'Unknown',
       tema: variation.baseQuestion.aiAnalysis?.topic || 'Unknown',
       nivel: variation.difficulty || 'medio',
