@@ -96,11 +96,15 @@ export class QASweep2Service {
               upsert: {
                 create: {
                   specialty: corrections.specialty ?? original.baseQuestion?.aiAnalysis?.specialty ?? 'Unknown',
-                  topic: corrections.topic ?? original.baseQuestion?.aiAnalysis?.topic ?? 'Unknown'
+                  topic: corrections.topic ?? original.baseQuestion?.aiAnalysis?.topic ?? 'Unknown',
+                  difficulty: original.baseQuestion?.aiAnalysis?.difficulty ?? 'MEDIUM',
+                  analysisResult: 'QA_SWEEP_2_RECLASSIFIED'
                 },
                 update: {
                   specialty: corrections.specialty ?? original.baseQuestion?.aiAnalysis?.specialty ?? 'Unknown',
-                  topic: corrections.topic ?? original.baseQuestion?.aiAnalysis?.topic ?? 'Unknown'
+                  topic: corrections.topic ?? original.baseQuestion?.aiAnalysis?.topic ?? 'Unknown',
+                  difficulty: original.baseQuestion?.aiAnalysis?.difficulty ?? 'MEDIUM',
+                  analysisResult: 'QA_SWEEP_2_RECLASSIFIED'
                 }
               }
             }
