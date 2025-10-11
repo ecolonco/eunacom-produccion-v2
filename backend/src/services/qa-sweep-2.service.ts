@@ -276,11 +276,11 @@ export class QASweep2Service {
         }
       }
 
-      // Filtrar solo variaciones visibles (originales, no correcciones)
+      // Filtrar solo variaciones visibles (puede ser v1, v2, v3, etc.)
+      // Esto permite reprocesar ejercicios que ya fueron corregidos
       whereConditions.isVisible = true;
-      whereConditions.version = 1; // Solo versiones originales
 
-      const variations = await prisma.questionVariation.findMany({
+      const allVariations = await prisma.questionVariation.findMany({
         where: whereConditions,
         include: {
           alternatives: {
@@ -294,10 +294,20 @@ export class QASweep2Service {
         },
         orderBy: [
           { baseQuestion: { displaySequence: 'asc' } },
-          { variationNumber: 'asc' }
+          { variationNumber: 'asc' },
+          { version: 'desc' } // Más reciente primero
         ]
-        // NO usar 'take' aquí para obtener TODAS las variaciones del rango
       });
+
+      // Deduplicar: tomar solo la versión más reciente de cada variación
+      const variationMap = new Map();
+      for (const variation of allVariations) {
+        const key = `${variation.baseQuestionId}-${variation.variationNumber}`;
+        if (!variationMap.has(key)) {
+          variationMap.set(key, variation);
+        }
+      }
+      const variations = Array.from(variationMap.values());
 
       logger.info('Variations fetched for analysis', {
         total: variations.length,
