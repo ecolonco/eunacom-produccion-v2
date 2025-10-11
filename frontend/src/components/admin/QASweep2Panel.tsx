@@ -692,8 +692,10 @@ export const QASweep2Panel: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                     <div>
                       <h5 className="font-medium mb-2">Explicación Corregida</h5>
                       <p className="p-2 bg-green-50 rounded border">{individualDiagnosis.correction?.explicacion_global || '—'}</p>
-                      {(individualDiagnosis.diagnosis?.specialty_sugerida || individualDiagnosis.diagnosis?.tema_sugerido) && (
-                        <p className="text-xs text-gray-600 mt-1">Taxonomía sugerida: {individualDiagnosis.diagnosis?.specialty_sugerida || individualDiagnosis.exercise.especialidad} / {individualDiagnosis.diagnosis?.tema_sugerido || individualDiagnosis.exercise.tema}</p>
+                      {(individualDiagnosis.appliedTaxonomy || individualDiagnosis.diagnosis?.specialty_sugerida || individualDiagnosis.diagnosis?.tema_sugerido) && (
+                        <p className="text-xs text-gray-600 mt-1">
+                          Taxonomía {(individualDiagnosis.appliedTaxonomy ? 'aplicada' : 'sugerida')}: { (individualDiagnosis.appliedTaxonomy?.specialty) || individualDiagnosis.diagnosis?.specialty_sugerida || individualDiagnosis.exercise.especialidad } / { (individualDiagnosis.appliedTaxonomy?.topic) || individualDiagnosis.diagnosis?.tema_sugerido || individualDiagnosis.exercise.tema }
+                        </p>
                       )}
                     </div>
                   </div>

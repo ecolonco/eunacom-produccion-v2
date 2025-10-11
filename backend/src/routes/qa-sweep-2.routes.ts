@@ -325,6 +325,11 @@ router.post('/diagnose-individual', async (req: Request, res: Response) => {
     const result = await openAIService.processExercise(exerciseData);
 
     let newVariationId: string | undefined = undefined;
+    const originalTaxonomy = {
+      specialty: variation.baseQuestion?.aiAnalysis?.specialty || 'Unknown',
+      topic: variation.baseQuestion?.aiAnalysis?.topic || 'Unknown'
+    };
+    let appliedTaxonomy: { specialty: string; topic: string } | undefined;
     if (autoApply && result.correction) {
       const svc = new QASweep2Service();
       // Attach classification suggestions if evaluation proposes changes
@@ -335,6 +340,18 @@ router.post('/diagnose-individual', async (req: Request, res: Response) => {
       };
       const applied = await svc.applyCorrectionsAsNewVersion(variation.id, correctionWithTaxonomy);
       newVariationId = applied.newVariationId;
+
+      // Fetch applied taxonomy from base question after update
+      const refreshed = await prisma.baseQuestion.findUnique({
+        where: { id: variation.baseQuestionId },
+        include: { aiAnalysis: true }
+      });
+      if (refreshed?.aiAnalysis) {
+        appliedTaxonomy = {
+          specialty: refreshed.aiAnalysis.specialty,
+          topic: refreshed.aiAnalysis.topic
+        };
+      }
     }
 
     // Calcular confidence score
@@ -349,6 +366,8 @@ router.post('/diagnose-individual', async (req: Request, res: Response) => {
         correction: result.correction,
         result: result.result,
         newVariationId,
+        originalTaxonomy,
+        appliedTaxonomy,
         confidenceScore,
         tokensIn: result.tokensIn,
         tokensOut: result.tokensOut,
