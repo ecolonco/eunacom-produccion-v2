@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import { authenticate, authorize } from '../middleware/auth.middleware';
 import { QASweep2Service, QASweep2Config } from '../services/qa-sweep-2.service';
 import { logger } from '../utils/logger';
+import { prisma } from '../lib/prisma';
 
 const router = Router();
 const qaSweep2Service = new QASweep2Service();
@@ -249,6 +250,44 @@ router.get('/stats', async (req: Request, res: Response) => {
       success: false,
       message: 'Error al obtener las estadísticas de QA Sweep 2.0'
     });
+  }
+});
+
+// GET /api/admin/qa-sweep-2/metadata - Get available specialties and topics
+router.get('/metadata', async (req: Request, res: Response) => {
+  try {
+    const specialties = await prisma.aiAnalysis.findMany({
+      select: { specialty: true },
+      distinct: ['specialty'],
+      where: {
+        specialty: {
+          not: null
+        }
+      },
+      orderBy: { specialty: 'asc' }
+    });
+
+    const topics = await prisma.aiAnalysis.findMany({
+      select: { topic: true },
+      distinct: ['topic'],
+      where: {
+        topic: {
+          not: null
+        }
+      },
+      orderBy: { topic: 'asc' }
+    });
+
+    res.json({
+      success: true,
+      data: {
+        specialties: specialties.map(s => s.specialty).filter(Boolean),
+        topics: topics.map(t => t.topic).filter(Boolean)
+      }
+    });
+  } catch (error) {
+    logger.error('Error fetching QA Sweep 2.0 metadata:', error);
+    res.status(500).json({ success: false, message: 'Error fetching metadata' });
   }
 });
 

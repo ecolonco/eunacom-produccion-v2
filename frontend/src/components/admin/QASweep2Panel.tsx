@@ -37,6 +37,11 @@ interface QASweep2Stats {
   totalVariations: number;
 }
 
+interface Metadata {
+  specialties: string[];
+  topics: string[];
+}
+
 export const QASweep2Panel: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   const [activeTab, setActiveTab] = useState<'runs' | 'create' | 'stats'>('runs');
   const [runs, setRuns] = useState<QASweep2Run[]>([]);
@@ -45,6 +50,7 @@ export const QASweep2Panel: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   const [stats, setStats] = useState<QASweep2Stats | null>(null);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
+  const [metadata, setMetadata] = useState<Metadata | null>(null);
 
   // Estados para crear nuevo run
   const [newRun, setNewRun] = useState({
@@ -59,6 +65,7 @@ export const QASweep2Panel: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   useEffect(() => {
     loadRuns();
     loadStats();
+    loadMetadata();
   }, []);
 
   const loadRuns = async () => {
@@ -86,6 +93,20 @@ export const QASweep2Panel: React.FC<{ onBack: () => void }> = ({ onBack }) => {
       }
     } catch (error) {
       console.error('Error loading stats:', error);
+    }
+  };
+
+  const loadMetadata = async () => {
+    try {
+      const response = await fetch(`${API_BASE}/api/admin/qa-sweep-2/metadata`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('accessToken')}` }
+      });
+      const data = await response.json();
+      if (data.success) {
+        setMetadata(data.data);
+      }
+    } catch (error) {
+      console.error('Error loading metadata:', error);
     }
   };
 
@@ -327,23 +348,33 @@ export const QASweep2Panel: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">Especialidad (opcional)</label>
-              <input
-                type="text"
+              <select
                 value={newRun.specialty}
                 onChange={(e) => setNewRun({ ...newRun, specialty: e.target.value })}
-                placeholder="ej: OBSTETRICIA Y GINECOLOGÍA"
                 className="w-full p-2 border rounded"
-              />
+              >
+                <option value="">Todas las especialidades</option>
+                {metadata?.specialties.map((specialty, index) => (
+                  <option key={index} value={specialty}>
+                    {specialty}
+                  </option>
+                ))}
+              </select>
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">Tema (opcional)</label>
-              <input
-                type="text"
+              <select
                 value={newRun.topic}
                 onChange={(e) => setNewRun({ ...newRun, topic: e.target.value })}
-                placeholder="ej: Ginecología"
                 className="w-full p-2 border rounded"
-              />
+              >
+                <option value="">Todos los temas</option>
+                {metadata?.topics.map((topic, index) => (
+                  <option key={index} value={topic}>
+                    {topic}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
           <div className="mt-4">
