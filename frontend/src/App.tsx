@@ -12,7 +12,7 @@ import ExerciseManagement from './components/admin/ExerciseManagement';
 import PaymentsTable from './components/admin/PaymentsTable';
 import './App.css';
 
-// Main App Content Component
+// Main App Content Component - Deploy trigger
 const AppContent: React.FC = () => {
   const { state, logout } = useAuth();
   const [showAuthModal, setShowAuthModal] = useState(false);
