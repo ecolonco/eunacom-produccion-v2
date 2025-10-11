@@ -86,7 +86,7 @@ export const requireRole = (allowedRoles: string[]) => {
   };
 };
 
-// Alias para compatibilidad
+// Alias para compatibilidad mensaje para pushear
 export const authorize = (allowedRole: string | string[]) => {
   const roles = Array.isArray(allowedRole) ? allowedRole : [allowedRole];
   return requireRole(roles);
