@@ -383,4 +383,8 @@ export class QASweep2Service {
 
       logger.info('Corrections applied successfully', { resultId });
     } catch (error) {
-      logger.
+      logger.error('Failed to apply corrections:', error);
+      throw error;
+    }
+  }
+}
