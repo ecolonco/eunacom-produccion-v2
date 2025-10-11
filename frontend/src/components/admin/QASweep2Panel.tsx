@@ -232,8 +232,15 @@ export const QASweep2Panel: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
       const data = await response.json();
       if (data.success) {
-        alert('Análisis iniciado. Los resultados estarán disponibles en unos minutos.');
-        loadRuns();
+        alert('✅ Run listo para procesamiento. El worker lo detectará en 3-5 segundos.');
+        
+        // Auto-refrescar cada 2 segundos para ver cuando el worker lo detecta
+        const interval = setInterval(() => {
+          loadRuns();
+        }, 2000);
+        
+        // Detener el auto-refresh después de 30 segundos
+        setTimeout(() => clearInterval(interval), 30000);
       } else {
         alert(`Error: ${data.message}`);
       }
@@ -584,9 +591,10 @@ export const QASweep2Panel: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                       {run.status === 'PENDING' && (
                         <button
                           onClick={() => startAnalysis(run.id)}
-                          className="px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700"
+                          className="px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700 flex items-center gap-1"
+                          title="El worker procesará este run automáticamente"
                         >
-                          Iniciar Análisis
+                          ▶️ Iniciar Análisis
                         </button>
                       )}
                     </div>
