@@ -178,6 +178,7 @@ export class OpenAIService {
     specialty: string;
     topic: string;
     subtopic?: string;
+    difficulty: string;
     confidence: number;
     keywords: string[];
     learningObjectives: string[];
@@ -201,6 +202,7 @@ Responde en formato JSON:
   "specialty": "ESPECIALIDAD",
   "topic": "TEMA",
   "subtopic": "SUBTEMA_OPCIONAL",
+  "difficulty": "MEDIUM",
   "confidence": 0.95,
   "keywords": ["palabra1", "palabra2", "palabra3"],
   "learningObjectives": ["objetivo1", "objetivo2"],
