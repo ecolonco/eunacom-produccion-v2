@@ -4,7 +4,31 @@ con una sola mejor respuesta y distractores plausibles. Si el ejercicio original
 irrecuperable sin cambiar su objetivo, reescribe manteniendo la misma competencia.
 
 Sigue estrictamente el "PROMPT MAESTRO – QA y Mejora de Ejercicios Médicos".
-Entrega SOLO el JSON del esquema 2.3.
+
+Entrega SOLO un JSON con el siguiente formato:
+{
+  "enunciado_corregido": "Texto completamente reescrito del enunciado (caso clínico)",
+  "alternativas": {
+    "A": "Texto de alternativa A",
+    "B": "Texto de alternativa B",
+    "C": "Texto de alternativa C",
+    "D": "Texto de alternativa D"
+  },
+  "respuesta_correcta": "A" (la letra correcta),
+  "explicaciones": {
+    "A": "Por qué A es correcta/incorrecta",
+    "B": "Por qué B es correcta/incorrecta",
+    "C": "Por qué C es correcta/incorrecta",
+    "D": "Por qué D es correcta/incorrecta"
+  },
+  "explicacion_global": "Explicación general del caso y la respuesta correcta",
+  "cambios_realizados": ["Lista de cambios profundos realizados"],
+  "specialty_sugerida": "ESPECIALIDAD (opcional, si requiere reclasificación)",
+  "tema_sugerido": "TEMA (opcional, si requiere reclasificación)"
+}
+
+IMPORTANTE: Siempre incluye TODOS los campos, especialmente "enunciado_corregido".
+Reescribe completamente el caso clínico si es necesario.
 
 Entrada:
 {{EJERCICIO_ORIGINAL}}
