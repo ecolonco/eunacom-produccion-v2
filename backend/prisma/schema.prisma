@@ -498,3 +498,81 @@ enum QuizType {
   SIMULATION
   REVIEW
 }
+
+/// QA Sweep 2.0 - Sistema avanzado de evaluación y corrección
+model QASweep2Run {
+  id          String            @id @default(cuid())
+  name        String
+  description String?
+  status      QASweep2Status    @default(PENDING)
+  config      Json              // Configuración de modelos, prompts, etc.
+  results     QASweep2Result[]
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  @@map("qa_sweep_2_runs")
+}
+
+model QASweep2Result {
+  id                 String          @id @default(cuid())
+  runId              String
+  variationId        String
+  diagnosis          Json            // Resultado de evaluación (GPT-4o Mini)
+  corrections        Json?           // Resultado de corrección (GPT-4o)
+  finalLabels        Json            // Etiquetas finales
+  status             QASweep2ResultStatus @default(ANALYZED)
+  aiModelUsed        String          @map("ai_model_used")
+  confidenceScore    Float           @map("confidence_score")
+  tokensIn           Int             @map("tokens_in")
+  tokensOut          Int             @map("tokens_out")
+  latencyMs          Int             @map("latency_ms")
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+  run                QASweep2Run     @relation(fields: [runId], references: [id], onDelete: Cascade)
+
+  @@index([runId])
+  @@index([status])
+  @@map("qa_sweep_2_results")
+}
+
+model QASweep2Label {
+  id           String            @id @default(cuid())
+  name         String            @unique
+  description  String
+  severity     QASweep2Severity
+  category     QASweep2Category
+  autoFixable  Boolean           @default(false)
+  createdAt    DateTime          @default(now())
+
+  @@map("qa_sweep_2_labels")
+}
+
+enum QASweep2Status {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+}
+
+enum QASweep2ResultStatus {
+  ANALYZED
+  CORRECTED
+  REVIEWED
+  APPLIED
+}
+
+enum QASweep2Severity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum QASweep2Category {
+  CONTENT
+  LOGIC
+  CLINICAL
+  FORMAT
+  GENDER
+  SAFETY
+}
