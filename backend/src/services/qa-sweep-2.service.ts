@@ -107,11 +107,15 @@ export class QASweep2Service {
    */
   private variationToExerciseData(variation: any): ExerciseData {
     const alternatives: { [key: string]: string } = {};
+    const explanationsByAlt: { [key: string]: string } = {};
     let correctAnswer = '';
 
     variation.alternatives.forEach((alt: any, index: number) => {
       const letter = String.fromCharCode(65 + index); // A, B, C, D
       alternatives[letter] = alt.text;
+      if (alt.explanation) {
+        explanationsByAlt[letter] = alt.explanation;
+      }
       if (alt.isCorrect) {
         correctAnswer = letter;
       }
@@ -126,7 +130,7 @@ export class QASweep2Service {
       enunciado: variation.content,
       alternativas: alternatives,
       respuesta_correcta: correctAnswer,
-      explicaciones: alternatives, // Por ahora usamos las mismas alternativas
+      explicaciones: explanationsByAlt,
       explicacion_global: variation.explanation || ''
     };
   }
