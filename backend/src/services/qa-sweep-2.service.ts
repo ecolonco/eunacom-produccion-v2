@@ -11,6 +11,9 @@ export interface QASweep2Config {
   topic?: string;
   modelEval: string;
   modelFix: string;
+  // Nuevo: rango de ejercicios base
+  baseQuestionFrom?: number;
+  baseQuestionTo?: number;
 }
 
 export interface ExerciseData {
@@ -220,15 +223,50 @@ export class QASweep2Service {
   private async getVariationsForAnalysis(
     specialty?: string,
     topic?: string,
-    limit: number = 100
+    limit: number = 100,
+    baseQuestionFrom?: number,
+    baseQuestionTo?: number
   ): Promise<any[]> {
     try {
       let whereConditions: any = {};
 
+      // Filtro por rango de ejercicios base (usando número de ejercicio)
+      if (baseQuestionFrom !== undefined || baseQuestionTo !== undefined) {
+        // Primero buscar los IDs de los ejercicios base en el rango
+        const baseQuestions = await prisma.baseQuestion.findMany({
+          where: {
+            exerciseNumber: {
+              ...(baseQuestionFrom !== undefined && { gte: baseQuestionFrom }),
+              ...(baseQuestionTo !== undefined && { lte: baseQuestionTo })
+            }
+          },
+          select: { id: true }
+        });
+
+        const baseQuestionIds = baseQuestions.map(bq => bq.id);
+        
+        if (baseQuestionIds.length === 0) {
+          logger.warn('No base questions found in range', { baseQuestionFrom, baseQuestionTo });
+          return [];
+        }
+
+        whereConditions.baseQuestionId = { in: baseQuestionIds };
+        
+        logger.info('Filtering by base question range', {
+          from: baseQuestionFrom,
+          to: baseQuestionTo,
+          baseQuestionsFound: baseQuestionIds.length,
+          expectedVariations: baseQuestionIds.length * 4
+        });
+      }
+
+      // Filtro por especialidad/tema
       if (specialty || topic) {
-        whereConditions.baseQuestion = {
-          aiAnalysis: {}
-        };
+        if (!whereConditions.baseQuestion) {
+          whereConditions.baseQuestion = { aiAnalysis: {} };
+        } else {
+          whereConditions.baseQuestion.aiAnalysis = {};
+        }
         
         if (specialty) {
           whereConditions.baseQuestion.aiAnalysis.specialty = specialty;
@@ -251,7 +289,15 @@ export class QASweep2Service {
           }
         },
         take: limit,
-        orderBy: { baseQuestion: { createdAt: 'desc' } }
+        orderBy: { baseQuestion: { exerciseNumber: 'asc' }, variationNumber: 'asc' }
+      });
+
+      logger.info('Variations fetched for analysis', {
+        total: variations.length,
+        specialty,
+        topic,
+        baseQuestionFrom,
+        baseQuestionTo
       });
 
       return variations;
@@ -330,7 +376,9 @@ export class QASweep2Service {
         variations = await this.getVariationsForAnalysis(
           config.specialty,
           config.topic,
-          config.batchSize
+          config.batchSize,
+          config.baseQuestionFrom,
+          config.baseQuestionTo
         );
       }
 

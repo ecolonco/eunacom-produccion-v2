@@ -64,7 +64,9 @@ export const QASweep2Panel: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     batchSize: 50,
     maxConcurrency: 3,
     specialty: '',
-    topic: ''
+    topic: '',
+    baseQuestionFrom: '',
+    baseQuestionTo: ''
   });
 
   useEffect(() => {
@@ -201,7 +203,9 @@ export const QASweep2Panel: React.FC<{ onBack: () => void }> = ({ onBack }) => {
           batchSize: 50,
           maxConcurrency: 3,
           specialty: '',
-          topic: ''
+          topic: '',
+          baseQuestionFrom: '',
+          baseQuestionTo: ''
         });
         loadRuns();
         setActiveTab('runs');
@@ -431,27 +435,66 @@ export const QASweep2Panel: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                 className="w-full p-2 border rounded"
               />
             </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Tamaño del Lote</label>
-              <input
-                type="number"
-                value={newRun.batchSize}
-                onChange={(e) => setNewRun({ ...newRun, batchSize: parseInt(e.target.value) })}
-                min="1"
-                max="200"
-                className="w-full p-2 border rounded"
-              />
+            <div className="border-t pt-4">
+              <h4 className="font-semibold mb-2">📋 Rango de Ejercicios Base (opcional)</h4>
+              <p className="text-sm text-gray-600 mb-3">
+                Especifica el rango de ejercicios a procesar. Por ejemplo: del 40 al 60 = 21 ejercicios × 4 variaciones = 84 variaciones.
+                Si no especificas rango, se usará el "Tamaño del Lote" en variaciones sueltas.
+              </p>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Desde Ejercicio #</label>
+                  <input
+                    type="number"
+                    value={newRun.baseQuestionFrom}
+                    onChange={(e) => setNewRun({ ...newRun, baseQuestionFrom: e.target.value })}
+                    placeholder="Ej: 40"
+                    min="1"
+                    className="w-full p-2 border rounded"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Hasta Ejercicio #</label>
+                  <input
+                    type="number"
+                    value={newRun.baseQuestionTo}
+                    onChange={(e) => setNewRun({ ...newRun, baseQuestionTo: e.target.value })}
+                    placeholder="Ej: 60"
+                    min="1"
+                    className="w-full p-2 border rounded"
+                  />
+                </div>
+              </div>
             </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Concurrencia Máxima</label>
-              <input
-                type="number"
-                value={newRun.maxConcurrency}
-                onChange={(e) => setNewRun({ ...newRun, maxConcurrency: parseInt(e.target.value) })}
-                min="1"
-                max="10"
-                className="w-full p-2 border rounded"
-              />
+            <div className="border-t pt-4">
+              <h4 className="font-semibold mb-2">⚙️ Configuración de Procesamiento</h4>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Tamaño del Lote (variaciones)</label>
+                  <input
+                    type="number"
+                    value={newRun.batchSize}
+                    onChange={(e) => setNewRun({ ...newRun, batchSize: parseInt(e.target.value) })}
+                    min="1"
+                    max="1000"
+                    placeholder="Solo si no usas rango"
+                    className="w-full p-2 border rounded"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Ignorado si especificas rango</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Concurrencia Máxima</label>
+                  <input
+                    type="number"
+                    value={newRun.maxConcurrency}
+                    onChange={(e) => setNewRun({ ...newRun, maxConcurrency: parseInt(e.target.value) })}
+                    min="1"
+                    max="10"
+                    className="w-full p-2 border rounded"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Procesamiento paralelo (max 5)</p>
+                </div>
+              </div>
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">Especialidad (opcional)</label>
