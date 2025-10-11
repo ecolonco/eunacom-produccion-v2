@@ -359,6 +359,35 @@ router.post('/diagnose-individual', async (req: Request, res: Response) => {
   }
 });
 
+// GET /api/admin/qa-sweep-2/variations/:id - Get variation by internal ID or displayCode
+router.get('/variations/:id', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    const variation = await prisma.questionVariation.findFirst({
+      where: {
+        OR: [
+          { id },
+          { displayCode: id }
+        ]
+      },
+      include: {
+        alternatives: { orderBy: { order: 'asc' } },
+        baseQuestion: { include: { aiAnalysis: true } }
+      }
+    });
+
+    if (!variation) {
+      return res.status(404).json({ success: false, message: 'Variation not found' });
+    }
+
+    return res.json({ success: true, data: variation });
+  } catch (error) {
+    logger.error('Error getting variation:', error);
+    res.status(500).json({ success: false, message: 'Error getting variation' });
+  }
+});
+
 // Export named and default to be compatible with different import styles
 export const qaSweep2Routes = router;
 export default router;

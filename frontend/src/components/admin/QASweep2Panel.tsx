@@ -675,7 +675,7 @@ export const QASweep2Panel: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                       <p className="p-2 bg-green-50 rounded border">{individualDiagnosis.correction?.enunciado_corregido || '—'}</p>
                       {individualDiagnosis.newVariationId && (
                         <div className="text-xs mt-1">
-                          <a className="text-blue-600 underline" href={`${API_BASE}/debug/exercise-factory-data?variationId=${individualDiagnosis.newVariationId}`} target="_blank" rel="noreferrer">
+                          <a className="text-blue-600 underline" href={`${API_BASE}/api/admin/qa-sweep-2/variations/${individualDiagnosis.newVariationId}`} target="_blank" rel="noreferrer">
                             Ver nueva versión (ID: {individualDiagnosis.newVariationId})
                           </a>
                         </div>
@@ -731,7 +731,7 @@ export const QASweep2Panel: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                       </div>
                       {individualDiagnosis.newVariationId && (
                         <div className="text-xs mt-1">
-                          <a className="text-blue-600 underline" href={`${API_BASE}/debug/exercise-factory-data?variationId=${individualDiagnosis.newVariationId}`} target="_blank" rel="noreferrer">
+                            <a className="text-blue-600 underline" href={`${API_BASE}/api/admin/qa-sweep-2/variations/${individualDiagnosis.newVariationId}`} target="_blank" rel="noreferrer">
                             Abrir variación aplicada (ID: {individualDiagnosis.newVariationId})
                           </a>
                         </div>
