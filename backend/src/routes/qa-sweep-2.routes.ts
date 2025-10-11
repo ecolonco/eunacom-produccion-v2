@@ -104,28 +104,37 @@ router.get('/runs/:id', async (req: Request, res: Response) => {
 router.post('/runs/:id/analyze', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { variationIds } = req.body;
 
-    // Marcar como RUNNING inmediatamente para evitar que el worker lo procese también
-    await prisma.qASweep2Run.update({
-      where: { id },
-      data: { status: 'RUNNING' }
+    // Verificar que el run existe y está en estado PENDING
+    const run = await prisma.qASweep2Run.findUnique({
+      where: { id }
     });
 
-    // Iniciar análisis de forma asíncrona
-    qaSweep2Service.startAnalysis(id, variationIds).catch(error => {
-      logger.error('Async analysis failed:', error);
-    });
+    if (!run) {
+      return res.status(404).json({
+        success: false,
+        message: 'Run no encontrado'
+      });
+    }
 
+    if (run.status !== 'PENDING') {
+      return res.status(400).json({
+        success: false,
+        message: `El run ya está en estado ${run.status}`
+      });
+    }
+
+    // El worker detectará este run PENDING y lo procesará automáticamente
+    // No llamamos a startAnalysis aquí para evitar duplicación
     res.json({
       success: true,
-      message: 'Análisis iniciado. Los resultados estarán disponibles en unos minutos.'
+      message: 'El worker procesará este run en los próximos segundos.'
     });
   } catch (error) {
-    logger.error('Error starting QA Sweep 2.0 analysis:', error);
+    logger.error('Error verifying QA Sweep 2.0 run:', error);
     res.status(500).json({
       success: false,
-      message: 'Error al iniciar el análisis de QA Sweep 2.0'
+      message: 'Error al verificar el run de QA Sweep 2.0'
     });
   }
 });

@@ -362,11 +362,8 @@ export class QASweep2Service {
    */
   async startAnalysis(runId: string, variationIds?: string[]): Promise<void> {
     try {
-      // Actualizar estado del run
-      await prisma.qASweep2Run.update({
-        where: { id: runId },
-        data: { status: 'RUNNING' }
-      });
+      // El estado RUNNING ya fue establecido por el worker loop
+      // NO actualizamos aquí para evitar condiciones de carrera
 
       // Obtener configuración
       const run = await prisma.qASweep2Run.findUnique({
