@@ -34,6 +34,34 @@ export class QASweep2Service {
   }
 
   /**
+   * Worker loop: claim and process pending runs continuously
+   */
+  async workerLoop(pollMs: number = 3000): Promise<void> {
+    // simple loop; stops only on process exit
+    // eslint-disable-next-line no-constant-condition
+    while (true) {
+      try {
+        const run = await prisma.qASweep2Run.updateMany({
+          data: { status: 'RUNNING' },
+          where: { status: 'PENDING' },
+        });
+        // If someone else claimed concurrently, updateMany>0 tells us there is at least one; pick one
+        const next = await prisma.qASweep2Run.findFirst({ where: { status: 'RUNNING' }, orderBy: { createdAt: 'asc' } });
+        if (!next) {
+          await new Promise(r => setTimeout(r, pollMs));
+          continue;
+        }
+
+        // Process this run (pagination inside analyzeVariations)
+        await this.startAnalysis(next.id);
+      } catch (err) {
+        logger.error('Worker loop error:', err);
+        await new Promise(r => setTimeout(r, pollMs));
+      }
+    }
+  }
+
+  /**
    * Crea una nueva versión de la variación aplicando correcciones y desactiva la anterior
    */
   async applyCorrectionsAsNewVersion(variationId: string, corrections: any): Promise<{ newVariationId: string }> {

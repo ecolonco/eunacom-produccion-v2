@@ -283,3 +283,178 @@ router.get('/metadata', async (req: Request, res: Response) => {
 
 // POST /api/admin/qa-sweep-2/diagnose-individual - Diagnóstico individual de un ejercicio
 router.post('/diagnose-individual', async (req: Request, res: Response) => {
+  try {
+    const { variationId, autoApply } = req.body;
+    
+    if (!variationId) {
+      return res.status(400).json({
+        success: false,
+        message: 'ID de variación es requerido'
+      });
+    }
+
+    // Buscar por displayCode (formato: 505.1) o por ID interno
+    const variation = await prisma.questionVariation.findFirst({
+      where: {
+        OR: [
+          { displayCode: variationId },
+          { id: variationId }
+        ]
+      },
+      include: {
+        alternatives: { orderBy: { order: 'asc' } },
+        baseQuestion: { include: { aiAnalysis: true } }
+      }
+    });
+
+    if (!variation) {
+      return res.status(404).json({
+        success: false,
+        message: 'Variación no encontrada'
+      });
+    }
+
+    // Convertir a formato de ejercicio
+    const qaSweep2Service = new QASweep2Service();
+    const exerciseData = (qaSweep2Service as any).variationToExerciseData(variation);
+
+    // Procesar con OpenAI
+    const openAIService = new (await import('../services/openai.service')).OpenAIService();
+    const result = await openAIService.processExercise(exerciseData);
+
+    let newVariationId: string | undefined = undefined;
+    const originalTaxonomy = {
+      specialty: variation.baseQuestion?.aiAnalysis?.specialty || 'Unknown',
+      topic: variation.baseQuestion?.aiAnalysis?.topic || 'Unknown'
+    };
+    let appliedTaxonomy: { specialty: string; topic: string } | undefined;
+    if (autoApply && result.correction) {
+      const svc = new QASweep2Service();
+      // Attach classification suggestions if evaluation proposes changes
+      const correctionWithTaxonomy = {
+        ...result.correction,
+        specialty: result.evaluation?.specialty_sugerida || undefined,
+        topic: result.evaluation?.tema_sugerido || undefined
+      };
+      const applied = await svc.applyCorrectionsAsNewVersion(variation.id, correctionWithTaxonomy);
+      newVariationId = applied.newVariationId;
+
+      // Fetch applied taxonomy from base question after update
+      const refreshed = await prisma.baseQuestion.findUnique({
+        where: { id: variation.baseQuestionId },
+        include: { aiAnalysis: true }
+      });
+      if (refreshed?.aiAnalysis) {
+        appliedTaxonomy = {
+          specialty: refreshed.aiAnalysis.specialty,
+          topic: refreshed.aiAnalysis.topic
+        };
+      }
+    }
+
+    // Calcular confidence score
+    const confidenceScore = (qaSweep2Service as any).calculateConfidenceScore(result.evaluation);
+
+    res.json({
+      success: true,
+      data: {
+        variationId: variation.id,
+        exercise: exerciseData,
+        diagnosis: result.evaluation,
+        correction: result.correction,
+        result: result.result,
+        newVariationId,
+        originalTaxonomy,
+        appliedTaxonomy,
+        confidenceScore,
+        tokensIn: result.tokensIn,
+        tokensOut: result.tokensOut,
+        latencyMs: result.latencyMs
+      }
+    });
+  } catch (error) {
+    logger.error('Error in individual diagnosis:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al diagnosticar ejercicio individual',
+      error: error.message
+    });
+  }
+});
+
+// GET /api/admin/qa-sweep-2/variations/:id - Get variation by internal ID or displayCode
+router.get('/variations/:id', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    const variation = await prisma.questionVariation.findFirst({
+      where: {
+        OR: [
+          { id },
+          { displayCode: id }
+        ]
+      },
+      include: {
+        alternatives: { orderBy: { order: 'asc' } },
+        baseQuestion: { include: { aiAnalysis: true } }
+      }
+    });
+
+    if (!variation) {
+      return res.status(404).json({ success: false, message: 'Variation not found' });
+    }
+
+    return res.json({ success: true, data: variation });
+  } catch (error) {
+    logger.error('Error getting variation:', error);
+    res.status(500).json({ success: false, message: 'Error getting variation' });
+  }
+});
+
+// GET /api/admin/qa-sweep-2/taxonomy/catalog - Get specialties with their topics
+router.get('/taxonomy/catalog', async (req: Request, res: Response) => {
+  try {
+    const specialties = await prisma.specialty.findMany({
+      where: { isActive: true },
+      orderBy: { name: 'asc' }
+    });
+
+    const topics = await prisma.topic.findMany({
+      orderBy: [{ specialtyId: 'asc' }, { name: 'asc' }]
+    });
+
+    const topicBySpecialty = new Map<string | null, any[]>();
+    for (const t of topics) {
+      const key = t.specialtyId || null;
+      if (!topicBySpecialty.has(key)) topicBySpecialty.set(key, []);
+      topicBySpecialty.get(key)!.push({ id: t.id, name: t.name });
+    }
+
+    const data = specialties.map(s => ({
+      id: s.id,
+      name: s.name,
+      code: (s as any).code ?? null,
+      topics: topicBySpecialty.get(s.id) || []
+    }));
+
+    res.json({ success: true, data });
+  } catch (error) {
+    logger.error('Error fetching taxonomy catalog:', error);
+    res.status(500).json({ success: false, message: 'Error fetching taxonomy catalog' });
+  }
+});
+
+// GET /api/admin/qa-sweep-2/worker/health - Simple health for worker readiness
+router.get('/worker/health', async (_req: Request, res: Response) => {
+  try {
+    const pending = await prisma.qASweep2Run.count({ where: { status: 'PENDING' } });
+    const running = await prisma.qASweep2Run.count({ where: { status: 'RUNNING' } });
+    res.json({ success: true, data: { pending, running } });
+  } catch (e) {
+    res.status(500).json({ success: false, message: 'Worker health error' });
+  }
+});
+
+// Export named and default to be compatible with different import styles
+export const qaSweep2Routes = router;
+export default router;
