@@ -138,13 +138,13 @@ export class QASweep2Service {
                     specialty: validSpecialtyName,
                     topic: validTopicName ?? original.baseQuestion?.aiAnalysis?.topic ?? 'Unknown',
                     difficulty: original.baseQuestion?.aiAnalysis?.difficulty ?? 'MEDIUM',
-                    analysisResult: 'QA_SWEEP_2_RECLASSIFIED'
+                    analysisResult: JSON.stringify({ source: 'QA_SWEEP_2', reason: 'AUTO_RECLASSIFIED' })
                   },
                   update: {
                     specialty: validSpecialtyName,
                     topic: validTopicName ?? original.baseQuestion?.aiAnalysis?.topic ?? 'Unknown',
                     difficulty: original.baseQuestion?.aiAnalysis?.difficulty ?? 'MEDIUM',
-                    analysisResult: 'QA_SWEEP_2_RECLASSIFIED'
+                    analysisResult: JSON.stringify({ source: 'QA_SWEEP_2', reason: 'AUTO_RECLASSIFIED' })
                   }
                 }
               }
