@@ -28,7 +28,7 @@ router.get('/variations', async (req, res) => {
     // Filter by specific label if provided
     if (label) {
       qaWhere.labels = {
-        has: label as string
+        not: null
       };
     } else {
       // If no label filter, show all QA results (including empty labels)
@@ -119,16 +119,16 @@ router.get('/variations', async (req, res) => {
       const qaResult = qaResults.find(r => r.variationId === variation.id);
       return {
         id: variation.id,
-        baseId: variation.baseQuestion.id,
+        baseId: (variation as any).baseQuestion?.id || variation.baseQuestionId,
         variationNumber: variation.variationNumber,
-        specialty: variation.baseQuestion.aiAnalysis?.specialty || 'Unknown',
-        topic: variation.baseQuestion.aiAnalysis?.topic || 'Unknown',
+        specialty: (variation as any).baseQuestion?.aiAnalysis?.specialty || 'Unknown',
+        topic: (variation as any).baseQuestion?.aiAnalysis?.topic || 'Unknown',
         labels: qaResult ? (qaResult.labels as string[]) : [],
         riskLevel: qaResult?.riskLevel || 'UNKNOWN',
         content: variation.content,
-        alternatives: variation.alternatives,
+        alternatives: (variation as any).alternatives || [],
         explanation: variation.explanation,
-        createdAt: variation.baseQuestion.createdAt,
+        createdAt: (variation as any).baseQuestion?.createdAt || new Date(),
         qaRunId: qaResult?.runId,
         notes: qaResult?.humanReviewNotes ? [qaResult.humanReviewNotes] : []
       };
@@ -167,13 +167,17 @@ router.get('/variations', async (req, res) => {
       const allVariationIds = allVariationsForLabel.map(v => v.id);
       const qaResultsForCount = await prisma.qAResult.findMany({
         where: {
-          variationId: { in: allVariationIds },
-          labels: {
-            has: label as string
-          }
+          variationId: { in: allVariationIds }
         }
       });
-      totalCount = qaResultsForCount.length;
+      
+      // Filter by label in JavaScript since Prisma doesn't support has for JSON arrays consistently
+      const filteredQaResults = qaResultsForCount.filter(qa => {
+        if (!qa.labels) return false;
+        const labels = qa.labels as string[];
+        return labels.includes(label as string);
+      });
+      totalCount = filteredQaResults.length;
     }
 
     res.json({
