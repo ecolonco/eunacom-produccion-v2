@@ -22,8 +22,23 @@ router.post('/runs', async (req: Request, res: Response) => {
       specialty: req.body.specialty,
       topic: req.body.topic,
       modelEval: req.body.modelEval || 'gpt-4o-mini',
-      modelFix: req.body.modelFix || 'gpt-4o'
+      modelFix: req.body.modelFix || 'gpt-4o',
+      // Nuevo: rango de ejercicios base
+      baseQuestionFrom: req.body.baseQuestionFrom ? parseInt(req.body.baseQuestionFrom) : undefined,
+      baseQuestionTo: req.body.baseQuestionTo ? parseInt(req.body.baseQuestionTo) : undefined
     };
+
+    // Validación del rango
+    if (config.baseQuestionFrom !== undefined && config.baseQuestionTo !== undefined) {
+      if (config.baseQuestionFrom > config.baseQuestionTo) {
+        return res.status(400).json({
+          success: false,
+          message: 'El ejercicio "Desde" debe ser menor o igual que "Hasta"'
+        });
+      }
+      const rangeSize = config.baseQuestionTo - config.baseQuestionFrom + 1;
+      logger.info(`Creating run with base question range: ${config.baseQuestionFrom}-${config.baseQuestionTo} (${rangeSize} exercises, ~${rangeSize * 4} variations)`);
+    }
 
     const runId = await qaSweep2Service.createRun(config);
 
