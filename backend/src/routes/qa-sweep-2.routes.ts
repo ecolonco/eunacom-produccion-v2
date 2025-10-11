@@ -106,6 +106,12 @@ router.post('/runs/:id/analyze', async (req: Request, res: Response) => {
     const { id } = req.params;
     const { variationIds } = req.body;
 
+    // Marcar como RUNNING inmediatamente para evitar que el worker lo procese también
+    await prisma.qASweep2Run.update({
+      where: { id },
+      data: { status: 'RUNNING' }
+    });
+
     // Iniciar análisis de forma asíncrona
     qaSweep2Service.startAnalysis(id, variationIds).catch(error => {
       logger.error('Async analysis failed:', error);
