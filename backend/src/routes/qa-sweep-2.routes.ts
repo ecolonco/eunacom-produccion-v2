@@ -413,6 +413,39 @@ router.get('/variations/:id', async (req: Request, res: Response) => {
   }
 });
 
+// GET /api/admin/qa-sweep-2/taxonomy/catalog - Get specialties with their topics
+router.get('/taxonomy/catalog', async (req: Request, res: Response) => {
+  try {
+    const specialties = await prisma.specialty.findMany({
+      where: { isActive: true },
+      orderBy: { name: 'asc' }
+    });
+
+    const topics = await prisma.topic.findMany({
+      orderBy: [{ specialtyId: 'asc' }, { name: 'asc' }]
+    });
+
+    const topicBySpecialty = new Map<string | null, any[]>();
+    for (const t of topics) {
+      const key = t.specialtyId || null;
+      if (!topicBySpecialty.has(key)) topicBySpecialty.set(key, []);
+      topicBySpecialty.get(key)!.push({ id: t.id, name: t.name });
+    }
+
+    const data = specialties.map(s => ({
+      id: s.id,
+      name: s.name,
+      code: (s as any).code ?? null,
+      topics: topicBySpecialty.get(s.id) || []
+    }));
+
+    res.json({ success: true, data });
+  } catch (error) {
+    logger.error('Error fetching taxonomy catalog:', error);
+    res.status(500).json({ success: false, message: 'Error fetching taxonomy catalog' });
+  }
+});
+
 // Export named and default to be compatible with different import styles
 export const qaSweep2Routes = router;
 export default router;
