@@ -338,19 +338,20 @@ model AIAnalysis {
 }
 
 model QuestionVariation {
-  id              String        @id @default(cuid())
-  baseQuestionId  String        @map("base_question_id")
+  id              String            @id @default(cuid())
+  baseQuestionId  String            @map("base_question_id")
   difficulty      String
-  variationNumber Int           @map("variation_number")
+  variationNumber Int               @map("variation_number")
   content         String
   explanation     String
-  displayCode     String?       @map("display_code")
-  version         Int           @default(1)
-  isVisible       Boolean       @default(true) @map("is_visible")
-  modifiedAt      DateTime?     @map("modified_at")
-  parentVersionId String?       @map("parent_version_id")
+  displayCode     String?           @map("display_code")
+  version         Int               @default(1)
+  isVisible       Boolean           @default(true) @map("is_visible")
+  modifiedAt      DateTime?         @map("modified_at")
+  parentVersionId String?           @map("parent_version_id")
   alternatives    Alternative[]
-  baseQuestion    BaseQuestion  @relation(fields: [baseQuestionId], references: [id], onDelete: Cascade)
+  baseQuestion    BaseQuestion      @relation(fields: [baseQuestionId], references: [id], onDelete: Cascade)
+  qaSweep2Results QASweep2Result[]
 
   @@map("question_variations")
 }
@@ -518,24 +519,26 @@ model QASweep2Run {
 }
 
 model QASweep2Result {
-  id                 String          @id @default(cuid())
+  id                 String              @id @default(cuid())
   runId              String
   variationId        String
-  diagnosis          Json            // Resultado de evaluación (GPT-4o Mini)
-  corrections        Json?           // Resultado de corrección (GPT-4o)
-  finalLabels        Json            // Etiquetas finales
+  diagnosis          Json                // Resultado de evaluación (GPT-4o Mini)
+  corrections        Json?               // Resultado de corrección (GPT-4o)
+  finalLabels        Json                // Etiquetas finales
   status             QASweep2ResultStatus @default(ANALYZED)
-  aiModelUsed        String          @map("ai_model_used")
-  confidenceScore    Float           @map("confidence_score")
-  tokensIn           Int             @map("tokens_in")
-  tokensOut          Int             @map("tokens_out")
-  latencyMs          Int             @map("latency_ms")
-  metadata           Json?           // Metadata adicional (newVariationId, appliedTaxonomy, etc.)
-  createdAt          DateTime        @default(now())
-  updatedAt          DateTime        @updatedAt
-  run                QASweep2Run     @relation(fields: [runId], references: [id], onDelete: Cascade)
+  aiModelUsed        String              @map("ai_model_used")
+  confidenceScore    Float               @map("confidence_score")
+  tokensIn           Int                 @map("tokens_in")
+  tokensOut          Int                 @map("tokens_out")
+  latencyMs          Int                 @map("latency_ms")
+  metadata           Json?               // Metadata adicional (newVariationId, appliedTaxonomy, etc.)
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  run                QASweep2Run         @relation(fields: [runId], references: [id], onDelete: Cascade)
+  variation          QuestionVariation   @relation(fields: [variationId], references: [id], onDelete: Cascade)
 
   @@index([runId])
+  @@index([variationId])
   @@index([status])
   @@map("qa_sweep_2_results")
 }

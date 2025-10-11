@@ -619,8 +619,8 @@ export const QASweep2Panel: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                     <div key={result.id} className="border rounded-lg p-4">
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-3">
-                          <span className="font-mono text-sm bg-gray-100 px-2 py-1 rounded">
-                            {result.variationId.slice(-8)}
+                          <span className="font-mono text-sm bg-blue-100 px-2 py-1 rounded font-semibold">
+                            {result.displayCode || result.variationId.slice(-8)}
                           </span>
                           <span className={`px-2 py-1 text-xs rounded ${getResultStatusColor(result.status)}`}>
                             {result.status}
