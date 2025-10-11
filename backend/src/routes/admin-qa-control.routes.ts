@@ -23,42 +23,22 @@ router.get('/variations', async (req, res) => {
     const offset = (pageNum - 1) * limitNum;
 
     // Build where clause for QA Results
-    const qaWhere: any = {
-      labels: {
-        not: []
-      }
-    };
+    const qaWhere: any = {};
 
     // Filter by specific label if provided
     if (label) {
       qaWhere.labels = {
         has: label as string
       };
+    } else {
+      // If no label filter, show all QA results (including empty labels)
+      qaWhere.labels = {
+        not: null
+      };
     }
 
-    // Get QA Results with pagination
-    const qaResults = await prisma.qAResult.findMany({
-      where: qaWhere,
-      orderBy: { createdAt: 'desc' },
-      take: limitNum,
-      skip: offset,
-      select: {
-        id: true,
-        variationId: true,
-        baseId: true,
-        labels: true,
-        riskLevel: true,
-        humanReviewNotes: true,
-        createdAt: true,
-        runId: true
-      }
-    });
-
-    // Get the variations for these QA results
-    const variationIds = qaResults.map(r => r.variationId);
-    
-    const variations = await prisma.questionVariation.findMany({
-      where: { id: { in: variationIds } },
+    // Get all variations with pagination
+    let variationsQuery: any = {
       include: {
         alternatives: {
           orderBy: { order: 'asc' },
@@ -79,21 +59,58 @@ router.get('/variations', async (req, res) => {
             }
           }
         }
+      },
+      orderBy: { baseQuestion: { createdAt: 'desc' } },
+      take: limitNum,
+      skip: offset
+    };
+
+    // If filtering by specialty or topic, add those filters
+    if (specialty || topic) {
+      variationsQuery.where = {
+        baseQuestion: {
+          aiAnalysis: {}
+        }
+      };
+      
+      if (specialty) {
+        variationsQuery.where.baseQuestion.aiAnalysis.specialty = specialty;
+      }
+      if (topic) {
+        variationsQuery.where.baseQuestion.aiAnalysis.topic = topic;
+      }
+    }
+
+    const variations = await prisma.questionVariation.findMany(variationsQuery);
+
+    // Get QA Results for these variations
+    const variationIds = variations.map(v => v.id);
+    const qaResults = await prisma.qAResult.findMany({
+      where: {
+        variationId: { in: variationIds }
+      },
+      select: {
+        id: true,
+        variationId: true,
+        baseId: true,
+        labels: true,
+        riskLevel: true,
+        humanReviewNotes: true,
+        createdAt: true,
+        runId: true
       }
     });
 
-    // Filter by specialty and topic if specified
+    // Apply label filter if specified
     let filteredVariations = variations;
     
-    if (specialty || topic) {
+    if (label) {
       filteredVariations = variations.filter(variation => {
-        const aiAnalysis = variation.baseQuestion?.aiAnalysis;
-        if (!aiAnalysis) return false;
+        const qaResult = qaResults.find(r => r.variationId === variation.id);
+        if (!qaResult || !qaResult.labels) return false;
         
-        if (specialty && aiAnalysis.specialty !== specialty) return false;
-        if (topic && aiAnalysis.topic !== topic) return false;
-        
-        return true;
+        const labels = qaResult.labels as string[];
+        return labels.includes(label as string);
       });
     }
 
@@ -118,9 +135,46 @@ router.get('/variations', async (req, res) => {
     });
 
     // Get total count for pagination
-    const totalCount = await prisma.qAResult.count({
-      where: qaWhere
+    let totalCountQuery: any = {};
+    
+    if (specialty || topic) {
+      totalCountQuery = {
+        baseQuestion: {
+          aiAnalysis: {}
+        }
+      };
+      
+      if (specialty) {
+        totalCountQuery.baseQuestion.aiAnalysis.specialty = specialty;
+      }
+      if (topic) {
+        totalCountQuery.baseQuestion.aiAnalysis.topic = topic;
+      }
+    }
+
+    const totalVariations = await prisma.questionVariation.count({
+      where: totalCountQuery
     });
+
+    // If filtering by label, we need to count how many have that label
+    let totalCount = totalVariations;
+    if (label) {
+      const allVariationsForLabel = await prisma.questionVariation.findMany({
+        where: totalCountQuery,
+        select: { id: true }
+      });
+      
+      const allVariationIds = allVariationsForLabel.map(v => v.id);
+      const qaResultsForCount = await prisma.qAResult.findMany({
+        where: {
+          variationId: { in: allVariationIds },
+          labels: {
+            has: label as string
+          }
+        }
+      });
+      totalCount = qaResultsForCount.length;
+    }
 
     res.json({
       success: true,
