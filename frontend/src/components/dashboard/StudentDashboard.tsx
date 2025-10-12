@@ -7,12 +7,13 @@ import { PaymentsService } from '../../services/payments.service';
 import { ControlsDashboard } from '../student/ControlsDashboard';
 import { ExamsDashboard } from '../student/ExamsDashboard';
 import { MockExamsDashboard } from '../student/MockExamsDashboard';
+import { PerformancePanel } from '../student/PerformancePanel';
 
 // Sistema de créditos v2 - Oct 2025
 export const StudentDashboard: React.FC = () => {
   const { state, logout, setUserCredits } = useAuth();
   const { user } = state;
-  const [practiceView, setPracticeView] = useState<'none' | 'hub' | 'random' | 'specialty' | 'random20' | 'random90' | 'controls' | 'exams' | 'mock-exams'>('none');
+  const [practiceView, setPracticeView] = useState<'none' | 'hub' | 'random' | 'specialty' | 'random20' | 'random90' | 'controls' | 'exams' | 'mock-exams' | 'performance'>('none');
   const [isPurchasing, setIsPurchasing] = useState(false);
 
   // Verificar pago pendiente al volver de Flow
@@ -133,6 +134,10 @@ export const StudentDashboard: React.FC = () => {
     );
   }
 
+  if (practiceView === 'performance') {
+    return <PerformancePanel onBack={() => setPracticeView('none')} />;
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       <div className="container mx-auto px-4 py-8">
@@ -188,6 +193,12 @@ export const StudentDashboard: React.FC = () => {
               className="w-full px-6 py-3 bg-green-600 text-white rounded-md hover:bg-green-700 transition duration-200 font-medium"
             >
               🎯 Ensayos EUNACOM (180 preguntas) - Sin créditos
+            </button>
+            <button
+              onClick={() => setPracticeView('performance')}
+              className="w-full px-6 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-md hover:from-purple-700 hover:to-indigo-700 transition duration-200 font-medium"
+            >
+              📊 Mi Rendimiento - Ver estadísticas
             </button>
             <button
               onClick={() => setPracticeView('random')}
