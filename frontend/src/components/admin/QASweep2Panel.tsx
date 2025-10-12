@@ -56,6 +56,9 @@ export const QASweep2Panel: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   const [showDiagnosisModal, setShowDiagnosisModal] = useState(false);
   const [diagnosisLoading, setDiagnosisLoading] = useState(false);
   const [variationIdInput, setVariationIdInput] = useState('');
+  const [reportModalOpen, setReportModalOpen] = useState(false);
+  const [currentReport, setCurrentReport] = useState<any>(null);
+  const [reportLoading, setReportLoading] = useState(false);
 
   // Estados para crear nuevo run
   const [newRun, setNewRun] = useState({
@@ -288,6 +291,43 @@ export const QASweep2Panel: React.FC<{ onBack: () => void }> = ({ onBack }) => {
       case 'ANALYZED': return 'bg-blue-100 text-blue-800';
       default: return 'bg-gray-100 text-gray-800';
     }
+  };
+
+  const generateReport = async (runId: string) => {
+    setReportLoading(true);
+    setReportModalOpen(true);
+    setCurrentReport(null);
+
+    try {
+      const response = await fetch(`${API_BASE}/api/admin/qa-sweep-2/runs/${runId}/generate-report`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setCurrentReport(data.data);
+      } else {
+        alert(`Error: ${data.message}`);
+        setReportModalOpen(false);
+      }
+    } catch (error) {
+      console.error('Error generating report:', error);
+      alert('Error al generar el reporte');
+      setReportModalOpen(false);
+    } finally {
+      setReportLoading(false);
+    }
+  };
+
+  const getRunNumber = (run: QASweep2Run): number => {
+    const sortedRuns = [...runs].sort((a, b) => 
+      new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+    );
+    return sortedRuns.findIndex(r => r.id === run.id) + 1;
   };
 
   return (
@@ -564,6 +604,9 @@ export const QASweep2Panel: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                   <div key={run.id} className="flex items-center justify-between p-4 border rounded-lg">
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
+                        <span className="px-2 py-1 text-xs font-bold bg-gray-200 text-gray-700 rounded">
+                          #{getRunNumber(run)}
+                        </span>
                         <h4 className="font-semibold">{run.name}</h4>
                         <span className={`px-2 py-1 text-xs rounded ${getStatusColor(run.status)}`}>
                           {run.status}
@@ -588,6 +631,15 @@ export const QASweep2Panel: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                       >
                         Ver Resultados
                       </button>
+                      {run.status === 'COMPLETED' && (
+                        <button
+                          onClick={() => generateReport(run.id)}
+                          className="px-3 py-1 bg-purple-600 text-white text-sm rounded hover:bg-purple-700 flex items-center gap-1"
+                          title="Generar reporte con IA"
+                        >
+                          📊 Reporte IA
+                        </button>
+                      )}
                       {run.status === 'PENDING' && (
                         <button
                           onClick={() => startAnalysis(run.id)}
@@ -888,6 +940,188 @@ export const QASweep2Panel: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                   </div>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Reporte IA */}
+      {reportModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-6xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center">
+              <h3 className="text-2xl font-bold">📊 Reporte IA - Trabajo #{currentReport?.runNumber || '...'}</h3>
+              <button
+                onClick={() => setReportModalOpen(false)}
+                className="text-gray-500 hover:text-gray-700 text-2xl font-bold"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="p-6">
+              {reportLoading ? (
+                <div className="text-center py-12">
+                  <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+                  <p className="mt-4 text-gray-600">Generando reporte con GPT-4o...</p>
+                </div>
+              ) : currentReport ? (
+                <div className="space-y-6">
+                  {/* Header */}
+                  <div className="bg-purple-50 p-4 rounded-lg">
+                    <h4 className="font-bold text-lg mb-2">{currentReport.runName}</h4>
+                    <p className="text-sm text-gray-600">{currentReport.runDescription}</p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Generado: {new Date(currentReport.generatedAt).toLocaleString()}
+                    </p>
+                  </div>
+
+                  {/* Resumen Ejecutivo (IA) */}
+                  <div className="bg-blue-50 p-4 rounded-lg">
+                    <h4 className="font-bold mb-2 flex items-center gap-2">
+                      <span>🤖</span>
+                      <span>Resumen Ejecutivo (GPT-4o)</span>
+                    </h4>
+                    <p className="text-gray-700 whitespace-pre-line">{currentReport.summary}</p>
+                  </div>
+
+                  {/* Estadísticas */}
+                  <div className="bg-white border rounded-lg p-4">
+                    <h4 className="font-bold mb-3">📊 Estadísticas del Run</h4>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div className="text-center p-3 bg-gray-50 rounded">
+                        <div className="text-2xl font-bold text-blue-600">{currentReport.stats.totalProcessed}</div>
+                        <div className="text-xs text-gray-600">Variaciones</div>
+                      </div>
+                      <div className="text-center p-3 bg-gray-50 rounded">
+                        <div className="text-2xl font-bold text-green-600">{currentReport.stats.corrected}</div>
+                        <div className="text-xs text-gray-600">Corregidas</div>
+                      </div>
+                      <div className="text-center p-3 bg-gray-50 rounded">
+                        <div className="text-2xl font-bold text-purple-600">{currentReport.stats.avgConfidence}%</div>
+                        <div className="text-xs text-gray-600">Confianza</div>
+                      </div>
+                      <div className="text-center p-3 bg-gray-50 rounded">
+                        <div className="text-2xl font-bold text-orange-600">${currentReport.stats.estimatedCost}</div>
+                        <div className="text-xs text-gray-600">Costo Estimado</div>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-4">
+                      <div className="text-center p-3 bg-gray-50 rounded">
+                        <div className="font-bold text-gray-700">{currentReport.stats.totalTokensIn.toLocaleString()}</div>
+                        <div className="text-xs text-gray-600">Tokens Input</div>
+                      </div>
+                      <div className="text-center p-3 bg-gray-50 rounded">
+                        <div className="font-bold text-gray-700">{currentReport.stats.totalTokensOut.toLocaleString()}</div>
+                        <div className="text-xs text-gray-600">Tokens Output</div>
+                      </div>
+                      <div className="text-center p-3 bg-gray-50 rounded">
+                        <div className="font-bold text-gray-700">{currentReport.stats.avgLatency}ms</div>
+                        <div className="text-xs text-gray-600">Latencia Promedio</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Casos Severos */}
+                  {currentReport.severeCases && currentReport.severeCases.length > 0 && (
+                    <div className="bg-red-50 border-2 border-red-200 rounded-lg p-4">
+                      <h4 className="font-bold mb-3 text-red-800 flex items-center gap-2">
+                        <span>⚠️</span>
+                        <span>Casos de Severidad Alta ({currentReport.severeCases.length})</span>
+                      </h4>
+                      <div className="space-y-4">
+                        {currentReport.severeCases.map((caseData: any, idx: number) => (
+                          <div key={idx} className="bg-white p-4 rounded border border-red-300">
+                            <div className="flex items-center gap-2 mb-2">
+                              <span className="font-bold">Ejercicio {caseData.displayCode}</span>
+                              <span className="px-2 py-1 bg-red-200 text-red-800 text-xs rounded">
+                                Severidad: {caseData.severity}
+                              </span>
+                            </div>
+                            
+                            {/* Diagnóstico */}
+                            <div className="mb-3">
+                              <div className="text-xs font-semibold text-gray-700 mb-1">Diagnóstico:</div>
+                              <div className="text-sm text-gray-600">{caseData.recommendation}</div>
+                              <div className="text-xs text-gray-500 mt-1">
+                                Etiquetas: {caseData.labels?.join(', ') || 'N/A'}
+                              </div>
+                            </div>
+
+                            {/* Comparación lado a lado */}
+                            {caseData.original && caseData.corrected && (
+                              <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                  <div className="text-xs font-semibold text-gray-700 mb-1 bg-gray-100 px-2 py-1 rounded">
+                                    📄 Original
+                                  </div>
+                                  <div className="text-sm p-2 bg-gray-50 rounded border">
+                                    {caseData.original.enunciado?.substring(0, 200)}
+                                    {caseData.original.enunciado?.length > 200 && '...'}
+                                  </div>
+                                </div>
+                                <div>
+                                  <div className="text-xs font-semibold text-gray-700 mb-1 bg-green-100 px-2 py-1 rounded">
+                                    ✨ Corregido
+                                  </div>
+                                  <div className="text-sm p-2 bg-green-50 rounded border border-green-300">
+                                    {caseData.corrected.enunciado?.substring(0, 200)}
+                                    {caseData.corrected.enunciado?.length > 200 && '...'}
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Cambio de Taxonomía */}
+                            {caseData.taxonomyChange && (
+                              <div className="mt-2 p-2 bg-yellow-50 rounded border border-yellow-300">
+                                <div className="text-xs font-semibold text-yellow-800">📚 Reclasificación:</div>
+                                <div className="text-sm mt-1">
+                                  <span className="line-through text-gray-500">{caseData.taxonomyChange.from}</span>
+                                  {' → '}
+                                  <span className="text-green-700 font-semibold">{caseData.taxonomyChange.to}</span>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Análisis de Casos Severos (IA) */}
+                  <div className="bg-orange-50 p-4 rounded-lg">
+                    <h4 className="font-bold mb-2 flex items-center gap-2">
+                      <span>🔍</span>
+                      <span>Análisis Detallado (GPT-4o)</span>
+                    </h4>
+                    <p className="text-gray-700 whitespace-pre-line">{currentReport.severeAnalysis}</p>
+                  </div>
+
+                  {/* Recomendaciones (IA) */}
+                  <div className="bg-green-50 p-4 rounded-lg">
+                    <h4 className="font-bold mb-2 flex items-center gap-2">
+                      <span>💡</span>
+                      <span>Recomendaciones (GPT-4o)</span>
+                    </h4>
+                    <ul className="list-disc list-inside space-y-1 text-gray-700">
+                      {currentReport.recommendations.map((rec: string, idx: number) => (
+                        <li key={idx}>{rec}</li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  {/* Footer */}
+                  <div className="text-center text-xs text-gray-500 pt-4 border-t">
+                    <p>Reporte generado automáticamente por GPT-4o</p>
+                    <p>EUNACOM QA Sweep 2.0 © 2025</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-600">
+                  No se pudo cargar el reporte
+                </div>
+              )}
             </div>
           </div>
         </div>
