@@ -98,14 +98,12 @@ export const Dashboard: React.FC = () => {
               🚀 Acciones Rápidas
             </h2>
             <div className="space-y-3">
-              {!isAdmin && (
-                <button 
-                  onClick={() => setShowControls(true)}
-                  className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition duration-200"
-                >
-                  📝 Controles (15 preguntas)
-                </button>
-              )}
+              <button 
+                onClick={() => setShowControls(true)}
+                className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition duration-200"
+              >
+                📝 Controles (15 preguntas)
+              </button>
               <button className="w-full bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 transition duration-200">
                 🧠 Práctica Individual
               </button>
@@ -121,7 +119,7 @@ export const Dashboard: React.FC = () => {
               <h2 className="text-xl font-semibold text-gray-800 mb-4">
                 ⚙️ Panel de Administración
               </h2>
-              <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-4">
+              <div className="grid md:grid-cols-2 lg:grid-cols-6 gap-4">
                 <button className="bg-indigo-600 text-white py-3 px-4 rounded-md hover:bg-indigo-700 transition duration-200">
                   👥 Gestionar Usuarios
                 </button>
@@ -133,6 +131,12 @@ export const Dashboard: React.FC = () => {
                   className="bg-purple-600 text-white py-3 px-4 rounded-md hover:bg-purple-700 transition duration-200"
                 >
                   📊 Inventario Taxonomía
+                </button>
+                <button 
+                  onClick={() => setShowControls(true)}
+                  className="bg-blue-600 text-white py-3 px-4 rounded-md hover:bg-blue-700 transition duration-200"
+                >
+                  📝 Gestionar Controles
                 </button>
                 <button className="bg-teal-600 text-white py-3 px-4 rounded-md hover:bg-teal-700 transition duration-200">
                   📈 Ver Estadísticas
