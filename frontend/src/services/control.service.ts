@@ -258,6 +258,11 @@ export class ControlService {
     
     return data.data;
   }
+
+  // Alias para compatibilidad con PerformancePanel
+  async listUserControls(): Promise<Control[]> {
+    return this.listMyControls();
+  }
 }
 
 export const controlService = new ControlService();
