@@ -33,7 +33,7 @@ router.get('/packages', async (req, res: Response) => {
 // GET /api/controls/my-purchases - Obtener mis compras de controles
 router.get('/my-purchases', authenticate, async (req: AuthRequest, res: Response) => {
   try {
-    const userId = req.user!.userId;
+    const userId = req.user!.id;
     const purchases = await controlService.getUserPurchases(userId);
     
     res.json({
@@ -52,7 +52,7 @@ router.get('/my-purchases', authenticate, async (req: AuthRequest, res: Response
 // POST /api/controls/start - Iniciar un nuevo control
 router.post('/start', authenticate, async (req: AuthRequest, res: Response) => {
   try {
-    const userId = req.user!.userId;
+    const userId = req.user!.id;
     const { purchaseId } = req.body;
 
     if (!purchaseId) {
@@ -84,7 +84,7 @@ router.post('/start', authenticate, async (req: AuthRequest, res: Response) => {
 // GET /api/controls/:id - Obtener un control específico
 router.get('/:id', authenticate, async (req: AuthRequest, res: Response) => {
   try {
-    const userId = req.user!.userId;
+    const userId = req.user!.id;
     const { id } = req.params;
 
     const control = await controlService.getControl(id, userId);
@@ -105,7 +105,7 @@ router.get('/:id', authenticate, async (req: AuthRequest, res: Response) => {
 // POST /api/controls/:id/answer - Responder una pregunta
 router.post('/:id/answer', authenticate, async (req: AuthRequest, res: Response) => {
   try {
-    const userId = req.user!.userId;
+    const userId = req.user!.id;
     const { id } = req.params;
     const { variationId, selectedAnswer } = req.body;
 
@@ -141,7 +141,7 @@ router.post('/:id/answer', authenticate, async (req: AuthRequest, res: Response)
 // POST /api/controls/:id/complete - Completar el control
 router.post('/:id/complete', authenticate, async (req: AuthRequest, res: Response) => {
   try {
-    const userId = req.user!.userId;
+    const userId = req.user!.id;
     const { id } = req.params;
 
     const results = await controlService.completeControl(id, userId);
@@ -163,7 +163,7 @@ router.post('/:id/complete', authenticate, async (req: AuthRequest, res: Respons
 // GET /api/controls/:id/results - Ver resultados de un control
 router.get('/:id/results', authenticate, async (req: AuthRequest, res: Response) => {
   try {
-    const userId = req.user!.userId;
+    const userId = req.user!.id;
     const { id } = req.params;
 
     const results = await controlService.getControlResults(id, userId);
@@ -184,7 +184,7 @@ router.get('/:id/results', authenticate, async (req: AuthRequest, res: Response)
 // GET /api/controls - Listar mis controles
 router.get('/', authenticate, async (req: AuthRequest, res: Response) => {
   try {
-    const userId = req.user!.userId;
+    const userId = req.user!.id;
     const controls = await controlService.listUserControls(userId);
 
     res.json({
