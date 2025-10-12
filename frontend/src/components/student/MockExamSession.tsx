@@ -227,34 +227,6 @@ export const MockExamSession: React.FC<MockExamSessionProps> = ({
           )}
         </div>
       </div>
-
-      {/* Question navigator - Grid adaptado para 180 preguntas */}
-      <div className="bg-white border border-gray-200 rounded-lg p-4">
-        <h3 className="text-sm font-semibold text-gray-700 mb-3">Navegación rápida (180 preguntas):</h3>
-        <div className="grid grid-cols-20 gap-1">
-          {mockExam.questions.map((q, index) => {
-            const isAnswered = !!selectedAnswers[q.variationId];
-            const isCurrent = index === currentQuestionIndex;
-
-            return (
-              <button
-                key={q.id}
-                onClick={() => setCurrentQuestionIndex(index)}
-                className={`w-8 h-8 rounded text-xs font-semibold transition-all ${
-                  isCurrent
-                    ? 'bg-green-600 text-white ring-2 ring-green-400'
-                    : isAnswered
-                    ? 'bg-green-100 text-green-700 border border-green-300'
-                    : 'bg-gray-100 text-gray-600 border border-gray-300'
-                }`}
-                title={`Pregunta ${index + 1}`}
-              >
-                {index + 1}
-              </button>
-            );
-          })}
-        </div>
-      </div>
     </div>
   );
 };
