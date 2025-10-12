@@ -293,7 +293,7 @@ export const QASweep2Panel: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     }
   };
 
-  const generateReport = async (runId: string) => {
+  const generateReport = async (runId: string, regenerate = true) => {
     setReportLoading(true);
     setReportModalOpen(true);
     setCurrentReport(null);
@@ -304,7 +304,8 @@ export const QASweep2Panel: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
           'Content-Type': 'application/json'
-        }
+        },
+        body: JSON.stringify({ regenerate })
       });
 
       const data = await response.json();
