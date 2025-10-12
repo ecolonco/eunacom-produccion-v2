@@ -95,18 +95,8 @@ export const ControlSession: React.FC<ControlSessionProps> = ({
     const totalQuestions = control.questions.length;
 
     console.log(`📊 Answered: ${answeredCount}/${totalQuestions}`);
-
-    // Solo advertir si hay preguntas sin responder (sin bloquear)
-    if (answeredCount < totalQuestions) {
-      const unanswered = totalQuestions - answeredCount;
-      console.log(`⚠️ ${unanswered} unanswered questions`);
-      if (!window.confirm(`⚠️ Tienes ${unanswered} pregunta(s) sin responder.\n\n¿Deseas finalizar de todos modos?`)) {
-        console.log('❌ User cancelled (unanswered)');
-        return;
-      }
-    }
-
-    console.log('✅ Starting completion (no confirmation needed)...');
+    console.log('✅ Starting completion immediately...');
+    
     setSubmitting(true);
 
     try {
