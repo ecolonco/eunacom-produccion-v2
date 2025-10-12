@@ -1,6 +1,6 @@
 import { Router, Response } from 'express';
 import { controlService } from '../services/control.service';
-import { authenticateToken, AuthRequest } from '../middleware/auth.middleware';
+import { authenticate, AuthRequest } from '../middleware/auth.middleware';
 import { logger } from '../utils/logger';
 
 const router = Router();
@@ -31,7 +31,7 @@ router.get('/packages', async (req, res: Response) => {
 // ============================================================================
 
 // GET /api/controls/my-purchases - Obtener mis compras de controles
-router.get('/my-purchases', authenticateToken, async (req: AuthRequest, res: Response) => {
+router.get('/my-purchases', authenticate, async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user!.userId;
     const purchases = await controlService.getUserPurchases(userId);
@@ -50,7 +50,7 @@ router.get('/my-purchases', authenticateToken, async (req: AuthRequest, res: Res
 });
 
 // POST /api/controls/start - Iniciar un nuevo control
-router.post('/start', authenticateToken, async (req: AuthRequest, res: Response) => {
+router.post('/start', authenticate, async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user!.userId;
     const { purchaseId } = req.body;
@@ -82,7 +82,7 @@ router.post('/start', authenticateToken, async (req: AuthRequest, res: Response)
 });
 
 // GET /api/controls/:id - Obtener un control específico
-router.get('/:id', authenticateToken, async (req: AuthRequest, res: Response) => {
+router.get('/:id', authenticate, async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user!.userId;
     const { id } = req.params;
@@ -103,7 +103,7 @@ router.get('/:id', authenticateToken, async (req: AuthRequest, res: Response) =>
 });
 
 // POST /api/controls/:id/answer - Responder una pregunta
-router.post('/:id/answer', authenticateToken, async (req: AuthRequest, res: Response) => {
+router.post('/:id/answer', authenticate, async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user!.userId;
     const { id } = req.params;
@@ -139,7 +139,7 @@ router.post('/:id/answer', authenticateToken, async (req: AuthRequest, res: Resp
 });
 
 // POST /api/controls/:id/complete - Completar el control
-router.post('/:id/complete', authenticateToken, async (req: AuthRequest, res: Response) => {
+router.post('/:id/complete', authenticate, async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user!.userId;
     const { id } = req.params;
@@ -161,7 +161,7 @@ router.post('/:id/complete', authenticateToken, async (req: AuthRequest, res: Re
 });
 
 // GET /api/controls/:id/results - Ver resultados de un control
-router.get('/:id/results', authenticateToken, async (req: AuthRequest, res: Response) => {
+router.get('/:id/results', authenticate, async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user!.userId;
     const { id } = req.params;
@@ -182,7 +182,7 @@ router.get('/:id/results', authenticateToken, async (req: AuthRequest, res: Resp
 });
 
 // GET /api/controls - Listar mis controles
-router.get('/', authenticateToken, async (req: AuthRequest, res: Response) => {
+router.get('/', authenticate, async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user!.userId;
     const controls = await controlService.listUserControls(userId);
