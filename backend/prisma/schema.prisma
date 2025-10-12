@@ -31,6 +31,8 @@ model User {
   creditTransactions   CreditTransaction[]
   emailVerifications   EmailVerification[]
   payments             Payment[]
+  controlPurchases     ControlPurchase[]
+  controls             Control[]
 
   @@map("users")
 }
@@ -349,9 +351,11 @@ model QuestionVariation {
   isVisible       Boolean           @default(true) @map("is_visible")
   modifiedAt      DateTime?         @map("modified_at")
   parentVersionId String?           @map("parent_version_id")
-  alternatives    Alternative[]
-  baseQuestion    BaseQuestion      @relation(fields: [baseQuestionId], references: [id], onDelete: Cascade)
-  qaSweep2Results QASweep2Result[]
+  alternatives      Alternative[]
+  baseQuestion      BaseQuestion      @relation(fields: [baseQuestionId], references: [id], onDelete: Cascade)
+  qaSweep2Results   QASweep2Result[]
+  controlQuestions  ControlQuestion[]
+  controlAnswers    ControlAnswer[]
 
   @@map("question_variations")
 }
@@ -454,9 +458,10 @@ model Payment {
   flowOrder  String?
   payUrl     String?
   metadata   Json?
-  createdAt  DateTime       @default(now())
-  updatedAt  DateTime       @updatedAt
-  user       User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  controlPurchases ControlPurchase[]
 
   @@index([userId])
   @@index([createdAt])
@@ -583,4 +588,114 @@ enum QASweep2Category {
   FORMAT
   GENDER
   SAFETY
+}
+
+// ============================================================================
+// SISTEMA DE CONTROLES (EVALUACIONES)
+// ============================================================================
+
+// Paquetes de controles que puede comprar el alumno
+model ControlPackage {
+  id          String   @id @default(cuid())
+  name        String   // "Paquete 5 Controles"
+  description String?
+  price       Int      // 4900 (en pesos CLP)
+  controlQty  Int      @map("control_qty") // 5
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  
+  purchases   ControlPurchase[]
+
+  @@map("control_packages")
+}
+
+// Compras de paquetes de controles
+model ControlPurchase {
+  id              String          @id @default(cuid())
+  userId          String          @map("user_id")
+  packageId       String          @map("package_id")
+  paymentId       String?         @map("payment_id") // Referencia a Payment (Flow)
+  controlsTotal   Int             @map("controls_total") // 5
+  controlsUsed    Int             @default(0) @map("controls_used")
+  status          ControlPurchaseStatus @default(ACTIVE)
+  purchasedAt     DateTime        @default(now()) @map("purchased_at")
+  expiresAt       DateTime?       @map("expires_at")
+  
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  package         ControlPackage  @relation(fields: [packageId], references: [id])
+  payment         Payment?        @relation(fields: [paymentId], references: [id])
+  controls        Control[]
+
+  @@index([userId])
+  @@index([status])
+  @@map("control_purchases")
+}
+
+// Instancia de un control (15 preguntas)
+model Control {
+  id              String          @id @default(cuid())
+  purchaseId      String          @map("purchase_id")
+  userId          String          @map("user_id")
+  status          ControlStatus   @default(IN_PROGRESS)
+  score           Int?            // Puntaje final (0-15)
+  correctAnswers  Int?            @map("correct_answers")
+  totalQuestions  Int             @default(15) @map("total_questions")
+  startedAt       DateTime        @default(now()) @map("started_at")
+  completedAt     DateTime?       @map("completed_at")
+  timeSpentSecs   Int?            @map("time_spent_secs") // Tiempo total en segundos
+  
+  purchase        ControlPurchase @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  questions       ControlQuestion[]
+  answers         ControlAnswer[]
+
+  @@index([userId])
+  @@index([status])
+  @@map("controls")
+}
+
+// Preguntas dentro de un control (15 preguntas)
+model ControlQuestion {
+  id              String   @id @default(cuid())
+  controlId       String   @map("control_id")
+  variationId     String   @map("variation_id") // QuestionVariation
+  questionOrder   Int      @map("question_order") // 1-15
+  
+  control         Control           @relation(fields: [controlId], references: [id], onDelete: Cascade)
+  variation       QuestionVariation @relation(fields: [variationId], references: [id])
+  
+  @@unique([controlId, questionOrder])
+  @@index([controlId])
+  @@map("control_questions")
+}
+
+// Respuestas del alumno
+model ControlAnswer {
+  id              String   @id @default(cuid())
+  controlId       String   @map("control_id")
+  variationId     String   @map("variation_id")
+  selectedAnswer  String   @map("selected_answer") // A, B, C, D
+  isCorrect       Boolean  @map("is_correct")
+  answeredAt      DateTime @default(now()) @map("answered_at")
+  
+  control         Control           @relation(fields: [controlId], references: [id], onDelete: Cascade)
+  variation       QuestionVariation @relation(fields: [variationId], references: [id])
+
+  @@unique([controlId, variationId])
+  @@index([controlId])
+  @@map("control_answers")
+}
+
+enum ControlPurchaseStatus {
+  PENDING
+  ACTIVE
+  EXPIRED
+  CANCELLED
+}
+
+enum ControlStatus {
+  IN_PROGRESS
+  COMPLETED
+  ABANDONED
 }
