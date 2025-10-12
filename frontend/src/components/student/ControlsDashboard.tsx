@@ -35,10 +35,13 @@ export const ControlsDashboard: React.FC = () => {
 
   const handleStartNewControl = async (purchaseId: string) => {
     try {
+      console.log('🚀 Iniciando control con purchaseId:', purchaseId);
       const control = await controlService.startControl(purchaseId);
+      console.log('✅ Control creado:', control);
       setActiveControl(control);
       setCurrentView('session');
     } catch (error: any) {
+      console.error('❌ Error al iniciar control:', error);
       alert(error.message || 'Error al iniciar el control');
     }
   };
