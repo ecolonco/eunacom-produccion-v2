@@ -253,7 +253,7 @@ Responde ÚNICAMENTE en formato JSON con esta estructura:
 
     try {
       const response = await this.openaiService.generateText(
-        'gpt-4o',
+        'gpt-5',
         prompt,
         8000
       );

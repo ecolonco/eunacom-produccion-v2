@@ -963,7 +963,7 @@ export const QASweep2Panel: React.FC<{ onBack: () => void }> = ({ onBack }) => {
               {reportLoading ? (
                 <div className="text-center py-12">
                   <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
-                  <p className="mt-4 text-gray-600">Generando reporte con GPT-4o...</p>
+                  <p className="mt-4 text-gray-600">Generando reporte con GPT-5...</p>
                 </div>
               ) : currentReport ? (
                 <div className="space-y-6">
@@ -980,47 +980,49 @@ export const QASweep2Panel: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                   <div className="bg-blue-50 p-4 rounded-lg">
                     <h4 className="font-bold mb-2 flex items-center gap-2">
                       <span>🤖</span>
-                      <span>Resumen Ejecutivo (GPT-4o)</span>
+                      <span>Resumen Ejecutivo (GPT-5)</span>
                     </h4>
                     <p className="text-gray-700 whitespace-pre-line">{currentReport.summary}</p>
                   </div>
 
                   {/* Estadísticas */}
-                  <div className="bg-white border rounded-lg p-4">
-                    <h4 className="font-bold mb-3">📊 Estadísticas del Run</h4>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      <div className="text-center p-3 bg-gray-50 rounded">
-                        <div className="text-2xl font-bold text-blue-600">{currentReport.stats.totalProcessed}</div>
-                        <div className="text-xs text-gray-600">Variaciones</div>
+                  {currentReport.stats && (
+                    <div className="bg-white border rounded-lg p-4">
+                      <h4 className="font-bold mb-3">📊 Estadísticas del Run</h4>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div className="text-center p-3 bg-gray-50 rounded">
+                          <div className="text-2xl font-bold text-blue-600">{currentReport.stats.totalProcessed || 0}</div>
+                          <div className="text-xs text-gray-600">Variaciones</div>
+                        </div>
+                        <div className="text-center p-3 bg-gray-50 rounded">
+                          <div className="text-2xl font-bold text-green-600">{currentReport.stats.corrected || 0}</div>
+                          <div className="text-xs text-gray-600">Corregidas</div>
+                        </div>
+                        <div className="text-center p-3 bg-gray-50 rounded">
+                          <div className="text-2xl font-bold text-purple-600">{currentReport.stats.avgConfidence || 0}%</div>
+                          <div className="text-xs text-gray-600">Confianza</div>
+                        </div>
+                        <div className="text-center p-3 bg-gray-50 rounded">
+                          <div className="text-2xl font-bold text-orange-600">${currentReport.stats.estimatedCost || 0}</div>
+                          <div className="text-xs text-gray-600">Costo Estimado</div>
+                        </div>
                       </div>
-                      <div className="text-center p-3 bg-gray-50 rounded">
-                        <div className="text-2xl font-bold text-green-600">{currentReport.stats.corrected}</div>
-                        <div className="text-xs text-gray-600">Corregidas</div>
-                      </div>
-                      <div className="text-center p-3 bg-gray-50 rounded">
-                        <div className="text-2xl font-bold text-purple-600">{currentReport.stats.avgConfidence}%</div>
-                        <div className="text-xs text-gray-600">Confianza</div>
-                      </div>
-                      <div className="text-center p-3 bg-gray-50 rounded">
-                        <div className="text-2xl font-bold text-orange-600">${currentReport.stats.estimatedCost}</div>
-                        <div className="text-xs text-gray-600">Costo Estimado</div>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-4">
+                        <div className="text-center p-3 bg-gray-50 rounded">
+                          <div className="font-bold text-gray-700">{(currentReport.stats.totalTokensIn || 0).toLocaleString()}</div>
+                          <div className="text-xs text-gray-600">Tokens Input</div>
+                        </div>
+                        <div className="text-center p-3 bg-gray-50 rounded">
+                          <div className="font-bold text-gray-700">{(currentReport.stats.totalTokensOut || 0).toLocaleString()}</div>
+                          <div className="text-xs text-gray-600">Tokens Output</div>
+                        </div>
+                        <div className="text-center p-3 bg-gray-50 rounded">
+                          <div className="font-bold text-gray-700">{currentReport.stats.avgLatency || 0}ms</div>
+                          <div className="text-xs text-gray-600">Latencia Promedio</div>
+                        </div>
                       </div>
                     </div>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-4">
-                      <div className="text-center p-3 bg-gray-50 rounded">
-                        <div className="font-bold text-gray-700">{currentReport.stats.totalTokensIn.toLocaleString()}</div>
-                        <div className="text-xs text-gray-600">Tokens Input</div>
-                      </div>
-                      <div className="text-center p-3 bg-gray-50 rounded">
-                        <div className="font-bold text-gray-700">{currentReport.stats.totalTokensOut.toLocaleString()}</div>
-                        <div className="text-xs text-gray-600">Tokens Output</div>
-                      </div>
-                      <div className="text-center p-3 bg-gray-50 rounded">
-                        <div className="font-bold text-gray-700">{currentReport.stats.avgLatency}ms</div>
-                        <div className="text-xs text-gray-600">Latencia Promedio</div>
-                      </div>
-                    </div>
-                  </div>
+                  )}
 
                   {/* Casos Severos */}
                   {currentReport.severeCases && currentReport.severeCases.length > 0 && (
@@ -1093,7 +1095,7 @@ export const QASweep2Panel: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                   <div className="bg-orange-50 p-4 rounded-lg">
                     <h4 className="font-bold mb-2 flex items-center gap-2">
                       <span>🔍</span>
-                      <span>Análisis Detallado (GPT-4o)</span>
+                      <span>Análisis Detallado (GPT-5)</span>
                     </h4>
                     <p className="text-gray-700 whitespace-pre-line">{currentReport.severeAnalysis}</p>
                   </div>
@@ -1102,10 +1104,10 @@ export const QASweep2Panel: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                   <div className="bg-green-50 p-4 rounded-lg">
                     <h4 className="font-bold mb-2 flex items-center gap-2">
                       <span>💡</span>
-                      <span>Recomendaciones (GPT-4o)</span>
+                      <span>Recomendaciones (GPT-5)</span>
                     </h4>
                     <ul className="list-disc list-inside space-y-1 text-gray-700">
-                      {currentReport.recommendations.map((rec: string, idx: number) => (
+                      {currentReport.recommendations && currentReport.recommendations.map((rec: string, idx: number) => (
                         <li key={idx}>{rec}</li>
                       ))}
                     </ul>
@@ -1113,7 +1115,7 @@ export const QASweep2Panel: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
                   {/* Footer */}
                   <div className="text-center text-xs text-gray-500 pt-4 border-t">
-                    <p>Reporte generado automáticamente por GPT-4o</p>
+                    <p>Reporte generado automáticamente por GPT-5</p>
                     <p>EUNACOM QA Sweep 2.0 © 2025</p>
                   </div>
                 </div>
