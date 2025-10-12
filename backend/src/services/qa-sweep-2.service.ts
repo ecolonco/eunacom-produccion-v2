@@ -262,17 +262,20 @@ export class QASweep2Service {
 
       // Filtro por especialidad/tema
       if (specialty || topic) {
-        if (!whereConditions.baseQuestion) {
-          whereConditions.baseQuestion = { aiAnalysis: {} };
-        } else {
-          whereConditions.baseQuestion.aiAnalysis = {};
-        }
-        
-        if (specialty) {
-          whereConditions.baseQuestion.aiAnalysis.specialty = specialty;
-        }
-        if (topic) {
-          whereConditions.baseQuestion.aiAnalysis.topic = topic;
+        // Si ya hay filtro de baseQuestionId, agregar aiAnalysis como condición adicional
+        const aiAnalysisConditions: any = {};
+        if (specialty) aiAnalysisConditions.specialty = specialty;
+        if (topic) aiAnalysisConditions.topic = topic;
+
+        // Crear el objeto baseQuestion correctamente
+        whereConditions.baseQuestion = {
+          ...(whereConditions.baseQuestionId && { id: whereConditions.baseQuestionId }),
+          aiAnalysis: aiAnalysisConditions
+        };
+
+        // Eliminar baseQuestionId ya que ahora está en baseQuestion.id
+        if (whereConditions.baseQuestionId) {
+          delete whereConditions.baseQuestionId;
         }
       }
 
