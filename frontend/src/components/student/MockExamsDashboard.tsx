@@ -157,21 +157,21 @@ export const MockExamsDashboard: React.FC<MockExamsDashboardProps> = ({ onBack }
         ← Volver al Dashboard
       </button>
 
-      <h1 className="text-3xl font-bold text-gray-900 mb-2">🎓 Pruebas EUNACOM</h1>
+      <h1 className="text-3xl font-bold text-gray-900 mb-2">🎯 Ensayos EUNACOM</h1>
       <p className="text-gray-600 mb-8">
-        Evaluaciones completas de 45 preguntas para medir tu preparación
+        Simulación completa del examen EUNACOM con 180 preguntas
       </p>
 
       {/* Estadísticas */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-          <div className="text-blue-600 text-4xl font-bold mb-2">{totalExamsAvailable}</div>
-          <div className="text-blue-900 font-medium">Pruebas Disponibles</div>
+        <div className="bg-green-50 border border-green-200 rounded-lg p-6">
+          <div className="text-green-600 text-4xl font-bold mb-2">{totalMockExamsAvailable}</div>
+          <div className="text-green-900 font-medium">Ensayos Disponibles</div>
         </div>
 
-        <div className="bg-green-50 border border-green-200 rounded-lg p-6">
-          <div className="text-green-600 text-4xl font-bold mb-2">{completedExams.length}</div>
-          <div className="text-green-900 font-medium">Pruebas Completadas</div>
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+          <div className="text-blue-600 text-4xl font-bold mb-2">{completedMockExams.length}</div>
+          <div className="text-blue-900 font-medium">Ensayos Completados</div>
         </div>
 
         <div className="bg-purple-50 border border-purple-200 rounded-lg p-6">
@@ -197,20 +197,20 @@ export const MockExamsDashboard: React.FC<MockExamsDashboardProps> = ({ onBack }
                 <div>
                   <div className="font-semibold text-gray-900">{purchase.package.name}</div>
                   <div className="text-sm text-gray-600">
-                    Pruebas restantes: {purchase.examsTotal - purchase.examsUsed} de{' '}
-                    {purchase.examsTotal}
+                    Ensayos restantes: {purchase.mockExamsTotal - purchase.mockExamsUsed} de{' '}
+                    {purchase.mockExamsTotal}
                   </div>
                   <div className="text-xs text-gray-500">
                     Comprado el {new Date(purchase.purchasedAt).toLocaleDateString()}
                   </div>
                 </div>
 
-                {purchase.examsUsed < purchase.examsTotal && (
+                {purchase.mockExamsUsed < purchase.mockExamsTotal && (
                   <button
-                    onClick={handleStartNewExam}
+                    onClick={handleStartNewMockExam}
                     className="px-6 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors"
                   >
-                    ▶ Iniciar Nueva Prueba
+                    ▶ Iniciar Nuevo Ensayo
                   </button>
                 )}
               </div>
@@ -218,12 +218,12 @@ export const MockExamsDashboard: React.FC<MockExamsDashboardProps> = ({ onBack }
           </div>
         ) : (
           <div className="text-center py-8">
-            <p className="text-gray-600 mb-4">No tienes pruebas disponibles</p>
+            <p className="text-gray-600 mb-4">No tienes ensayos disponibles</p>
             <button
               onClick={() => setCurrentView('store')}
               className="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700"
             >
-              + Comprar más pruebas
+              + Comprar más ensayos
             </button>
           </div>
         )}
@@ -234,7 +234,7 @@ export const MockExamsDashboard: React.FC<MockExamsDashboardProps> = ({ onBack }
               onClick={() => setCurrentView('store')}
               className="text-blue-600 hover:text-blue-700 font-medium"
             >
-              + Comprar más pruebas
+              + Comprar más ensayos
             </button>
           </div>
         )}
@@ -244,12 +244,12 @@ export const MockExamsDashboard: React.FC<MockExamsDashboardProps> = ({ onBack }
       <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
         <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center">
           <span className="mr-2">📊</span>
-          Historial de Pruebas
+          Historial de Ensayos
         </h2>
 
-        {completedExams.length > 0 ? (
+        {completedMockExams.length > 0 ? (
           <div className="space-y-3">
-            {completedExams.map((exam) => {
+            {completedMockExams.map((exam) => {
               const percentage = exam.score || 0;
               const scoreColor =
                 percentage >= 80
@@ -296,7 +296,7 @@ export const MockExamsDashboard: React.FC<MockExamsDashboardProps> = ({ onBack }
           </div>
         ) : (
           <div className="text-center py-8 text-gray-500">
-            No has completado ninguna prueba todavía
+            No has completado ningún ensayo todavía
           </div>
         )}
       </div>
