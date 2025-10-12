@@ -17,6 +17,7 @@ interface QASweep2Run {
 interface QASweep2Result {
   id: string;
   variationId: string;
+  displayCode?: string;
   diagnosis: any;
   corrections?: any;
   finalLabels: string[];
@@ -59,6 +60,11 @@ export const QASweep2Panel: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   const [reportModalOpen, setReportModalOpen] = useState(false);
   const [currentReport, setCurrentReport] = useState<any>(null);
   const [reportLoading, setReportLoading] = useState(false);
+  
+  // Paginación para resultados
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const resultsPerPage = 25;
 
   // Estados para crear nuevo run
   const [newRun, setNewRun] = useState({
@@ -170,18 +176,31 @@ export const QASweep2Panel: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     }
   };
 
-  const loadRunResults = async (runId: string) => {
+  const loadRunResults = async (runId: string, page: number = 1) => {
     try {
-      const response = await fetch(`${API_BASE}/api/admin/qa-sweep-2/runs/${runId}/results`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('accessToken')}` }
-      });
+      const response = await fetch(
+        `${API_BASE}/api/admin/qa-sweep-2/runs/${runId}/results?page=${page}&limit=${resultsPerPage}`,
+        { headers: { Authorization: `Bearer ${localStorage.getItem('accessToken')}` } }
+      );
       const data = await response.json();
       if (data.success) {
-        setResults(data.data.results);
+        // Ordenar por fecha de creación (más reciente primero)
+        const sortedResults = [...data.data.results].sort((a, b) => 
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
+        setResults(sortedResults);
         setSelectedRun(data.data.run);
+        setCurrentPage(page);
+        setTotalPages(data.data.pagination?.totalPages || 1);
       }
     } catch (error) {
       console.error('Error loading run results:', error);
+    }
+  };
+
+  const handlePageChange = (newPage: number) => {
+    if (selectedRun && newPage >= 1 && newPage <= totalPages) {
+      loadRunResults(selectedRun.id, newPage);
     }
   };
 
@@ -665,7 +684,11 @@ export const QASweep2Panel: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                   📊 Resultados: {selectedRun.name}
                 </h3>
                 <button
-                  onClick={() => setSelectedRun(null)}
+                  onClick={() => {
+                    setSelectedRun(null);
+                    setCurrentPage(1);
+                    setResults([]);
+                  }}
                   className="text-gray-500 hover:text-gray-700"
                 >
                   ✕
@@ -751,6 +774,61 @@ export const QASweep2Panel: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                       </div>
                     </div>
                   ))}
+                </div>
+              )}
+
+              {/* Paginación */}
+              {results.length > 0 && totalPages > 1 && (
+                <div className="mt-6 flex items-center justify-between border-t pt-4">
+                  <div className="text-sm text-gray-600">
+                    Página {currentPage} de {totalPages}
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handlePageChange(1)}
+                      disabled={currentPage === 1}
+                      className={`px-3 py-1 text-sm rounded ${
+                        currentPage === 1
+                          ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                          : 'bg-blue-600 text-white hover:bg-blue-700'
+                      }`}
+                    >
+                      « Primera
+                    </button>
+                    <button
+                      onClick={() => handlePageChange(currentPage - 1)}
+                      disabled={currentPage === 1}
+                      className={`px-3 py-1 text-sm rounded ${
+                        currentPage === 1
+                          ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                          : 'bg-blue-600 text-white hover:bg-blue-700'
+                      }`}
+                    >
+                      ‹ Anterior
+                    </button>
+                    <button
+                      onClick={() => handlePageChange(currentPage + 1)}
+                      disabled={currentPage === totalPages}
+                      className={`px-3 py-1 text-sm rounded ${
+                        currentPage === totalPages
+                          ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                          : 'bg-blue-600 text-white hover:bg-blue-700'
+                      }`}
+                    >
+                      Siguiente ›
+                    </button>
+                    <button
+                      onClick={() => handlePageChange(totalPages)}
+                      disabled={currentPage === totalPages}
+                      className={`px-3 py-1 text-sm rounded ${
+                        currentPage === totalPages
+                          ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                          : 'bg-blue-600 text-white hover:bg-blue-700'
+                      }`}
+                    >
+                      Última »
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
