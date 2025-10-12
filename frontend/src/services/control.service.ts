@@ -181,17 +181,28 @@ export class ControlService {
    * Completar el control
    */
   async completeControl(controlId: string): Promise<Control> {
+    console.log('🚀 completeControl service called');
+    console.log('   controlId:', controlId);
+    console.log('   URL:', `${API_BASE}/api/controls/${controlId}/complete`);
+    console.log('   Headers:', this.getAuthHeaders());
+    
     const response = await fetch(`${API_BASE}/api/controls/${controlId}/complete`, {
       method: 'POST',
       headers: this.getAuthHeaders(),
     });
     
+    console.log('📡 Response status:', response.status);
+    console.log('📡 Response headers:', response.headers);
+    
     const data = await response.json();
+    console.log('📦 Response data:', data);
     
     if (!data.success) {
+      console.error('❌ Complete failed:', data.message);
       throw new Error(data.message || 'Error al completar control');
     }
     
+    console.log('✅ Complete successful');
     return data.data;
   }
 
