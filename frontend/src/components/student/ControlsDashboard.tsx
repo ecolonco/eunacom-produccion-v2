@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { controlService, ControlPurchase, Control } from '../../services/control.service';
+import { controlService, ControlPurchase, Control, Specialty } from '../../services/control.service';
 import { ControlStore } from './ControlStore';
 import { ControlSession } from './ControlSession';
 import { ControlResults } from './ControlResults';
@@ -11,6 +11,8 @@ export const ControlsDashboard: React.FC = () => {
   const [purchases, setPurchases] = useState<ControlPurchase[]>([]);
   const [myControls, setMyControls] = useState<Control[]>([]);
   const [activeControl, setActiveControl] = useState<Control | null>(null);
+  const [specialties, setSpecialties] = useState<Specialty[]>([]);
+  const [selectedSpecialtyId, setSelectedSpecialtyId] = useState<string>('');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -20,12 +22,14 @@ export const ControlsDashboard: React.FC = () => {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [purchasesData, controlsData] = await Promise.all([
+      const [purchasesData, controlsData, specialtiesData] = await Promise.all([
         controlService.getMyPurchases(),
         controlService.listMyControls(),
+        controlService.listSpecialties(),
       ]);
       setPurchases(purchasesData);
       setMyControls(controlsData);
+      setSpecialties(specialtiesData);
     } catch (error) {
       console.error('Error loading data:', error);
     } finally {
@@ -36,7 +40,13 @@ export const ControlsDashboard: React.FC = () => {
   const handleStartNewControl = async (purchaseId: string) => {
     try {
       console.log('🚀 Iniciando control con purchaseId:', purchaseId);
-      const control = await controlService.startControl(purchaseId);
+      console.log('📚 Especialidad seleccionada:', selectedSpecialtyId || 'Todas');
+      
+      const control = await controlService.startControl(
+        purchaseId, 
+        selectedSpecialtyId || undefined
+      );
+      
       console.log('✅ Control creado:', control);
       setActiveControl(control);
       setCurrentView('session');
@@ -154,6 +164,32 @@ export const ControlsDashboard: React.FC = () => {
               🛒 Comprar Controles
             </button>
           </div>
+        </div>
+      )}
+
+      {/* Selector de Especialidad */}
+      {totalAvailable > 0 && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-8">
+          <h3 className="text-lg font-bold text-blue-900 mb-3">
+            📚 Selecciona una Especialidad
+          </h3>
+          <select
+            value={selectedSpecialtyId}
+            onChange={(e) => setSelectedSpecialtyId(e.target.value)}
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          >
+            <option value="">✨ Todas las Especialidades (aleatorio)</option>
+            {specialties.map((specialty) => (
+              <option key={specialty.id} value={specialty.id}>
+                {specialty.name}
+              </option>
+            ))}
+          </select>
+          <p className="text-sm text-blue-700 mt-2">
+            {selectedSpecialtyId
+              ? `Las 15 preguntas serán de: ${specialties.find((s) => s.id === selectedSpecialtyId)?.name}`
+              : 'Las 15 preguntas serán aleatorias de todas las especialidades'}
+          </p>
         </div>
       )}
 
