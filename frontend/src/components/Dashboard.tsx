@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import TaxonomyInventory from './TaxonomyInventory';
+import { ControlsDashboard } from './student/ControlsDashboard';
 
 export const Dashboard: React.FC = () => {
   const { state, logout } = useAuth();
   const { user } = state;
   const [showTaxonomyInventory, setShowTaxonomyInventory] = useState(false);
+  const [showControls, setShowControls] = useState(false);
 
   if (!user) return null;
 
@@ -14,6 +16,23 @@ export const Dashboard: React.FC = () => {
   // Show taxonomy inventory if requested
   if (showTaxonomyInventory) {
     return <TaxonomyInventory onBack={() => setShowTaxonomyInventory(false)} />;
+  }
+
+  // Show controls dashboard if requested
+  if (showControls) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+        <div className="container mx-auto px-4 py-8">
+          <button
+            onClick={() => setShowControls(false)}
+            className="mb-6 px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
+          >
+            ← Volver al Dashboard
+          </button>
+          <ControlsDashboard />
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -79,11 +98,14 @@ export const Dashboard: React.FC = () => {
               🚀 Acciones Rápidas
             </h2>
             <div className="space-y-3">
-              <button className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition duration-200">
-                🧠 Práctica Rápida
+              <button 
+                onClick={() => setShowControls(true)}
+                className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition duration-200"
+              >
+                📝 Controles (15 preguntas)
               </button>
               <button className="w-full bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 transition duration-200">
-                📚 Simulacro EUNACOM
+                🧠 Práctica Individual
               </button>
               <button className="w-full bg-purple-600 text-white py-2 px-4 rounded-md hover:bg-purple-700 transition duration-200">
                 📊 Ver Progreso
