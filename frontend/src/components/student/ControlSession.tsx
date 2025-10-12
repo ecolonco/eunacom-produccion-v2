@@ -99,13 +99,15 @@ export const ControlSession: React.FC<ControlSessionProps> = ({
     if (answeredCount < totalQuestions) {
       const unanswered = totalQuestions - answeredCount;
       console.log(`⚠️ ${unanswered} unanswered questions`);
-      if (!confirm(`Tienes ${unanswered} pregunta(s) sin responder. ¿Deseas finalizar de todos modos?`)) {
+      if (!window.confirm(`⚠️ Tienes ${unanswered} pregunta(s) sin responder.\n\n¿Deseas finalizar de todos modos?`)) {
         console.log('❌ User cancelled (unanswered)');
         return;
       }
     }
 
-    if (!confirm('¿Estás seguro de que deseas finalizar el control? No podrás modificar tus respuestas después.')) {
+    // Confirmación final con mensaje más claro
+    const confirmMessage = '✅ ¿Finalizar el control y ver tus resultados?\n\nNo podrás modificar tus respuestas después.';
+    if (!window.confirm(confirmMessage)) {
       console.log('❌ User cancelled (confirmation)');
       return;
     }
