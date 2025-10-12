@@ -264,33 +264,6 @@ export const ExamSession: React.FC<ExamSessionProps> = ({
           )}
         </div>
       </div>
-
-      {/* Question navigator */}
-      <div className="bg-white border border-gray-200 rounded-lg p-4">
-        <h3 className="text-sm font-semibold text-gray-700 mb-3">Navegación rápida:</h3>
-        <div className="grid grid-cols-15 gap-2">
-          {exam.questions.map((q, index) => {
-            const isAnswered = !!selectedAnswers[q.variationId];
-            const isCurrent = index === currentQuestionIndex;
-
-            return (
-              <button
-                key={q.id}
-                onClick={() => setCurrentQuestionIndex(index)}
-                className={`w-10 h-10 rounded-lg font-semibold text-sm transition-all ${
-                  isCurrent
-                    ? 'bg-blue-600 text-white ring-2 ring-blue-400'
-                    : isAnswered
-                    ? 'bg-green-100 text-green-700 border border-green-300'
-                    : 'bg-gray-100 text-gray-600 border border-gray-300'
-                }`}
-              >
-                {index + 1}
-              </button>
-            );
-          })}
-        </div>
-      </div>
     </div>
   );
 };
