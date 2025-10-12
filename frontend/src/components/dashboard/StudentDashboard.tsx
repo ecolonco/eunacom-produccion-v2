@@ -5,12 +5,13 @@ import { PracticeHub } from '../quiz/PracticeHub';
 import { QuickPractice } from '../quiz/QuickPractice';
 import { PaymentsService } from '../../services/payments.service';
 import { ControlsDashboard } from '../student/ControlsDashboard';
+import { ExamsDashboard } from '../student/ExamsDashboard';
 
 // Sistema de créditos v2 - Oct 2025
 export const StudentDashboard: React.FC = () => {
   const { state, logout, setUserCredits } = useAuth();
   const { user } = state;
-  const [practiceView, setPracticeView] = useState<'none' | 'hub' | 'random' | 'specialty' | 'random20' | 'random90' | 'controls'>('none');
+  const [practiceView, setPracticeView] = useState<'none' | 'hub' | 'random' | 'specialty' | 'random20' | 'random90' | 'controls' | 'exams'>('none');
   const [isPurchasing, setIsPurchasing] = useState(false);
 
   // Verificar pago pendiente al volver de Flow
@@ -111,6 +112,16 @@ export const StudentDashboard: React.FC = () => {
     );
   }
 
+  if (practiceView === 'exams') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-100">
+        <div className="container mx-auto px-4 py-8">
+          <ExamsDashboard onBack={() => setPracticeView('none')} />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       <div className="container mx-auto px-4 py-8">
@@ -154,6 +165,12 @@ export const StudentDashboard: React.FC = () => {
               className="w-full px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition duration-200 font-medium"
             >
               📝 Controles (15 preguntas) - Sin créditos
+            </button>
+            <button
+              onClick={() => setPracticeView('exams')}
+              className="w-full px-6 py-3 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition duration-200 font-medium"
+            >
+              🎓 Pruebas (45 preguntas) - Sin créditos
             </button>
             <button
               onClick={() => setPracticeView('random')}
