@@ -117,7 +117,7 @@ export const Dashboard: React.FC = () => {
           {isAdmin && (
             <div className="bg-white rounded-lg shadow-md p-6 md:col-span-2 lg:col-span-3">
               <h2 className="text-xl font-semibold text-gray-800 mb-4">
-                ⚙️ Panel de Administración
+                ⚙️ Panel Administrativo
               </h2>
               <div className="grid md:grid-cols-2 lg:grid-cols-6 gap-4">
                 <button className="bg-indigo-600 text-white py-3 px-4 rounded-md hover:bg-indigo-700 transition duration-200">
