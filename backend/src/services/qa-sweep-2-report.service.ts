@@ -252,7 +252,7 @@ Responde ÚNICAMENTE en formato JSON con esta estructura:
     let severeAnalysis = 'No se pudo generar análisis detallado';
 
     try {
-      const response = await this.openaiService.callOpenAI(
+      const response = await this.openaiService.generateText(
         'gpt-4o',
         prompt,
         8000

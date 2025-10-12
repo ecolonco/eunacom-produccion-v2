@@ -68,6 +68,42 @@ export class OpenAIService {
   }
 
   /**
+   * Método público para generar texto con OpenAI (sin JSON parsing)
+   */
+  async generateText(
+    model: string,
+    prompt: string,
+    maxTokens?: number
+  ): Promise<{ content: string; tokensIn: number; tokensOut: number; latencyMs: number }> {
+    const startTime = Date.now();
+    
+    try {
+      const response = await this.client.chat.completions.create({
+        model,
+        response_format: { type: 'json_object' },
+        messages: [
+          { role: 'system', content: 'Eres un experto en análisis y generación de reportes técnicos.' },
+          { role: 'user', content: prompt }
+        ],
+        max_tokens: maxTokens,
+      });
+
+      const latencyMs = Date.now() - startTime;
+      const content = response.choices[0].message.content || '{}';
+      
+      return {
+        content,
+        tokensIn: response.usage?.prompt_tokens || 0,
+        tokensOut: response.usage?.completion_tokens || 0,
+        latencyMs
+      };
+    } catch (error) {
+      logger.error('OpenAI generateText failed:', error);
+      throw new Error(`OpenAI generateText failed: ${error}`);
+    }
+  }
+
+  /**
    * Evalúa un ejercicio usando GPT-4o Mini
    */
   async evaluateExercise(exerciseJson: any): Promise<{
