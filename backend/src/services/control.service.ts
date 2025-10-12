@@ -98,23 +98,20 @@ export class ControlService {
    * Seleccionar 15 preguntas aleatorias visibles
    */
   private async selectRandomQuestions(count: number = 15, specialtyId?: string) {
-    // Construir el filtro para specialty si se proporciona
-    const whereClause: any = {
-      isVisible: true,
-    };
-
-    // Si se especifica una especialidad, filtrar por ella
+    // Primero, si hay especialidad, buscar su nombre
+    let specialtyName: string | undefined;
     if (specialtyId) {
-      whereClause.baseQuestion = {
-        topic: {
-          specialtyId: specialtyId,
-        },
-      };
+      const specialty = await prisma.specialty.findUnique({
+        where: { id: specialtyId },
+      });
+      specialtyName = specialty?.name;
     }
 
     // Obtener todas las variaciones visibles (última versión)
     const allVariations = await prisma.questionVariation.findMany({
-      where: whereClause,
+      where: {
+        isVisible: true,
+      },
       include: {
         alternatives: {
           orderBy: { order: 'asc' },
@@ -122,11 +119,6 @@ export class ControlService {
         baseQuestion: {
           include: {
             aiAnalysis: true,
-            topic: {
-              include: {
-                specialty: true,
-              },
-            },
           },
         },
       },
@@ -144,7 +136,20 @@ export class ControlService {
       }
     }
 
-    const uniqueVariations = Array.from(variationMap.values());
+    let uniqueVariations = Array.from(variationMap.values());
+
+    // Filtrar por especialidad si se especificó
+    if (specialtyName) {
+      uniqueVariations = uniqueVariations.filter((variation) => {
+        const aiAnalysis = variation.baseQuestion.aiAnalysis;
+        if (!aiAnalysis) return false;
+        
+        // Comparar specialty (case insensitive)
+        return aiAnalysis.specialty?.toLowerCase() === specialtyName.toLowerCase();
+      });
+      
+      logger.info(`Filtrado por especialidad '${specialtyName}': ${uniqueVariations.length} variaciones encontradas`);
+    }
 
     // Validar que hay suficientes preguntas
     if (uniqueVariations.length < count) {
