@@ -8,23 +8,36 @@ import { logger } from '../utils/logger';
 
 interface RunReport {
   runNumber: number;
+  runName: string;
+  runDescription: string;
+  generatedAt: string;
   summary: string;
-  statistics: {
-    totalVariations: number;
-    correctedVariations: number;
-    correctionRate: number;
+  stats: {
+    totalProcessed: number;
+    corrected: number;
     avgConfidence: number;
-    totalTokens: number;
-    totalCost: number;
+    estimatedCost: string;
+    totalTokensIn: number;
+    totalTokensOut: number;
+    avgLatency: number;
   };
   severeCases: Array<{
-    variationId: string;
     displayCode: string;
     severity: number;
-    originalContent: string;
-    correctedContent: string;
-    justification: string;
+    recommendation: string;
+    labels: string[];
+    original: {
+      enunciado: string;
+    } | null;
+    corrected: {
+      enunciado: string;
+    } | null;
+    taxonomyChange: {
+      from: string;
+      to: string;
+    } | null;
   }>;
+  severeAnalysis: string;
   recommendations: string[];
   taxonomyChanges: Array<{
     variationId: string;
@@ -272,21 +285,80 @@ Responde ÚNICAMENTE en formato JSON con esta estructura:
       ];
     }
 
+    // Mapear casos severos con el formato esperado por el frontend
+    const mappedSevereCases = await Promise.all(severeCases.map(async c => {
+      let original: any = null;
+      let corrected: any = null;
+      let labels: string[] = [];
+
+      try {
+        // Obtener el resultado completo para extraer el diagnosis
+        const result = run.results.find(r => r.variationId === c.variationId);
+        if (result && result.diagnosis) {
+          const diagnosis = result.diagnosis as any;
+          labels = diagnosis.etiquetas || [];
+        }
+
+        // Parsear contenido original
+        if (c.originalContent) {
+          const originalParsed = JSON.parse(c.originalContent);
+          original = {
+            enunciado: originalParsed.statement || originalParsed.enunciado || '',
+          };
+        }
+
+        // Parsear contenido corregido
+        if (c.correctedContent) {
+          const correctedParsed = JSON.parse(c.correctedContent);
+          corrected = {
+            enunciado: correctedParsed.statement || correctedParsed.enunciado || correctedParsed.enunciado_corregido || '',
+          };
+        }
+      } catch (e) {
+        logger.warn(`Error parsing content for case ${c.displayCode}: ${e}`);
+      }
+
+      return {
+        displayCode: c.displayCode,
+        severity: c.severity,
+        recommendation: c.justification,
+        labels,
+        original,
+        corrected,
+        taxonomyChange: null, // Se agregará más abajo si existe
+      };
+    }));
+
+    // Agregar cambios de taxonomía a los casos correspondientes
+    for (const change of taxonomyChanges) {
+      const caseIndex = mappedSevereCases.findIndex(c => c.displayCode === change.displayCode);
+      if (caseIndex >= 0) {
+        mappedSevereCases[caseIndex].taxonomyChange = {
+          from: `${change.from.specialty} / ${change.from.topic}`,
+          to: `${change.to.specialty} / ${change.to.topic}`,
+        };
+      }
+    }
+
     const report: RunReport = {
       runNumber,
+      runName: run.name,
+      runDescription: run.description || '',
+      generatedAt: new Date().toISOString(),
       summary,
-      statistics: {
-        totalVariations,
-        correctedVariations,
-        correctionRate: parseFloat(correctionRate.toFixed(2)),
-        avgConfidence: parseFloat(avgConfidence.toFixed(2)),
-        totalTokens,
-        totalCost: parseFloat(totalCost.toFixed(4)),
+      stats: {
+        totalProcessed: totalVariations,
+        corrected: correctedVariations,
+        avgConfidence: parseFloat(avgConfidence.toFixed(1)),
+        estimatedCost: totalCost.toFixed(2),
+        totalTokensIn,
+        totalTokensOut,
+        avgLatency: run.results.length > 0
+          ? Math.round(run.results.reduce((sum, r) => sum + r.latencyMs, 0) / run.results.length)
+          : 0,
       },
-      severeCases: severeCases.map(c => ({
-        ...c,
-        justification: severeAnalysis,
-      })),
+      severeCases: mappedSevereCases,
+      severeAnalysis,
       recommendations,
       taxonomyChanges,
     };
