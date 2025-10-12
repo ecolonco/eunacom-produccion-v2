@@ -82,29 +82,44 @@ export const ControlSession: React.FC<ControlSessionProps> = ({
   };
 
   const handleComplete = async () => {
-    if (!control || !control.questions) return;
+    console.log('🎯 handleComplete called');
+    console.log('Control:', control);
+    console.log('Selected answers:', selectedAnswers);
+    
+    if (!control || !control.questions) {
+      console.error('❌ No control or questions');
+      return;
+    }
 
     const answeredCount = Object.keys(selectedAnswers).length;
     const totalQuestions = control.questions.length;
 
+    console.log(`📊 Answered: ${answeredCount}/${totalQuestions}`);
+
     if (answeredCount < totalQuestions) {
       const unanswered = totalQuestions - answeredCount;
+      console.log(`⚠️ ${unanswered} unanswered questions`);
       if (!confirm(`Tienes ${unanswered} pregunta(s) sin responder. ¿Deseas finalizar de todos modos?`)) {
+        console.log('❌ User cancelled (unanswered)');
         return;
       }
     }
 
     if (!confirm('¿Estás seguro de que deseas finalizar el control? No podrás modificar tus respuestas después.')) {
+      console.log('❌ User cancelled (confirmation)');
       return;
     }
 
+    console.log('✅ Starting completion...');
     setSubmitting(true);
 
     try {
+      console.log(`🚀 Calling completeControl(${controlId})`);
       const results = await controlService.completeControl(controlId);
+      console.log('✅ Results received:', results);
       onComplete(results);
     } catch (error: any) {
-      console.error('Error completing control:', error);
+      console.error('❌ Error completing control:', error);
       alert(error.message || 'Error al finalizar el control');
       setSubmitting(false);
     }
