@@ -126,10 +126,16 @@ export class ControlService {
       body: JSON.stringify({ purchaseId }),
     });
     
-    const data = await response.json();
+    // Log para debug
+    console.log('Response status:', response.status);
+    console.log('Response headers:', response.headers);
     
-    if (!data.success) {
-      throw new Error(data.message || 'Error al iniciar control');
+    const data = await response.json();
+    console.log('Response data:', data);
+    
+    if (!response.ok || !data.success) {
+      const errorMsg = data.message || `Error ${response.status}: ${response.statusText}`;
+      throw new Error(errorMsg);
     }
     
     return data.data;
