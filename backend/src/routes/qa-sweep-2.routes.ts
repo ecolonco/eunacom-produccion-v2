@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { authenticate, authorize } from '../middleware/auth.middleware';
 import { QASweep2Service, QASweep2Config } from '../services/qa-sweep-2.service';
+import { qaSweep2ReportService } from '../services/qa-sweep-2-report.service';
 import { logger } from '../utils/logger';
 import { prisma } from '../lib/prisma';
 
@@ -482,6 +483,30 @@ router.get('/worker/health', async (_req: Request, res: Response) => {
     res.json({ success: true, data: { pending, running } });
   } catch (e) {
     res.status(500).json({ success: false, message: 'Worker health error' });
+  }
+});
+
+// POST /api/admin/qa-sweep-2/runs/:id/generate-report - Generar reporte IA
+router.post('/runs/:id/generate-report', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { regenerate = false } = req.body;
+
+    logger.info(`Generating AI report for run ${id}, regenerate=${regenerate}`);
+
+    const report = await qaSweep2ReportService.generateReport(id, regenerate);
+
+    res.json({
+      success: true,
+      data: report,
+      message: 'Reporte generado exitosamente'
+    });
+  } catch (error) {
+    logger.error('Error generating AI report:', error);
+    res.status(500).json({
+      success: false,
+      message: error instanceof Error ? error.message : 'Error al generar el reporte'
+    });
   }
 });
 
