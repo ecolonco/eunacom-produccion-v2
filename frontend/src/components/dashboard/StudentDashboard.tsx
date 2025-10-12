@@ -4,12 +4,13 @@ import { CreditsService } from '../../services/credits.service';
 import { PracticeHub } from '../quiz/PracticeHub';
 import { QuickPractice } from '../quiz/QuickPractice';
 import { PaymentsService } from '../../services/payments.service';
+import { ControlsDashboard } from '../student/ControlsDashboard';
 
 // Sistema de créditos v2 - Oct 2025
 export const StudentDashboard: React.FC = () => {
   const { state, logout, setUserCredits } = useAuth();
   const { user } = state;
-  const [practiceView, setPracticeView] = useState<'none' | 'hub' | 'random' | 'specialty' | 'random20' | 'random90'>('none');
+  const [practiceView, setPracticeView] = useState<'none' | 'hub' | 'random' | 'specialty' | 'random20' | 'random90' | 'controls'>('none');
   const [isPurchasing, setIsPurchasing] = useState(false);
 
   // Verificar pago pendiente al volver de Flow
@@ -94,6 +95,22 @@ export const StudentDashboard: React.FC = () => {
     );
   }
 
+  if (practiceView === 'controls') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+        <div className="container mx-auto px-4 py-8">
+          <button
+            onClick={() => setPracticeView('none')}
+            className="mb-6 px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
+          >
+            ← Volver al Dashboard
+          </button>
+          <ControlsDashboard />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       <div className="container mx-auto px-4 py-8">
@@ -133,8 +150,14 @@ export const StudentDashboard: React.FC = () => {
               💳 Comprar 400 créditos por $20.000
             </button>
             <button
-              onClick={() => setPracticeView('random')}
+              onClick={() => setPracticeView('controls')}
               className="w-full px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition duration-200 font-medium"
+            >
+              📝 Controles (15 preguntas) - Sin créditos
+            </button>
+            <button
+              onClick={() => setPracticeView('random')}
+              className="w-full px-6 py-3 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition duration-200 font-medium"
             >
               🎯 Practica ejercicios aleatoriamente (1 crédito)
             </button>
