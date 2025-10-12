@@ -98,12 +98,14 @@ export const Dashboard: React.FC = () => {
               🚀 Acciones Rápidas
             </h2>
             <div className="space-y-3">
-              <button 
-                onClick={() => setShowControls(true)}
-                className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition duration-200"
-              >
-                📝 Controles (15 preguntas)
-              </button>
+              {!isAdmin && (
+                <button 
+                  onClick={() => setShowControls(true)}
+                  className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition duration-200"
+                >
+                  📝 Controles (15 preguntas)
+                </button>
+              )}
               <button className="w-full bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 transition duration-200">
                 🧠 Práctica Individual
               </button>
