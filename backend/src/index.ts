@@ -30,6 +30,8 @@ import adminQaControlRoutes from './routes/admin-qa-control.routes';
 import qaSweep2Routes, { qaSweep2Routes as qaSweep2NamedRoutes } from './routes/qa-sweep-2.routes';
 import controlRoutes from './routes/control.routes';
 import adminControlsRoutes from './routes/admin-controls.routes';
+import examRoutes from './routes/exam.routes';
+import adminExamsRoutes from './routes/admin-exams.routes';
 import { logger } from './utils/logger';
 
 // Load environment variables
@@ -135,6 +137,8 @@ app.use('/api/admin/qa-control', adminQaControlRoutes);
 app.use('/api/admin/qa-sweep-2', qaSweep2Routes);
 app.use('/api/admin/controls', adminControlsRoutes);
 app.use('/api/controls', controlRoutes);
+app.use('/api/admin/exams', adminExamsRoutes);
+app.use('/api/exams', examRoutes);
 app.use('/api/exercise-factory', exerciseFactoryRoutes);
 app.use('/api/taxonomy-admin', taxonomyAdminRoutes);
 app.use('/api/qa-sweep', qaSweepRoutes);
