@@ -2,12 +2,37 @@ import { Router, Response } from 'express';
 import { controlService } from '../services/control.service';
 import { authenticate, AuthRequest } from '../middleware/auth.middleware';
 import { logger } from '../utils/logger';
+import { prisma } from '../lib/prisma';
 
 const router = Router();
 
 // ============================================================================
 // RUTAS PÚBLICAS (para ver paquetes)
 // ============================================================================
+
+// GET /api/controls/specialties - Listar especialidades disponibles
+router.get('/specialties', async (req, res: Response) => {
+  try {
+    const specialties = await prisma.specialty.findMany({
+      orderBy: { name: 'asc' },
+      select: {
+        id: true,
+        name: true,
+      },
+    });
+    
+    res.json({
+      success: true,
+      data: specialties,
+    });
+  } catch (error) {
+    logger.error('Error getting specialties:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al obtener especialidades',
+    });
+  }
+});
 
 // GET /api/controls/packages - Listar paquetes disponibles
 router.get('/packages', async (req, res: Response) => {
@@ -53,7 +78,7 @@ router.get('/my-purchases', authenticate, async (req: AuthRequest, res: Response
 router.post('/start', authenticate, async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user!.id;
-    const { purchaseId } = req.body;
+    const { purchaseId, specialtyId } = req.body;
 
     if (!purchaseId) {
       return res.status(400).json({
@@ -62,9 +87,12 @@ router.post('/start', authenticate, async (req: AuthRequest, res: Response) => {
       });
     }
 
+    console.log(`🚀 Iniciando control - Usuario: ${userId}, Compra: ${purchaseId}, Especialidad: ${specialtyId || 'Todas'}`);
+    
     const control = await controlService.startControl({
       userId,
       purchaseId,
+      specialtyId,
     });
 
     res.json({

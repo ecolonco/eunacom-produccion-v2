@@ -17,6 +17,7 @@ export interface PurchaseControlPackageDto {
 export interface StartControlDto {
   userId: string;
   purchaseId: string;
+  specialtyId?: string; // Opcional: filtrar por especialidad
 }
 
 export interface SubmitAnswerDto {
@@ -96,12 +97,24 @@ export class ControlService {
   /**
    * Seleccionar 15 preguntas aleatorias visibles
    */
-  private async selectRandomQuestions(count: number = 15) {
+  private async selectRandomQuestions(count: number = 15, specialtyId?: string) {
+    // Construir el filtro para specialty si se proporciona
+    const whereClause: any = {
+      isVisible: true,
+    };
+
+    // Si se especifica una especialidad, filtrar por ella
+    if (specialtyId) {
+      whereClause.baseQuestion = {
+        topic: {
+          specialtyId: specialtyId,
+        },
+      };
+    }
+
     // Obtener todas las variaciones visibles (última versión)
     const allVariations = await prisma.questionVariation.findMany({
-      where: {
-        isVisible: true,
-      },
+      where: whereClause,
       include: {
         alternatives: {
           orderBy: { order: 'asc' },
@@ -109,6 +122,11 @@ export class ControlService {
         baseQuestion: {
           include: {
             aiAnalysis: true,
+            topic: {
+              include: {
+                specialty: true,
+              },
+            },
           },
         },
       },
@@ -165,8 +183,8 @@ export class ControlService {
       throw new Error('No tienes controles disponibles');
     }
 
-    // Seleccionar 15 preguntas aleatorias
-    const questions = await this.selectRandomQuestions(15);
+    // Seleccionar 15 preguntas aleatorias (con filtro de especialidad opcional)
+    const questions = await this.selectRandomQuestions(15, data.specialtyId);
 
     // Crear el control
     const control = await prisma.control.create({

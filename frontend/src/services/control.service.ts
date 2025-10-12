@@ -1,5 +1,10 @@
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://eunacom-backend-v3.onrender.com';
 
+export interface Specialty {
+  id: string;
+  name: string;
+}
+
 export interface ControlPackage {
   id: string;
   name: string;
@@ -86,6 +91,20 @@ export class ControlService {
   }
 
   /**
+   * Listar especialidades disponibles
+   */
+  async listSpecialties(): Promise<Specialty[]> {
+    const response = await fetch(`${API_BASE}/api/controls/specialties`);
+    const data = await response.json();
+    
+    if (!data.success) {
+      throw new Error(data.message || 'Error al cargar especialidades');
+    }
+    
+    return data.data;
+  }
+
+  /**
    * Listar paquetes de controles disponibles
    */
   async listPackages(): Promise<ControlPackage[]> {
@@ -119,11 +138,11 @@ export class ControlService {
   /**
    * Iniciar un nuevo control
    */
-  async startControl(purchaseId: string): Promise<Control> {
+  async startControl(purchaseId: string, specialtyId?: string): Promise<Control> {
     const response = await fetch(`${API_BASE}/api/controls/start`, {
       method: 'POST',
       headers: this.getAuthHeaders(),
-      body: JSON.stringify({ purchaseId }),
+      body: JSON.stringify({ purchaseId, specialtyId }),
     });
     
     // Log para debug
