@@ -72,10 +72,6 @@ export const ControlStore: React.FC<ControlStoreProps> = ({ onPurchaseSuccess })
   };
 
   const handlePurchase = async (pkg: ControlPackage) => {
-    if (!confirm(`¿Confirmas la compra de ${pkg.name} por $${pkg.price.toLocaleString('es-CL')} CLP?`)) {
-      return;
-    }
-
     setPurchasing(true);
     
     try {
@@ -177,4 +173,44 @@ export const ControlStore: React.FC<ControlStoreProps> = ({ onPurchaseSuccess })
               </div>
               <div className="flex items-center justify-between py-2">
                 <span className="text-gray-600">Precio:</span>
-                <span className="font-bold tex
+                <span className="font-bold text-2xl text-blue-600">
+                  ${pkg.price.toLocaleString('es-CL')}
+                </span>
+              </div>
+              <div className="text-center text-sm text-gray-500">
+                ${Math.round(pkg.price / pkg.controlQty).toLocaleString('es-CL')} por control
+              </div>
+            </div>
+
+            <button
+              onClick={() => handlePurchase(pkg)}
+              disabled={purchasing}
+              className={`w-full py-3 px-6 rounded-lg font-semibold transition-all ${
+                purchasing
+                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  : 'bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg'
+              }`}
+            >
+              {purchasing ? 'Procesando...' : '🛒 Comprar Ahora'}
+            </button>
+
+            <p className="text-xs text-gray-500 text-center mt-3">
+              Pago seguro a través de Flow.cl
+            </p>
+          </div>
+        ))}
+      </div>
+
+      <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
+        <h4 className="font-semibold text-gray-900 mb-3">💡 Recomendaciones:</h4>
+        <ul className="text-gray-700 space-y-2 text-sm">
+          <li>• Realiza los controles en un ambiente tranquilo y sin interrupciones</li>
+          <li>• Simula condiciones de examen real (sin apuntes ni consultas)</li>
+          <li>• Revisa cuidadosamente las explicaciones al finalizar</li>
+          <li>• Identifica patrones en tus errores para mejorar</li>
+        </ul>
+      </div>
+    </div>
+  );
+};
+
