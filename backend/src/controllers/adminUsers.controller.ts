@@ -37,6 +37,45 @@ export class AdminUsersController {
             isActive: true,
             isVerified: true,
             createdAt: true,
+            controlPurchases: {
+              where: { status: 'ACTIVE' },
+              select: {
+                id: true,
+                controlsTotal: true,
+                controlsUsed: true,
+                package: {
+                  select: {
+                    name: true,
+                  }
+                }
+              }
+            },
+            examPurchases: {
+              where: { status: 'ACTIVE' },
+              select: {
+                id: true,
+                examsTotal: true,
+                examsUsed: true,
+                package: {
+                  select: {
+                    name: true,
+                  }
+                }
+              }
+            },
+            mockExamPurchases: {
+              where: { status: 'ACTIVE' },
+              select: {
+                id: true,
+                mockExamsTotal: true,
+                mockExamsUsed: true,
+                package: {
+                  select: {
+                    name: true,
+                  }
+                }
+              }
+            }
           },
           take: limit,
           skip: (page - 1) * limit,
@@ -116,6 +155,102 @@ export class AdminUsersController {
         return;
       }
       res.status(500).json({ success: false, message: 'Error al actualizar usuario' });
+    }
+  }
+
+  // PUT /api/admin/users/:userId/control-purchases/:purchaseId
+  static async updateControlPurchase(req: AuthenticatedRequest, res: Response): Promise<void> {
+    try {
+      const { userId, purchaseId } = req.params;
+      const { controlsUsed } = req.body;
+
+      if (typeof controlsUsed !== 'number' || !Number.isFinite(controlsUsed)) {
+        res.status(400).json({ success: false, message: 'controlsUsed debe ser un número' });
+        return;
+      }
+
+      const purchase = await prisma.controlPurchase.findFirst({
+        where: { id: purchaseId, userId }
+      });
+
+      if (!purchase) {
+        res.status(404).json({ success: false, message: 'Compra no encontrada' });
+        return;
+      }
+
+      const updated = await prisma.controlPurchase.update({
+        where: { id: purchaseId },
+        data: { controlsUsed: Math.max(0, Math.min(controlsUsed, purchase.controlsTotal)) }
+      });
+
+      res.json({ success: true, data: { purchase: updated } });
+    } catch (error) {
+      logger.error('Error updating control purchase:', error);
+      res.status(500).json({ success: false, message: 'Error al actualizar compra' });
+    }
+  }
+
+  // PUT /api/admin/users/:userId/exam-purchases/:purchaseId
+  static async updateExamPurchase(req: AuthenticatedRequest, res: Response): Promise<void> {
+    try {
+      const { userId, purchaseId } = req.params;
+      const { examsUsed } = req.body;
+
+      if (typeof examsUsed !== 'number' || !Number.isFinite(examsUsed)) {
+        res.status(400).json({ success: false, message: 'examsUsed debe ser un número' });
+        return;
+      }
+
+      const purchase = await prisma.examPurchase.findFirst({
+        where: { id: purchaseId, userId }
+      });
+
+      if (!purchase) {
+        res.status(404).json({ success: false, message: 'Compra no encontrada' });
+        return;
+      }
+
+      const updated = await prisma.examPurchase.update({
+        where: { id: purchaseId },
+        data: { examsUsed: Math.max(0, Math.min(examsUsed, purchase.examsTotal)) }
+      });
+
+      res.json({ success: true, data: { purchase: updated } });
+    } catch (error) {
+      logger.error('Error updating exam purchase:', error);
+      res.status(500).json({ success: false, message: 'Error al actualizar compra' });
+    }
+  }
+
+  // PUT /api/admin/users/:userId/mock-exam-purchases/:purchaseId
+  static async updateMockExamPurchase(req: AuthenticatedRequest, res: Response): Promise<void> {
+    try {
+      const { userId, purchaseId } = req.params;
+      const { mockExamsUsed } = req.body;
+
+      if (typeof mockExamsUsed !== 'number' || !Number.isFinite(mockExamsUsed)) {
+        res.status(400).json({ success: false, message: 'mockExamsUsed debe ser un número' });
+        return;
+      }
+
+      const purchase = await prisma.mockExamPurchase.findFirst({
+        where: { id: purchaseId, userId }
+      });
+
+      if (!purchase) {
+        res.status(404).json({ success: false, message: 'Compra no encontrada' });
+        return;
+      }
+
+      const updated = await prisma.mockExamPurchase.update({
+        where: { id: purchaseId },
+        data: { mockExamsUsed: Math.max(0, Math.min(mockExamsUsed, purchase.mockExamsTotal)) }
+      });
+
+      res.json({ success: true, data: { purchase: updated } });
+    } catch (error) {
+      logger.error('Error updating mock exam purchase:', error);
+      res.status(500).json({ success: false, message: 'Error al actualizar compra' });
     }
   }
 }
