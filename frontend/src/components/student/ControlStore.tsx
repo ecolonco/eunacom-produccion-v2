@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { controlService, ControlPackage } from '../../services/control.service';
 
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://eunacom-backend-v3.onrender.com';
+
 interface ControlStoreProps {
   onPurchaseSuccess: () => void;
 }
@@ -9,10 +11,53 @@ export const ControlStore: React.FC<ControlStoreProps> = ({ onPurchaseSuccess })
   const [packages, setPackages] = useState<ControlPackage[]>([]);
   const [loading, setLoading] = useState(true);
   const [purchasing, setPurchasing] = useState(false);
+  const [currentPaymentId, setCurrentPaymentId] = useState<string | null>(null);
 
   useEffect(() => {
     loadPackages();
   }, []);
+
+  // Polling para verificar estado del pago
+  useEffect(() => {
+    if (!currentPaymentId) return;
+
+    const checkPaymentStatus = async () => {
+      try {
+        const response = await fetch(`${API_BASE}/api/payments/flow/check/${currentPaymentId}`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+          }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success && data.status === 'PAID') {
+          // Pago exitoso
+          setCurrentPaymentId(null);
+          setPurchasing(false);
+          alert('✅ ¡Pago confirmado! Tu paquete de controles ha sido acreditado.');
+          onPurchaseSuccess();
+        }
+      } catch (error) {
+        console.error('Error checking payment:', error);
+      }
+    };
+
+    // Verificar cada 3 segundos
+    const interval = setInterval(checkPaymentStatus, 3000);
+    
+    // Detener después de 5 minutos
+    const timeout = setTimeout(() => {
+      clearInterval(interval);
+      setCurrentPaymentId(null);
+      setPurchasing(false);
+    }, 300000);
+
+    return () => {
+      clearInterval(interval);
+      clearTimeout(timeout);
+    };
+  }, [currentPaymentId, onPurchaseSuccess]);
 
   const loadPackages = async () => {
     try {
@@ -34,22 +79,30 @@ export const ControlStore: React.FC<ControlStoreProps> = ({ onPurchaseSuccess })
     setPurchasing(true);
     
     try {
-      // Aquí integraremos con Flow.cl (similar a como compramos créditos)
-      // Por ahora, mostramos mensaje
-      alert('Integración con Flow.cl próximamente. Contacta al administrador para comprar controles.');
-      
-      // TODO: Implementar integración Flow.cl
-      // const payment = await flowService.createPayment({
-      //   amount: pkg.price,
-      //   subject: pkg.name,
-      //   packageId: pkg.id
-      // });
-      // window.location.href = payment.payUrl;
+      const response = await fetch(`${API_BASE}/api/payments/flow/create-control-purchase`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+        },
+        body: JSON.stringify({ packageId: pkg.id })
+      });
+
+      const data = await response.json();
+
+      if (data.success && data.url) {
+        // Guardar ID de pago para polling
+        setCurrentPaymentId(data.paymentId);
+        
+        // Redirigir a Flow.cl
+        window.location.href = data.url;
+      } else {
+        throw new Error(data.message || 'Error al crear el pago');
+      }
       
     } catch (error: any) {
       console.error('Error purchasing package:', error);
       alert(error.message || 'Error al procesar la compra');
-    } finally {
       setPurchasing(false);
     }
   };
@@ -124,44 +177,4 @@ export const ControlStore: React.FC<ControlStoreProps> = ({ onPurchaseSuccess })
               </div>
               <div className="flex items-center justify-between py-2">
                 <span className="text-gray-600">Precio:</span>
-                <span className="font-bold text-2xl text-blue-600">
-                  ${pkg.price.toLocaleString('es-CL')}
-                </span>
-              </div>
-              <div className="text-center text-sm text-gray-500">
-                ${Math.round(pkg.price / pkg.controlQty).toLocaleString('es-CL')} por control
-              </div>
-            </div>
-
-            <button
-              onClick={() => handlePurchase(pkg)}
-              disabled={purchasing}
-              className={`w-full py-3 px-6 rounded-lg font-semibold transition-all ${
-                purchasing
-                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                  : 'bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg'
-              }`}
-            >
-              {purchasing ? 'Procesando...' : '🛒 Comprar Ahora'}
-            </button>
-
-            <p className="text-xs text-gray-500 text-center mt-3">
-              Pago seguro a través de Flow.cl
-            </p>
-          </div>
-        ))}
-      </div>
-
-      <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
-        <h4 className="font-semibold text-gray-900 mb-3">💡 Recomendaciones:</h4>
-        <ul className="text-gray-700 space-y-2 text-sm">
-          <li>• Realiza los controles en un ambiente tranquilo y sin interrupciones</li>
-          <li>• Simula condiciones de examen real (sin apuntes ni consultas)</li>
-          <li>• Revisa cuidadosamente las explicaciones al finalizar</li>
-          <li>• Identifica patrones en tus errores para mejorar</li>
-        </ul>
-      </div>
-    </div>
-  );
-};
-
+                <span className="font-bold tex
