@@ -72,6 +72,9 @@ logger.info(`CORS Origins configured: ${JSON.stringify(corsOrigins)}`);
 // Permitir CORS para Vercel, localhost y dominios configurados
 app.use(cors({
   origin: (origin, callback) => {
+    // Log para debugging
+    logger.info(`CORS request from origin: ${origin}`);
+    
     // Permitir sin origin (mobile apps, curl, etc.)
     if (!origin) return callback(null, true);
     
@@ -97,7 +100,12 @@ app.use(cors({
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  exposedHeaders: ['Content-Length', 'X-Request-Id'],
+  maxAge: 86400, // 24 hours
 }));
+
+// Handle preflight OPTIONS requests explicitly
+app.options('*', cors());
 
 // Rate limiting
 const limiter = rateLimit({
