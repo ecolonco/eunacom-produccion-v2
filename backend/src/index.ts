@@ -84,6 +84,9 @@ app.use(cors({
     // Permitir Flow.cl (sandbox y producción)
     if (origin.includes('flow.cl')) return callback(null, true);
     
+    // Permitir eunacomtest.cl y sus subdominios
+    if (origin.includes('eunacomtest.cl')) return callback(null, true);
+    
     // Permitir orígenes configurados
     if (corsOrigins.includes(origin)) return callback(null, true);
     
