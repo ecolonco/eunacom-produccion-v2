@@ -10,6 +10,9 @@ export const AdminUsersTable: React.FC<Props> = ({ onBack }) => {
   const [savingAll, setSavingAll] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [expandedUserId, setExpandedUserId] = React.useState<string | null>(null);
+  const [controlPackages, setControlPackages] = React.useState<any[]>([]);
+  const [examPackages, setExamPackages] = React.useState<any[]>([]);
+  const [mockExamPackages, setMockExamPackages] = React.useState<any[]>([]);
 
   const load = async () => {
     try {
@@ -24,7 +27,25 @@ export const AdminUsersTable: React.FC<Props> = ({ onBack }) => {
     }
   };
 
-  React.useEffect(() => { void load(); }, []);
+  React.useEffect(() => { 
+    void load(); 
+    void loadPackages();
+  }, []);
+
+  const loadPackages = async () => {
+    try {
+      const [controls, exams, mockExams] = await Promise.all([
+        AdminUsersService.listControlPackages(),
+        AdminUsersService.listExamPackages(),
+        AdminUsersService.listMockExamPackages(),
+      ]);
+      setControlPackages(controls);
+      setExamPackages(exams);
+      setMockExamPackages(mockExams);
+    } catch (e) {
+      console.error('Error loading packages:', e);
+    }
+  };
 
   const handleChange = (id: string, field: keyof AdminUserDto | 'password', value: string) => {
     setUsers(prev => prev.map(u => u.id === id ? { ...u, [field]: field === 'credits' ? Number(value) : value } as any : u));
@@ -116,6 +137,36 @@ export const AdminUsersTable: React.FC<Props> = ({ onBack }) => {
       alert('Compra actualizada');
     } catch (e: any) {
       alert(e?.message || 'Error al actualizar');
+    }
+  };
+
+  const handleCreateControlPurchase = async (userId: string, packageId: string) => {
+    try {
+      await AdminUsersService.createControlPurchase(userId, packageId);
+      await load();
+      alert('Paquete de controles asignado');
+    } catch (e: any) {
+      alert(e?.message || 'Error al asignar paquete');
+    }
+  };
+
+  const handleCreateExamPurchase = async (userId: string, packageId: string) => {
+    try {
+      await AdminUsersService.createExamPurchase(userId, packageId);
+      await load();
+      alert('Paquete de pruebas asignado');
+    } catch (e: any) {
+      alert(e?.message || 'Error al asignar paquete');
+    }
+  };
+
+  const handleCreateMockExamPurchase = async (userId: string, packageId: string) => {
+    try {
+      await AdminUsersService.createMockExamPurchase(userId, packageId);
+      await load();
+      alert('Paquete de ensayos asignado');
+    } catch (e: any) {
+      alert(e?.message || 'Error al asignar paquete');
     }
   };
 
@@ -267,10 +318,60 @@ export const AdminUsersTable: React.FC<Props> = ({ onBack }) => {
                               </div>
                             </div>
                           )}
-                          {/* Sin paquetes */}
-                          {(u.controlPurchases || []).length === 0 && (u.examPurchases || []).length === 0 && (u.mockExamPurchases || []).length === 0 && (
-                            <div className="text-sm text-gray-500 italic">Sin paquetes activos</div>
-                          )}
+                          {/* Agregar nuevos paquetes */}
+                          <div className="border-t pt-4 mt-4">
+                            <h4 className="font-semibold mb-3">➕ Asignar Nuevo Paquete:</h4>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                              {/* Controles */}
+                              <div>
+                                <label className="block text-sm font-medium mb-1">📝 Controles:</label>
+                                <select 
+                                  className="border p-2 rounded w-full text-sm mb-2"
+                                  onChange={(e) => e.target.value && handleCreateControlPurchase(u.id, e.target.value)}
+                                  value=""
+                                >
+                                  <option value="">Seleccionar paquete...</option>
+                                  {controlPackages.map(pkg => (
+                                    <option key={pkg.id} value={pkg.id}>
+                                      {pkg.name} - {pkg.controlQty} controles - ${pkg.price.toLocaleString()}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+                              {/* Pruebas */}
+                              <div>
+                                <label className="block text-sm font-medium mb-1">🎓 Pruebas:</label>
+                                <select 
+                                  className="border p-2 rounded w-full text-sm mb-2"
+                                  onChange={(e) => e.target.value && handleCreateExamPurchase(u.id, e.target.value)}
+                                  value=""
+                                >
+                                  <option value="">Seleccionar paquete...</option>
+                                  {examPackages.map(pkg => (
+                                    <option key={pkg.id} value={pkg.id}>
+                                      {pkg.name} - {pkg.examQty} pruebas - ${pkg.price.toLocaleString()}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+                              {/* Ensayos */}
+                              <div>
+                                <label className="block text-sm font-medium mb-1">🎯 Ensayos:</label>
+                                <select 
+                                  className="border p-2 rounded w-full text-sm mb-2"
+                                  onChange={(e) => e.target.value && handleCreateMockExamPurchase(u.id, e.target.value)}
+                                  value=""
+                                >
+                                  <option value="">Seleccionar paquete...</option>
+                                  {mockExamPackages.map(pkg => (
+                                    <option key={pkg.id} value={pkg.id}>
+                                      {pkg.name} - {pkg.mockExamQty} ensayos - ${pkg.price.toLocaleString()}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+                            </div>
+                          </div>
                         </div>
                       </td>
                     </tr>

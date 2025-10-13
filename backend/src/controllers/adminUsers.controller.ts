@@ -253,6 +253,174 @@ export class AdminUsersController {
       res.status(500).json({ success: false, message: 'Error al actualizar compra' });
     }
   }
+
+  // POST /api/admin/users/:userId/control-purchases
+  static async createControlPurchase(req: AuthenticatedRequest, res: Response): Promise<void> {
+    try {
+      const { userId } = req.params;
+      const { packageId } = req.body;
+
+      if (!packageId) {
+        res.status(400).json({ success: false, message: 'packageId requerido' });
+        return;
+      }
+
+      const controlPackage = await prisma.controlPackage.findUnique({
+        where: { id: packageId }
+      });
+
+      if (!controlPackage) {
+        res.status(404).json({ success: false, message: 'Paquete no encontrado' });
+        return;
+      }
+
+      const purchase = await prisma.controlPurchase.create({
+        data: {
+          userId,
+          packageId,
+          controlsTotal: controlPackage.controlQty,
+          controlsUsed: 0,
+          status: 'ACTIVE'
+        },
+        include: {
+          package: {
+            select: { name: true }
+          }
+        }
+      });
+
+      res.json({ success: true, data: { purchase } });
+    } catch (error) {
+      logger.error('Error creating control purchase:', error);
+      res.status(500).json({ success: false, message: 'Error al crear compra' });
+    }
+  }
+
+  // POST /api/admin/users/:userId/exam-purchases
+  static async createExamPurchase(req: AuthenticatedRequest, res: Response): Promise<void> {
+    try {
+      const { userId } = req.params;
+      const { packageId } = req.body;
+
+      if (!packageId) {
+        res.status(400).json({ success: false, message: 'packageId requerido' });
+        return;
+      }
+
+      const examPackage = await prisma.examPackage.findUnique({
+        where: { id: packageId }
+      });
+
+      if (!examPackage) {
+        res.status(404).json({ success: false, message: 'Paquete no encontrado' });
+        return;
+      }
+
+      const purchase = await prisma.examPurchase.create({
+        data: {
+          userId,
+          packageId,
+          examsTotal: examPackage.examQty,
+          examsUsed: 0,
+          status: 'ACTIVE'
+        },
+        include: {
+          package: {
+            select: { name: true }
+          }
+        }
+      });
+
+      res.json({ success: true, data: { purchase } });
+    } catch (error) {
+      logger.error('Error creating exam purchase:', error);
+      res.status(500).json({ success: false, message: 'Error al crear compra' });
+    }
+  }
+
+  // POST /api/admin/users/:userId/mock-exam-purchases
+  static async createMockExamPurchase(req: AuthenticatedRequest, res: Response): Promise<void> {
+    try {
+      const { userId } = req.params;
+      const { packageId } = req.body;
+
+      if (!packageId) {
+        res.status(400).json({ success: false, message: 'packageId requerido' });
+        return;
+      }
+
+      const mockExamPackage = await prisma.mockExamPackage.findUnique({
+        where: { id: packageId }
+      });
+
+      if (!mockExamPackage) {
+        res.status(404).json({ success: false, message: 'Paquete no encontrado' });
+        return;
+      }
+
+      const purchase = await prisma.mockExamPurchase.create({
+        data: {
+          userId,
+          packageId,
+          mockExamsTotal: mockExamPackage.mockExamQty,
+          mockExamsUsed: 0,
+          status: 'ACTIVE'
+        },
+        include: {
+          package: {
+            select: { name: true }
+          }
+        }
+      });
+
+      res.json({ success: true, data: { purchase } });
+    } catch (error) {
+      logger.error('Error creating mock exam purchase:', error);
+      res.status(500).json({ success: false, message: 'Error al crear compra' });
+    }
+  }
+
+  // GET /api/admin/control-packages
+  static async listControlPackages(req: AuthenticatedRequest, res: Response): Promise<void> {
+    try {
+      const packages = await prisma.controlPackage.findMany({
+        where: { isActive: true },
+        orderBy: { controlQty: 'asc' }
+      });
+      res.json({ success: true, data: { packages } });
+    } catch (error) {
+      logger.error('Error listing control packages:', error);
+      res.status(500).json({ success: false, message: 'Error al listar paquetes' });
+    }
+  }
+
+  // GET /api/admin/exam-packages
+  static async listExamPackages(req: AuthenticatedRequest, res: Response): Promise<void> {
+    try {
+      const packages = await prisma.examPackage.findMany({
+        where: { isActive: true },
+        orderBy: { examQty: 'asc' }
+      });
+      res.json({ success: true, data: { packages } });
+    } catch (error) {
+      logger.error('Error listing exam packages:', error);
+      res.status(500).json({ success: false, message: 'Error al listar paquetes' });
+    }
+  }
+
+  // GET /api/admin/mock-exam-packages
+  static async listMockExamPackages(req: AuthenticatedRequest, res: Response): Promise<void> {
+    try {
+      const packages = await prisma.mockExamPackage.findMany({
+        where: { isActive: true },
+        orderBy: { mockExamQty: 'asc' }
+      });
+      res.json({ success: true, data: { packages } });
+    } catch (error) {
+      logger.error('Error listing mock exam packages:', error);
+      res.status(500).json({ success: false, message: 'Error al listar paquetes' });
+    }
+  }
 }
 
 

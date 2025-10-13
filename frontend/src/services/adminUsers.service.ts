@@ -116,4 +116,76 @@ export class AdminUsersService {
     const data = await res.json();
     if (!data.success) throw new Error(data.message || 'Error al actualizar compra');
   }
+
+  static async createControlPurchase(userId: string, packageId: string): Promise<void> {
+    const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://eunacom-backend-v3.onrender.com'}/api/admin/users/${userId}/control-purchases`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${localStorage.getItem('accessToken') || ''}`,
+      },
+      body: JSON.stringify({ packageId }),
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.message || 'Error al crear compra');
+  }
+
+  static async createExamPurchase(userId: string, packageId: string): Promise<void> {
+    const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://eunacom-backend-v3.onrender.com'}/api/admin/users/${userId}/exam-purchases`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${localStorage.getItem('accessToken') || ''}`,
+      },
+      body: JSON.stringify({ packageId }),
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.message || 'Error al crear compra');
+  }
+
+  static async createMockExamPurchase(userId: string, packageId: string): Promise<void> {
+    const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://eunacom-backend-v3.onrender.com'}/api/admin/users/${userId}/mock-exam-purchases`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${localStorage.getItem('accessToken') || ''}`,
+      },
+      body: JSON.stringify({ packageId }),
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.message || 'Error al crear compra');
+  }
+
+  static async listControlPackages(): Promise<any[]> {
+    const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://eunacom-backend-v3.onrender.com'}/api/admin/control-packages`, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('accessToken') || ''}`,
+      },
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.message || 'Error al listar paquetes');
+    return data.data.packages;
+  }
+
+  static async listExamPackages(): Promise<any[]> {
+    const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://eunacom-backend-v3.onrender.com'}/api/admin/exam-packages`, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('accessToken') || ''}`,
+      },
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.message || 'Error al listar paquetes');
+    return data.data.packages;
+  }
+
+  static async listMockExamPackages(): Promise<any[]> {
+    const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://eunacom-backend-v3.onrender.com'}/api/admin/mock-exam-packages`, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('accessToken') || ''}`,
+      },
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.message || 'Error al listar paquetes');
+    return data.data.packages;
+  }
 }
