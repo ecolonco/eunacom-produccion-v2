@@ -1,3 +1,30 @@
+export interface ControlPurchaseDto {
+  id: string;
+  controlsTotal: number;
+  controlsUsed: number;
+  package: {
+    name: string;
+  };
+}
+
+export interface ExamPurchaseDto {
+  id: string;
+  examsTotal: number;
+  examsUsed: number;
+  package: {
+    name: string;
+  };
+}
+
+export interface MockExamPurchaseDto {
+  id: string;
+  mockExamsTotal: number;
+  mockExamsUsed: number;
+  package: {
+    name: string;
+  };
+}
+
 export interface AdminUserDto {
   id: string;
   email: string;
@@ -9,6 +36,9 @@ export interface AdminUserDto {
   isActive: boolean;
   isVerified: boolean;
   createdAt: string;
+  controlPurchases?: ControlPurchaseDto[];
+  examPurchases?: ExamPurchaseDto[];
+  mockExamPurchases?: MockExamPurchaseDto[];
 }
 
 export class AdminUsersService {
@@ -46,5 +76,44 @@ export class AdminUsersService {
     const data = await res.json();
     if (!data.success) throw new Error(data.message || 'Error al actualizar usuario');
     return data.data.user as AdminUserDto;
+  }
+
+  static async updateControlPurchase(userId: string, purchaseId: string, controlsUsed: number): Promise<void> {
+    const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://eunacom-backend-v3.onrender.com'}/api/admin/users/${userId}/control-purchases/${purchaseId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${localStorage.getItem('accessToken') || ''}`,
+      },
+      body: JSON.stringify({ controlsUsed }),
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.message || 'Error al actualizar compra');
+  }
+
+  static async updateExamPurchase(userId: string, purchaseId: string, examsUsed: number): Promise<void> {
+    const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://eunacom-backend-v3.onrender.com'}/api/admin/users/${userId}/exam-purchases/${purchaseId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${localStorage.getItem('accessToken') || ''}`,
+      },
+      body: JSON.stringify({ examsUsed }),
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.message || 'Error al actualizar compra');
+  }
+
+  static async updateMockExamPurchase(userId: string, purchaseId: string, mockExamsUsed: number): Promise<void> {
+    const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://eunacom-backend-v3.onrender.com'}/api/admin/users/${userId}/mock-exam-purchases/${purchaseId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${localStorage.getItem('accessToken') || ''}`,
+      },
+      body: JSON.stringify({ mockExamsUsed }),
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.message || 'Error al actualizar compra');
   }
 }

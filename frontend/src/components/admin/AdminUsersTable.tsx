@@ -9,6 +9,7 @@ export const AdminUsersTable: React.FC<Props> = ({ onBack }) => {
   const [loading, setLoading] = React.useState(true);
   const [savingAll, setSavingAll] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  const [expandedUserId, setExpandedUserId] = React.useState<string | null>(null);
 
   const load = async () => {
     try {
@@ -88,6 +89,36 @@ export const AdminUsersTable: React.FC<Props> = ({ onBack }) => {
     }
   };
 
+  const handleUpdateControlPurchase = async (userId: string, purchaseId: string, controlsUsed: number) => {
+    try {
+      await AdminUsersService.updateControlPurchase(userId, purchaseId, controlsUsed);
+      await load(); // Recargar datos
+      alert('Compra actualizada');
+    } catch (e: any) {
+      alert(e?.message || 'Error al actualizar');
+    }
+  };
+
+  const handleUpdateExamPurchase = async (userId: string, purchaseId: string, examsUsed: number) => {
+    try {
+      await AdminUsersService.updateExamPurchase(userId, purchaseId, examsUsed);
+      await load();
+      alert('Compra actualizada');
+    } catch (e: any) {
+      alert(e?.message || 'Error al actualizar');
+    }
+  };
+
+  const handleUpdateMockExamPurchase = async (userId: string, purchaseId: string, mockExamsUsed: number) => {
+    try {
+      await AdminUsersService.updateMockExamPurchase(userId, purchaseId, mockExamsUsed);
+      await load();
+      alert('Compra actualizada');
+    } catch (e: any) {
+      alert(e?.message || 'Error al actualizar');
+    }
+  };
+
   if (loading) return <div className="p-6">Cargando...</div>;
   if (error) return <div className="p-6 text-red-600">{error}</div>;
 
@@ -109,6 +140,7 @@ export const AdminUsersTable: React.FC<Props> = ({ onBack }) => {
               <th className="p-2">Apellido</th>
               <th className="p-2">Usuario</th>
               <th className="p-2">Créditos</th>
+              <th className="p-2">Paquetes</th>
               <th className="p-2">Verificado</th>
               <th className="p-2">Activo</th>
               <th className="p-2">Nueva password</th>
@@ -116,31 +148,136 @@ export const AdminUsersTable: React.FC<Props> = ({ onBack }) => {
             </tr>
           </thead>
           <tbody>
-            {users.map(u => (
-              <tr key={u.id} className="border-b">
-                <td className="p-2"><input className="border p-1 rounded w-64" value={u.email} onChange={e => handleChange(u.id, 'email' as any, e.target.value)} /></td>
-                <td className="p-2"><input className="border p-1 rounded w-40" value={u.firstName} onChange={e => handleChange(u.id, 'firstName' as any, e.target.value)} /></td>
-                <td className="p-2"><input className="border p-1 rounded w-40" value={u.lastName} onChange={e => handleChange(u.id, 'lastName' as any, e.target.value)} /></td>
-                <td className="p-2"><input className="border p-1 rounded w-40" value={u.username || ''} onChange={e => handleChange(u.id, 'username' as any, e.target.value)} /></td>
-                <td className="p-2"><input type="number" className="border p-1 rounded w-24" value={u.credits} onChange={e => handleChange(u.id, 'credits' as any, e.target.value)} /></td>
-                <td className="p-2">
-                  <label className="inline-flex items-center gap-2 cursor-pointer">
-                    <input type="checkbox" checked={u.isVerified} onChange={() => handleToggle(u.id, 'isVerified')} />
-                    <span className={u.isVerified ? 'text-green-700' : 'text-gray-600'}>{u.isVerified ? 'Sí' : 'No'}</span>
-                  </label>
-                </td>
-                <td className="p-2">
-                  <label className="inline-flex items-center gap-2 cursor-pointer">
-                    <input type="checkbox" checked={u.isActive} onChange={() => handleToggle(u.id, 'isActive')} />
-                    <span className={u.isActive ? 'text-green-700' : 'text-gray-600'}>{u.isActive ? 'Sí' : 'No'}</span>
-                  </label>
-                </td>
-                <td className="p-2"><input type="password" className="border p-1 rounded w-40" placeholder="(min 6)" onChange={e => handleChange(u.id, 'password' as any, e.target.value)} /></td>
-                <td className="p-2">
-                  <button onClick={() => handleSave(u as any)} className="px-3 py-2 bg-blue-600 text-white rounded">Guardar</button>
-                </td>
-              </tr>
-            ))}
+            {users.map(u => {
+              const totalControls = (u.controlPurchases || []).reduce((sum, p) => sum + (p.controlsTotal - p.controlsUsed), 0);
+              const totalExams = (u.examPurchases || []).reduce((sum, p) => sum + (p.examsTotal - p.examsUsed), 0);
+              const totalMockExams = (u.mockExamPurchases || []).reduce((sum, p) => sum + (p.mockExamsTotal - p.mockExamsUsed), 0);
+              const isExpanded = expandedUserId === u.id;
+              
+              return (
+                <React.Fragment key={u.id}>
+                  <tr className="border-b hover:bg-gray-50">
+                    <td className="p-2"><input className="border p-1 rounded w-64" value={u.email} onChange={e => handleChange(u.id, 'email' as any, e.target.value)} /></td>
+                    <td className="p-2"><input className="border p-1 rounded w-40" value={u.firstName} onChange={e => handleChange(u.id, 'firstName' as any, e.target.value)} /></td>
+                    <td className="p-2"><input className="border p-1 rounded w-40" value={u.lastName} onChange={e => handleChange(u.id, 'lastName' as any, e.target.value)} /></td>
+                    <td className="p-2"><input className="border p-1 rounded w-40" value={u.username || ''} onChange={e => handleChange(u.id, 'username' as any, e.target.value)} /></td>
+                    <td className="p-2"><input type="number" className="border p-1 rounded w-24" value={u.credits} onChange={e => handleChange(u.id, 'credits' as any, e.target.value)} /></td>
+                    <td className="p-2">
+                      <button 
+                        onClick={() => setExpandedUserId(isExpanded ? null : u.id)} 
+                        className="text-sm text-blue-600 hover:underline flex items-center gap-1"
+                      >
+                        <span>{isExpanded ? '▼' : '▶'}</span>
+                        <span>C:{totalControls} P:{totalExams} E:{totalMockExams}</span>
+                      </button>
+                    </td>
+                    <td className="p-2">
+                      <label className="inline-flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" checked={u.isVerified} onChange={() => handleToggle(u.id, 'isVerified')} />
+                        <span className={u.isVerified ? 'text-green-700' : 'text-gray-600'}>{u.isVerified ? 'Sí' : 'No'}</span>
+                      </label>
+                    </td>
+                    <td className="p-2">
+                      <label className="inline-flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" checked={u.isActive} onChange={() => handleToggle(u.id, 'isActive')} />
+                        <span className={u.isActive ? 'text-green-700' : 'text-gray-600'}>{u.isActive ? 'Sí' : 'No'}</span>
+                      </label>
+                    </td>
+                    <td className="p-2"><input type="password" className="border p-1 rounded w-40" placeholder="(min 6)" onChange={e => handleChange(u.id, 'password' as any, e.target.value)} /></td>
+                    <td className="p-2">
+                      <button onClick={() => handleSave(u as any)} className="px-3 py-2 bg-blue-600 text-white rounded">Guardar</button>
+                    </td>
+                  </tr>
+                  {isExpanded && (
+                    <tr>
+                      <td colSpan={10} className="p-4 bg-gray-50">
+                        <div className="space-y-4">
+                          {/* Controles */}
+                          {(u.controlPurchases || []).length > 0 && (
+                            <div>
+                              <h4 className="font-semibold mb-2">📝 Controles:</h4>
+                              <div className="space-y-2">
+                                {u.controlPurchases!.map(p => (
+                                  <div key={p.id} className="flex items-center gap-3 bg-white p-2 rounded border">
+                                    <span className="text-sm">{p.package.name}</span>
+                                    <span className="text-sm text-gray-600">Total: {p.controlsTotal}</span>
+                                    <span className="text-sm text-gray-600">Usados:</span>
+                                    <input 
+                                      type="number" 
+                                      className="border p-1 rounded w-20 text-sm" 
+                                      value={p.controlsUsed}
+                                      onChange={(e) => {
+                                        const newValue = parseInt(e.target.value) || 0;
+                                        handleUpdateControlPurchase(u.id, p.id, newValue);
+                                      }}
+                                    />
+                                    <span className="text-sm text-green-600 font-semibold">Disponibles: {p.controlsTotal - p.controlsUsed}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          {/* Pruebas */}
+                          {(u.examPurchases || []).length > 0 && (
+                            <div>
+                              <h4 className="font-semibold mb-2">🎓 Pruebas:</h4>
+                              <div className="space-y-2">
+                                {u.examPurchases!.map(p => (
+                                  <div key={p.id} className="flex items-center gap-3 bg-white p-2 rounded border">
+                                    <span className="text-sm">{p.package.name}</span>
+                                    <span className="text-sm text-gray-600">Total: {p.examsTotal}</span>
+                                    <span className="text-sm text-gray-600">Usados:</span>
+                                    <input 
+                                      type="number" 
+                                      className="border p-1 rounded w-20 text-sm" 
+                                      value={p.examsUsed}
+                                      onChange={(e) => {
+                                        const newValue = parseInt(e.target.value) || 0;
+                                        handleUpdateExamPurchase(u.id, p.id, newValue);
+                                      }}
+                                    />
+                                    <span className="text-sm text-green-600 font-semibold">Disponibles: {p.examsTotal - p.examsUsed}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          {/* Ensayos */}
+                          {(u.mockExamPurchases || []).length > 0 && (
+                            <div>
+                              <h4 className="font-semibold mb-2">🎯 Ensayos EUNACOM:</h4>
+                              <div className="space-y-2">
+                                {u.mockExamPurchases!.map(p => (
+                                  <div key={p.id} className="flex items-center gap-3 bg-white p-2 rounded border">
+                                    <span className="text-sm">{p.package.name}</span>
+                                    <span className="text-sm text-gray-600">Total: {p.mockExamsTotal}</span>
+                                    <span className="text-sm text-gray-600">Usados:</span>
+                                    <input 
+                                      type="number" 
+                                      className="border p-1 rounded w-20 text-sm" 
+                                      value={p.mockExamsUsed}
+                                      onChange={(e) => {
+                                        const newValue = parseInt(e.target.value) || 0;
+                                        handleUpdateMockExamPurchase(u.id, p.id, newValue);
+                                      }}
+                                    />
+                                    <span className="text-sm text-green-600 font-semibold">Disponibles: {p.mockExamsTotal - p.mockExamsUsed}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          {/* Sin paquetes */}
+                          {(u.controlPurchases || []).length === 0 && (u.examPurchases || []).length === 0 && (u.mockExamPurchases || []).length === 0 && (
+                            <div className="text-sm text-gray-500 italic">Sin paquetes activos</div>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </React.Fragment>
+              );
+            })}
           </tbody>
         </table>
       </div>
