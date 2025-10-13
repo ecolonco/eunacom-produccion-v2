@@ -1,9 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { CreditsService } from '../../services/credits.service';
 import { PracticeHub } from '../quiz/PracticeHub';
 import { QuickPractice } from '../quiz/QuickPractice';
-import { PaymentsService } from '../../services/payments.service';
 import { ControlsDashboard } from '../student/ControlsDashboard';
 import { ExamsDashboard } from '../student/ExamsDashboard';
 import { MockExamsDashboard } from '../student/MockExamsDashboard';
@@ -11,44 +9,9 @@ import { PerformancePanel } from '../student/PerformancePanel';
 
 // Sistema de créditos v2 - Oct 2025
 export const StudentDashboard: React.FC = () => {
-  const { state, logout, setUserCredits } = useAuth();
+  const { state, logout } = useAuth();
   const { user } = state;
-  const [practiceView, setPracticeView] = useState<'none' | 'hub' | 'random' | 'specialty' | 'random20' | 'random90' | 'controls' | 'exams' | 'mock-exams' | 'performance'>('none');
-  const [isPurchasing, setIsPurchasing] = useState(false);
-
-  // Verificar pago pendiente al volver de Flow
-  React.useEffect(() => {
-    const checkPendingPayment = async () => {
-      const paymentId = localStorage.getItem('pendingPaymentId');
-      if (!paymentId || !state.isAuthenticated) return;
-      
-      try {
-        const result = await PaymentsService.checkPaymentStatus(paymentId);
-        if (result.status === 'PAID' && result.credited) {
-          localStorage.removeItem('pendingPaymentId');
-          alert('¡Pago exitoso! Se acreditaron 400 créditos.');
-          window.location.reload();
-        } else if (result.status === 'PENDING') {
-          // Reintentar en 5 segundos
-          setTimeout(checkPendingPayment, 5000);
-        } else {
-          localStorage.removeItem('pendingPaymentId');
-        }
-      } catch (e: any) {
-        // Si falla por auth, reintentar (puede ser token refrescándose)
-        if (e?.message?.includes('401') || e?.message?.includes('autenticación')) {
-          setTimeout(checkPendingPayment, 5000);
-        } else {
-          console.error('Error checking payment:', e);
-          localStorage.removeItem('pendingPaymentId');
-        }
-      }
-    };
-    
-    if (state.isAuthenticated) {
-      checkPendingPayment();
-    }
-  }, [state.isAuthenticated]);
+  const [practiceView, setPracticeView] = useState<'none' | 'hub' | 'specialty' | 'controls' | 'exams' | 'mock-exams' | 'performance'>('none');
 
   if (!user) return null;
 
@@ -57,43 +20,12 @@ export const StudentDashboard: React.FC = () => {
     return <PracticeHub onClose={() => setPracticeView('none')} />;
   }
 
-  if (practiceView === 'random') {
-    return (
-      <QuickPractice
-        onClose={() => setPracticeView('none')}
-        title="Práctica Aleatoria"
-      />
-    );
-  }
-
   if (practiceView === 'specialty') {
     return (
       <QuickPractice
         onClose={() => setPracticeView('none')}
         requireSpecialty
         title="Práctica por Especialidad"
-      />
-    );
-  }
-
-  if (practiceView === 'random20') {
-    return (
-      <QuickPractice
-        onClose={() => setPracticeView('none')}
-        maxQuestions={20}
-        title="20 Preguntas Aleatorias"
-        prepaid
-      />
-    );
-  }
-
-  if (practiceView === 'random90') {
-    return (
-      <QuickPractice
-        onClose={() => setPracticeView('none')}
-        maxQuestions={90}
-        title="90 Preguntas Aleatorias - Simulacro"
-        prepaid
       />
     );
   }
@@ -154,29 +86,6 @@ export const StudentDashboard: React.FC = () => {
           
           <div className="space-y-3 max-w-md mx-auto">
             <button
-              onClick={async () => {
-                if (isPurchasing) return;
-                try {
-                  setIsPurchasing(true);
-                  const { url, paymentId } = await PaymentsService.createFlowPayment();
-                  // Guardar paymentId para verificar al volver
-                  localStorage.setItem('pendingPaymentId', paymentId);
-                  localStorage.setItem('pendingPaymentEmail', user.email);
-                  // Redirigir al botón de Flow con email del usuario
-                  const flowButtonUrl = url.includes('btn.php') 
-                    ? `${url}&email=${encodeURIComponent(user.email)}`
-                    : url;
-                  window.location.href = flowButtonUrl;
-                } catch (e: any) {
-                  alert(e?.message || 'No se pudo iniciar el pago.');
-                  setIsPurchasing(false);
-                }
-              }}
-              className="w-full px-6 py-3 bg-amber-600 text-white rounded-md hover:bg-amber-700 transition duration-200 font-medium"
-            >
-              💳 Comprar 400 créditos por $20.000
-            </button>
-            <button
               onClick={() => setPracticeView('controls')}
               className="w-full px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition duration-200 font-medium"
             >
@@ -199,68 +108,6 @@ export const StudentDashboard: React.FC = () => {
               className="w-full px-6 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-md hover:from-purple-700 hover:to-indigo-700 transition duration-200 font-medium"
             >
               📊 Mi Rendimiento - Ver estadísticas
-            </button>
-            <button
-              onClick={() => setPracticeView('random')}
-              className="w-full px-6 py-3 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition duration-200 font-medium"
-            >
-              🎯 Practica ejercicios aleatoriamente (1 crédito)
-            </button>
-            <button
-              onClick={async () => {
-                if (isPurchasing) return;
-                try {
-                  setIsPurchasing(true);
-                  // Descontar 15 créditos al inicio
-                  const { newBalance } = await CreditsService.deductCredits({
-                    packageType: 'PACK_20',
-                    metadata: { source: 'STUDENT_DASHBOARD' }
-                  });
-                  // Actualizar saldo global
-                  setUserCredits(newBalance);
-                  // Abrir la sesión de 20 preguntas
-                  setPracticeView('random20');
-                } catch (err: any) {
-                  if (err?.message === 'INSUFFICIENT_CREDITS') {
-                    alert('No tienes suficientes créditos para este paquete (15 créditos).');
-                  } else {
-                    alert('No se pudo procesar la compra del paquete. Intenta nuevamente.');
-                  }
-                } finally {
-                  setIsPurchasing(false);
-                }
-              }}
-              className="w-full px-6 py-3 bg-teal-600 text-white rounded-md hover:bg-teal-700 transition duration-200 font-medium"
-            >
-              🔢 20 Preguntas aleatoriamente (15 créditos)
-            </button>
-            <button
-              onClick={async () => {
-                if (isPurchasing) return;
-                try {
-                  setIsPurchasing(true);
-                  // Descontar 60 créditos al inicio
-                  const { newBalance } = await CreditsService.deductCredits({
-                    packageType: 'PACK_90',
-                    metadata: { source: 'STUDENT_DASHBOARD' }
-                  });
-                  // Actualizar saldo global
-                  setUserCredits(newBalance);
-                  // Abrir la sesión de 90 preguntas
-                  setPracticeView('random90');
-                } catch (err: any) {
-                  if (err?.message === 'INSUFFICIENT_CREDITS') {
-                    alert('No tienes suficientes créditos para este paquete (60 créditos).');
-                  } else {
-                    alert('No se pudo procesar la compra del paquete. Intenta nuevamente.');
-                  }
-                } finally {
-                  setIsPurchasing(false);
-                }
-              }}
-              className="w-full px-6 py-3 bg-green-600 text-white rounded-md hover:bg-green-700 transition duration-200 font-medium"
-            >
-              📋 90 preguntas tipo Eunacom (60 créditos)
             </button>
             <button
               onClick={() => logout()}
