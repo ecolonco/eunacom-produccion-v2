@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { mockExamService, MockExamPackage } from '../../services/mock-exam.service';
 
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://eunacom-backend-v3.onrender.com';
+
 interface MockExamStoreProps {
   onPurchase: () => void;
 }
@@ -8,10 +10,50 @@ interface MockExamStoreProps {
 export const MockExamStore: React.FC<MockExamStoreProps> = ({ onPurchase }) => {
   const [packages, setPackages] = useState<MockExamPackage[]>([]);
   const [loading, setLoading] = useState(true);
+  const [purchasing, setPurchasing] = useState(false);
+  const [currentPaymentId, setCurrentPaymentId] = useState<string | null>(null);
 
   useEffect(() => {
     loadPackages();
   }, []);
+
+  // Polling para verificar estado del pago
+  useEffect(() => {
+    if (!currentPaymentId) return;
+
+    const checkPaymentStatus = async () => {
+      try {
+        const response = await fetch(`${API_BASE}/api/payments/flow/check/${currentPaymentId}`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+          }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success && data.status === 'PAID') {
+          setCurrentPaymentId(null);
+          setPurchasing(false);
+          alert('✅ ¡Pago confirmado! Tu paquete de ensayos ha sido acreditado.');
+          onPurchase();
+        }
+      } catch (error) {
+        console.error('Error checking payment:', error);
+      }
+    };
+
+    const interval = setInterval(checkPaymentStatus, 3000);
+    const timeout = setTimeout(() => {
+      clearInterval(interval);
+      setCurrentPaymentId(null);
+      setPurchasing(false);
+    }, 300000);
+
+    return () => {
+      clearInterval(interval);
+      clearTimeout(timeout);
+    };
+  }, [currentPaymentId, onPurchase]);
 
   const loadPackages = async () => {
     try {
@@ -25,8 +67,37 @@ export const MockExamStore: React.FC<MockExamStoreProps> = ({ onPurchase }) => {
     }
   };
 
-  const handleBuyPackage = (pkg: MockExamPackage) => {
-    alert(`Compra de ensayos próximamente disponible.\n\nPaquete: ${pkg.name}\nPrecio: $${pkg.price.toLocaleString()}`);
+  const handleBuyPackage = async (pkg: MockExamPackage) => {
+    if (!confirm(`¿Confirmas la compra de ${pkg.name} por $${pkg.price.toLocaleString('es-CL')} CLP?`)) {
+      return;
+    }
+
+    setPurchasing(true);
+    
+    try {
+      const response = await fetch(`${API_BASE}/api/payments/flow/create-mock-exam-purchase`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+        },
+        body: JSON.stringify({ packageId: pkg.id })
+      });
+
+      const data = await response.json();
+
+      if (data.success && data.url) {
+        setCurrentPaymentId(data.paymentId);
+        window.location.href = data.url;
+      } else {
+        throw new Error(data.message || 'Error al crear el pago');
+      }
+      
+    } catch (error: any) {
+      console.error('Error purchasing package:', error);
+      alert(error.message || 'Error al procesar la compra');
+      setPurchasing(false);
+    }
   };
 
   if (loading) {
@@ -106,13 +177,14 @@ export const MockExamStore: React.FC<MockExamStoreProps> = ({ onPurchase }) => {
 
                 <button
                   onClick={() => handleBuyPackage(pkg)}
+                  disabled={purchasing}
                   className={`w-full py-3 rounded-lg font-semibold transition-colors ${
-                    isPopular
-                      ? 'bg-green-600 text-white hover:bg-green-700'
+                    purchasing
+                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                       : 'bg-green-600 text-white hover:bg-green-700'
                   }`}
                 >
-                  Comprar Ahora
+                  {purchasing ? 'Procesando...' : 'Comprar Ahora'}
                 </button>
               </div>
             </div>
