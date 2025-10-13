@@ -156,8 +156,9 @@ export const MockExamSession: React.FC<MockExamSessionProps> = ({
       {/* Question content */}
       <div className="bg-white border border-gray-200 rounded-lg p-6 mb-6 shadow-sm">
         {currentQuestion.variation.displayCode && (
-          <div className="text-sm text-gray-500 mb-2">
-            Ejercicio {currentQuestion.variation.displayCode}
+          <div className="flex justify-between items-center text-sm text-gray-500 mb-2">
+            <span>Ejercicio {currentQuestion.variation.displayCode}</span>
+            <span className="text-xs text-gray-400">{currentQuestion.variation.version || 0}</span>
           </div>
         )}
         
