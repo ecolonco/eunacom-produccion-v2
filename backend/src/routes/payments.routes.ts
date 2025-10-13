@@ -228,14 +228,84 @@ router.post('/flow/webhook', async (req: Request, res: Response) => {
     });
 
     if ((status || 'PAID') === 'PAID') {
-      // Idempotente: si ya existe transacción con metadata.paymentId, no volver a cargar
-      const existingTx = await prisma.creditTransaction.findFirst({
-        where: { userId: payment.userId, type: 'PURCHASE', description: payment.id }
-      });
-      if (!existingTx) {
-        await CreditsService.addCredits(payment.userId, payment.credits, 'PURCHASE', payment.id, {
-          provider: 'FLOW', amount: payment.amount, flowOrder: flowOrder || payment.flowOrder
+      // Procesar según el tipo de paquete
+      if (payment.packageType === 'CREDITS') {
+        // Idempotente: si ya existe transacción con metadata.paymentId, no volver a cargar
+        const existingTx = await prisma.creditTransaction.findFirst({
+          where: { userId: payment.userId, type: 'PURCHASE', description: payment.id }
         });
+        if (!existingTx) {
+          await CreditsService.addCredits(payment.userId, payment.credits, 'PURCHASE', payment.id, {
+            provider: 'FLOW', amount: payment.amount, flowOrder: flowOrder || payment.flowOrder
+          });
+        }
+      } else if (payment.packageType === 'CONTROL' && payment.packageId) {
+        // Verificar si ya existe la compra
+        const existingPurchase = await prisma.controlPurchase.findFirst({
+          where: { userId: payment.userId, paymentId: payment.id }
+        });
+        if (!existingPurchase) {
+          const controlPackage = await prisma.controlPackage.findUnique({
+            where: { id: payment.packageId }
+          });
+          if (controlPackage) {
+            await prisma.controlPurchase.create({
+              data: {
+                userId: payment.userId,
+                packageId: payment.packageId,
+                paymentId: payment.id,
+                controlsTotal: controlPackage.controlQty,
+                controlsUsed: 0,
+                status: 'ACTIVE'
+              }
+            });
+            logger.info('Control package purchase created', { userId: payment.userId, paymentId: payment.id });
+          }
+        }
+      } else if (payment.packageType === 'EXAM' && payment.packageId) {
+        const existingPurchase = await prisma.examPurchase.findFirst({
+          where: { userId: payment.userId, paymentId: payment.id }
+        });
+        if (!existingPurchase) {
+          const examPackage = await prisma.examPackage.findUnique({
+            where: { id: payment.packageId }
+          });
+          if (examPackage) {
+            await prisma.examPurchase.create({
+              data: {
+                userId: payment.userId,
+                packageId: payment.packageId,
+                paymentId: payment.id,
+                examsTotal: examPackage.examQty,
+                examsUsed: 0,
+                status: 'ACTIVE'
+              }
+            });
+            logger.info('Exam package purchase created', { userId: payment.userId, paymentId: payment.id });
+          }
+        }
+      } else if (payment.packageType === 'MOCK_EXAM' && payment.packageId) {
+        const existingPurchase = await prisma.mockExamPurchase.findFirst({
+          where: { userId: payment.userId, paymentId: payment.id }
+        });
+        if (!existingPurchase) {
+          const mockExamPackage = await prisma.mockExamPackage.findUnique({
+            where: { id: payment.packageId }
+          });
+          if (mockExamPackage) {
+            await prisma.mockExamPurchase.create({
+              data: {
+                userId: payment.userId,
+                packageId: payment.packageId,
+                paymentId: payment.id,
+                mockExamsTotal: mockExamPackage.mockExamQty,
+                mockExamsUsed: 0,
+                status: 'ACTIVE'
+              }
+            });
+            logger.info('Mock exam package purchase created', { userId: payment.userId, paymentId: payment.id });
+          }
+        }
       }
     }
 
@@ -314,20 +384,89 @@ router.get('/flow/check/:paymentId', authenticate as any, async (req: Request, r
           data: { status: 'PAID' }
         });
         
-        const existingTx = await prisma.creditTransaction.findFirst({
-          where: { userId: payment.userId, type: 'PURCHASE', description: payment.id }
-        });
-        
-        if (!existingTx) {
-          logger.info('Crediting user', { userId: payment.userId, credits: payment.credits, paymentId });
-          await CreditsService.addCredits(payment.userId, payment.credits, 'PURCHASE', payment.id, {
-            provider: 'FLOW', amount: payment.amount, flowOrder: payment.flowOrder
+        // Procesar según el tipo de paquete
+        if (payment.packageType === 'CREDITS') {
+          const existingTx = await prisma.creditTransaction.findFirst({
+            where: { userId: payment.userId, type: 'PURCHASE', description: payment.id }
           });
-        } else {
-          logger.info('Credits already added for this payment', { paymentId });
+          
+          if (!existingTx) {
+            logger.info('Crediting user', { userId: payment.userId, credits: payment.credits, paymentId });
+            await CreditsService.addCredits(payment.userId, payment.credits, 'PURCHASE', payment.id, {
+              provider: 'FLOW', amount: payment.amount, flowOrder: payment.flowOrder
+            });
+          } else {
+            logger.info('Credits already added for this payment', { paymentId });
+          }
+        } else if (payment.packageType === 'CONTROL' && payment.packageId) {
+          const existingPurchase = await prisma.controlPurchase.findFirst({
+            where: { userId: payment.userId, paymentId: payment.id }
+          });
+          if (!existingPurchase) {
+            const controlPackage = await prisma.controlPackage.findUnique({
+              where: { id: payment.packageId }
+            });
+            if (controlPackage) {
+              await prisma.controlPurchase.create({
+                data: {
+                  userId: payment.userId,
+                  packageId: payment.packageId,
+                  paymentId: payment.id,
+                  controlsTotal: controlPackage.controlQty,
+                  controlsUsed: 0,
+                  status: 'ACTIVE'
+                }
+              });
+              logger.info('Control package purchase created via check', { userId: payment.userId, paymentId });
+            }
+          }
+        } else if (payment.packageType === 'EXAM' && payment.packageId) {
+          const existingPurchase = await prisma.examPurchase.findFirst({
+            where: { userId: payment.userId, paymentId: payment.id }
+          });
+          if (!existingPurchase) {
+            const examPackage = await prisma.examPackage.findUnique({
+              where: { id: payment.packageId }
+            });
+            if (examPackage) {
+              await prisma.examPurchase.create({
+                data: {
+                  userId: payment.userId,
+                  packageId: payment.packageId,
+                  paymentId: payment.id,
+                  examsTotal: examPackage.examQty,
+                  examsUsed: 0,
+                  status: 'ACTIVE'
+                }
+              });
+              logger.info('Exam package purchase created via check', { userId: payment.userId, paymentId });
+            }
+          }
+        } else if (payment.packageType === 'MOCK_EXAM' && payment.packageId) {
+          const existingPurchase = await prisma.mockExamPurchase.findFirst({
+            where: { userId: payment.userId, paymentId: payment.id }
+          });
+          if (!existingPurchase) {
+            const mockExamPackage = await prisma.mockExamPackage.findUnique({
+              where: { id: payment.packageId }
+            });
+            if (mockExamPackage) {
+              await prisma.mockExamPurchase.create({
+                data: {
+                  userId: payment.userId,
+                  packageId: payment.packageId,
+                  paymentId: payment.id,
+                  mockExamsTotal: mockExamPackage.mockExamQty,
+                  mockExamsUsed: 0,
+                  status: 'ACTIVE'
+                }
+              });
+              logger.info('Mock exam package purchase created via check', { userId: payment.userId, paymentId });
+            }
+          }
         }
         
-        return res.json({ success: true, status: 'PAID', credited: !existingTx });
+        return res.json({ success: true, status: 'PAID', packageType: payment.packageType });
       }
       
       // Otros estados
@@ -417,6 +556,237 @@ router.post('/flow/return', async (req: Request, res: Response) => {
     logger.error('Error in Flow return (POST):', error);
     // En caso de error, redirigir de todas formas al frontend
     res.redirect('https://eunacom-nuevo.vercel.app/?payment=success');
+  }
+});
+
+// POST /api/payments/flow/create-control-purchase - Create payment for control package
+router.post('/flow/create-control-purchase', authenticate as any, async (req: Request, res: Response) => {
+  try {
+    const user = (req as any).user;
+    if (!user?.id) {
+      return res.status(401).json({ success: false, message: 'No autenticado' });
+    }
+
+    const { packageId } = req.body;
+    if (!packageId) {
+      return res.status(400).json({ success: false, message: 'packageId requerido' });
+    }
+
+    // Obtener información del paquete
+    const controlPackage = await prisma.controlPackage.findUnique({
+      where: { id: packageId }
+    });
+
+    if (!controlPackage || !controlPackage.isActive) {
+      return res.status(404).json({ success: false, message: 'Paquete no encontrado o inactivo' });
+    }
+
+    // Crear registro de pago
+    const payment = await prisma.payment.create({
+      data: {
+        userId: user.id,
+        amount: controlPackage.price,
+        credits: 0, // No son créditos, es un paquete de controles
+        packageType: 'CONTROL',
+        packageId: controlPackage.id,
+        status: 'CREATED',
+      }
+    });
+
+    // Crear pago en Flow
+    const urlReturn = `https://eunacom-backend-v3.onrender.com/api/payments/flow/return`;
+    const urlConfirmation = `https://eunacom-backend-v3.onrender.com/api/payments/flow/webhook`;
+    
+    logger.info('Creating Flow payment for control package', { 
+      paymentId: payment.id, 
+      userEmail: user.email,
+      packageName: controlPackage.name,
+      price: controlPackage.price
+    });
+
+    const flow = await FlowService.createPayment({
+      commerceOrder: payment.id,
+      subject: `Compra: ${controlPackage.name}`,
+      amount: controlPackage.price,
+      email: user.email,
+      urlReturn,
+      urlConfirmation,
+    });
+
+    logger.info('Flow payment created for control package', { 
+      paymentId: payment.id, 
+      flowToken: flow.token, 
+      flowOrder: flow.flowOrder 
+    });
+
+    await prisma.payment.update({
+      where: { id: payment.id },
+      data: { 
+        flowToken: flow.token, 
+        flowOrder: flow.flowOrder ? String(flow.flowOrder) : null, 
+        payUrl: flow.url, 
+        status: 'PENDING' 
+      }
+    });
+
+    return res.json({ 
+      success: true, 
+      url: flow.url, 
+      token: flow.token, 
+      paymentId: payment.id,
+      packageName: controlPackage.name
+    });
+  } catch (error) {
+    logger.error('Error creating Flow payment for control package:', error);
+    return res.status(500).json({ success: false, message: 'No se pudo crear el pago' });
+  }
+});
+
+// POST /api/payments/flow/create-exam-purchase - Create payment for exam package
+router.post('/flow/create-exam-purchase', authenticate as any, async (req: Request, res: Response) => {
+  try {
+    const user = (req as any).user;
+    if (!user?.id) {
+      return res.status(401).json({ success: false, message: 'No autenticado' });
+    }
+
+    const { packageId } = req.body;
+    if (!packageId) {
+      return res.status(400).json({ success: false, message: 'packageId requerido' });
+    }
+
+    const examPackage = await prisma.examPackage.findUnique({
+      where: { id: packageId }
+    });
+
+    if (!examPackage || !examPackage.isActive) {
+      return res.status(404).json({ success: false, message: 'Paquete no encontrado o inactivo' });
+    }
+
+    const payment = await prisma.payment.create({
+      data: {
+        userId: user.id,
+        amount: examPackage.price,
+        credits: 0,
+        packageType: 'EXAM',
+        packageId: examPackage.id,
+        status: 'CREATED',
+      }
+    });
+
+    const urlReturn = `https://eunacom-backend-v3.onrender.com/api/payments/flow/return`;
+    const urlConfirmation = `https://eunacom-backend-v3.onrender.com/api/payments/flow/webhook`;
+    
+    logger.info('Creating Flow payment for exam package', { 
+      paymentId: payment.id, 
+      userEmail: user.email,
+      packageName: examPackage.name,
+      price: examPackage.price
+    });
+
+    const flow = await FlowService.createPayment({
+      commerceOrder: payment.id,
+      subject: `Compra: ${examPackage.name}`,
+      amount: examPackage.price,
+      email: user.email,
+      urlReturn,
+      urlConfirmation,
+    });
+
+    await prisma.payment.update({
+      where: { id: payment.id },
+      data: { 
+        flowToken: flow.token, 
+        flowOrder: flow.flowOrder ? String(flow.flowOrder) : null, 
+        payUrl: flow.url, 
+        status: 'PENDING' 
+      }
+    });
+
+    return res.json({ 
+      success: true, 
+      url: flow.url, 
+      token: flow.token, 
+      paymentId: payment.id,
+      packageName: examPackage.name
+    });
+  } catch (error) {
+    logger.error('Error creating Flow payment for exam package:', error);
+    return res.status(500).json({ success: false, message: 'No se pudo crear el pago' });
+  }
+});
+
+// POST /api/payments/flow/create-mock-exam-purchase - Create payment for mock exam package
+router.post('/flow/create-mock-exam-purchase', authenticate as any, async (req: Request, res: Response) => {
+  try {
+    const user = (req as any).user;
+    if (!user?.id) {
+      return res.status(401).json({ success: false, message: 'No autenticado' });
+    }
+
+    const { packageId } = req.body;
+    if (!packageId) {
+      return res.status(400).json({ success: false, message: 'packageId requerido' });
+    }
+
+    const mockExamPackage = await prisma.mockExamPackage.findUnique({
+      where: { id: packageId }
+    });
+
+    if (!mockExamPackage || !mockExamPackage.isActive) {
+      return res.status(404).json({ success: false, message: 'Paquete no encontrado o inactivo' });
+    }
+
+    const payment = await prisma.payment.create({
+      data: {
+        userId: user.id,
+        amount: mockExamPackage.price,
+        credits: 0,
+        packageType: 'MOCK_EXAM',
+        packageId: mockExamPackage.id,
+        status: 'CREATED',
+      }
+    });
+
+    const urlReturn = `https://eunacom-backend-v3.onrender.com/api/payments/flow/return`;
+    const urlConfirmation = `https://eunacom-backend-v3.onrender.com/api/payments/flow/webhook`;
+    
+    logger.info('Creating Flow payment for mock exam package', { 
+      paymentId: payment.id, 
+      userEmail: user.email,
+      packageName: mockExamPackage.name,
+      price: mockExamPackage.price
+    });
+
+    const flow = await FlowService.createPayment({
+      commerceOrder: payment.id,
+      subject: `Compra: ${mockExamPackage.name}`,
+      amount: mockExamPackage.price,
+      email: user.email,
+      urlReturn,
+      urlConfirmation,
+    });
+
+    await prisma.payment.update({
+      where: { id: payment.id },
+      data: { 
+        flowToken: flow.token, 
+        flowOrder: flow.flowOrder ? String(flow.flowOrder) : null, 
+        payUrl: flow.url, 
+        status: 'PENDING' 
+      }
+    });
+
+    return res.json({ 
+      success: true, 
+      url: flow.url, 
+      token: flow.token, 
+      paymentId: payment.id,
+      packageName: mockExamPackage.name
+    });
+  } catch (error) {
+    logger.error('Error creating Flow payment for mock exam package:', error);
+    return res.status(500).json({ success: false, message: 'No se pudo crear el pago' });
   }
 });
 

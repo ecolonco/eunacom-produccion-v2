@@ -459,9 +459,11 @@ model Payment {
   id         String         @id @default(cuid())
   userId     String
   amount     Int            // en CLP
-  credits    Int            // créditos a otorgar
+  credits    Int            // créditos a otorgar (0 si es paquete de controles/pruebas/ensayos)
   currency   String         @default("CLP")
   status     PaymentStatus  @default(CREATED)
+  packageType PackageType   @default(CREDITS) @map("package_type") // CREDITS, CONTROL, EXAM, MOCK_EXAM
+  packageId  String?        @map("package_id") // ID del paquete específico (ControlPackage, ExamPackage, etc.)
   flowToken  String?        @unique
   flowOrder  String?
   payUrl     String?
@@ -475,6 +477,7 @@ model Payment {
 
   @@index([userId])
   @@index([createdAt])
+  @@index([packageType])
   @@map("payments")
 }
 
@@ -484,6 +487,13 @@ enum PaymentStatus {
   PAID
   FAILED
   CANCELED
+}
+
+enum PackageType {
+  CREDITS
+  CONTROL
+  EXAM
+  MOCK_EXAM
 }
 
 enum UserRole {
