@@ -58,7 +58,9 @@ export const ExamStore: React.FC<ExamStoreProps> = ({ onPurchase }) => {
   const loadPackages = async () => {
     try {
       const data = await examService.listPackages();
-      setPackages(data);
+      // Ordenar por precio de menor a mayor
+      const sortedPackages = data.sort((a, b) => a.price - b.price);
+      setPackages(sortedPackages);
     } catch (error) {
       console.error('Error loading exam packages:', error);
       alert('Error al cargar paquetes de pruebas');

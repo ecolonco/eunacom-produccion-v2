@@ -62,7 +62,9 @@ export const ControlStore: React.FC<ControlStoreProps> = ({ onPurchaseSuccess })
   const loadPackages = async () => {
     try {
       const data = await controlService.listPackages();
-      setPackages(data);
+      // Ordenar por precio de menor a mayor
+      const sortedPackages = data.sort((a, b) => a.price - b.price);
+      setPackages(sortedPackages);
     } catch (error) {
       console.error('Error loading packages:', error);
       alert('Error al cargar los paquetes');
