@@ -221,8 +221,9 @@ export const ControlResults: React.FC<ControlResultsProps> = ({ controlId, onBac
                   {isExpanded && (
                     <div className="border-t-2 border-gray-300 p-6 bg-white">
                       {question.variation.displayCode && (
-                        <div className="text-sm text-gray-500 mb-3">
-                          Ejercicio {question.variation.displayCode}
+                        <div className="flex justify-between items-center text-sm text-gray-500 mb-3">
+                          <span>Ejercicio {question.variation.displayCode}</span>
+                          <span className="text-xs text-gray-400">{question.variation.version || 0}</span>
                         </div>
                       )}
 

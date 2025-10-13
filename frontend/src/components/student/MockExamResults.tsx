@@ -102,9 +102,14 @@ export const MockExamResults: React.FC<MockExamResultsProps> = ({ mockExam: exam
                       Pregunta {index + 1}
                     </div>
                     {question.variation.displayCode && (
-                      <div className="text-sm text-gray-500">
-                        Ejercicio {question.variation.displayCode}
-                      </div>
+                      <>
+                        <div className="text-sm text-gray-500">
+                          Ejercicio {question.variation.displayCode}
+                        </div>
+                        <div className="text-xs text-gray-400">
+                          {question.variation.version || 0}
+                        </div>
+                      </>
                     )}
                   </div>
                   <div
