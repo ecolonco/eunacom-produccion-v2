@@ -138,6 +138,14 @@ router.post('/flow/create', authenticate as any, async (req: Request, res: Respo
       return res.status(401).json({ success: false, message: 'No autenticado' });
     }
 
+    // Validar email
+    if (!user.email || !user.email.includes('@') || user.email.endsWith('.local')) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'El email del usuario no es válido para pagos. Debe usar un email real (ej: @gmail.com, @outlook.com, etc.)' 
+      });
+    }
+
     const payment = await prisma.payment.create({
       data: {
         userId: user.id,
@@ -572,6 +580,14 @@ router.post('/flow/create-control-purchase', authenticate as any, async (req: Re
       return res.status(400).json({ success: false, message: 'packageId requerido' });
     }
 
+    // Validar email
+    if (!user.email || !user.email.includes('@') || user.email.endsWith('.local')) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'El email del usuario no es válido para pagos. Debe usar un email real (ej: @gmail.com, @outlook.com, etc.)' 
+      });
+    }
+
     // Obtener información del paquete
     const controlPackage = await prisma.controlPackage.findUnique({
       where: { id: packageId }
@@ -655,6 +671,14 @@ router.post('/flow/create-exam-purchase', authenticate as any, async (req: Reque
       return res.status(400).json({ success: false, message: 'packageId requerido' });
     }
 
+    // Validar email
+    if (!user.email || !user.email.includes('@') || user.email.endsWith('.local')) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'El email del usuario no es válido para pagos. Debe usar un email real (ej: @gmail.com, @outlook.com, etc.)' 
+      });
+    }
+
     const examPackage = await prisma.examPackage.findUnique({
       where: { id: packageId }
     });
@@ -727,6 +751,14 @@ router.post('/flow/create-mock-exam-purchase', authenticate as any, async (req: 
     const { packageId } = req.body;
     if (!packageId) {
       return res.status(400).json({ success: false, message: 'packageId requerido' });
+    }
+
+    // Validar email
+    if (!user.email || !user.email.includes('@') || user.email.endsWith('.local')) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'El email del usuario no es válido para pagos. Debe usar un email real (ej: @gmail.com, @outlook.com, etc.)' 
+      });
     }
 
     const mockExamPackage = await prisma.mockExamPackage.findUnique({
