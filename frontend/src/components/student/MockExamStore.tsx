@@ -68,10 +68,6 @@ export const MockExamStore: React.FC<MockExamStoreProps> = ({ onPurchase }) => {
   };
 
   const handleBuyPackage = async (pkg: MockExamPackage) => {
-    if (!confirm(`¿Confirmas la compra de ${pkg.name} por $${pkg.price.toLocaleString('es-CL')} CLP?`)) {
-      return;
-    }
-
     setPurchasing(true);
     
     try {

@@ -68,10 +68,6 @@ export const ExamStore: React.FC<ExamStoreProps> = ({ onPurchase }) => {
   };
 
   const handleBuyPackage = async (pkg: ExamPackage) => {
-    if (!confirm(`¿Confirmas la compra de ${pkg.name} por $${pkg.price.toLocaleString('es-CL')} CLP?`)) {
-      return;
-    }
-
     setPurchasing(true);
     
     try {
@@ -127,4 +123,64 @@ export const ExamStore: React.FC<ExamStoreProps> = ({ onPurchase }) => {
               className="bg-white border-2 border-gray-200 rounded-xl p-6 hover:border-blue-400 hover:shadow-lg transition-all"
             >
               <div className="text-center">
-                <h3 className="text-xl font-bold text
+                <h3 className="text-xl font-bold text-gray-900 mb-2">
+                  {pkg.name}
+                </h3>
+                <p className="text-sm text-gray-600 mb-4">
+                  {pkg.description || `${pkg.examQty} pruebas de 45 preguntas`}
+                </p>
+
+                <div className="bg-blue-50 rounded-lg p-4 mb-4">
+                  <div className="text-3xl font-bold text-blue-600 mb-1">
+                    ${pkg.price.toLocaleString()}
+                  </div>
+                  <div className="text-sm text-gray-600">
+                    ${pricePerExam.toLocaleString()} por prueba
+                  </div>
+                </div>
+
+                <div className="space-y-2 mb-6 text-left">
+                  <div className="flex items-center text-sm text-gray-700">
+                    <span className="mr-2">✅</span>
+                    <span>{pkg.examQty} pruebas completas</span>
+                  </div>
+                  <div className="flex items-center text-sm text-gray-700">
+                    <span className="mr-2">✅</span>
+                    <span>45 preguntas por prueba</span>
+                  </div>
+                  <div className="flex items-center text-sm text-gray-700">
+                    <span className="mr-2">✅</span>
+                    <span>Revisión detallada</span>
+                  </div>
+                  <div className="flex items-center text-sm text-gray-700">
+                    <span className="mr-2">✅</span>
+                    <span>Estadísticas avanzadas</span>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => handleBuyPackage(pkg)}
+                  disabled={purchasing}
+                  className={`w-full py-3 rounded-lg font-semibold transition-colors ${
+                    purchasing
+                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                      : 'bg-blue-600 text-white hover:bg-blue-700'
+                  }`}
+                >
+                  {purchasing ? 'Procesando...' : 'Comprar Ahora'}
+                </button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {packages.length === 0 && !loading && (
+        <div className="text-center py-12 text-gray-500">
+          No hay paquetes de pruebas disponibles en este momento
+        </div>
+      )}
+    </div>
+  );
+};
+
