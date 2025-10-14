@@ -9,6 +9,7 @@ router.use(authenticate, authorize('ADMIN'));
 
 router.get('/users', AdminUsersController.listUsers);
 router.put('/users/:id', AdminUsersController.updateUser);
+router.post('/users/:id/toggle-active', AdminUsersController.toggleUserActive);
 
 // Gestión de compras de paquetes
 router.post('/users/:userId/control-purchases', AdminUsersController.createControlPurchase);

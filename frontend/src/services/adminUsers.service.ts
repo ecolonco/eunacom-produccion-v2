@@ -78,6 +78,19 @@ export class AdminUsersService {
     return data.data.user as AdminUserDto;
   }
 
+  static async toggleUserActive(id: string): Promise<AdminUserDto> {
+    const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://eunacom-backend-v3.onrender.com'}/api/admin/users/${id}/toggle-active`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${localStorage.getItem('accessToken') || ''}`,
+      },
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.message || 'Error al cambiar estado del usuario');
+    return data.data.user as AdminUserDto;
+  }
+
   static async updateControlPurchase(userId: string, purchaseId: string, controlsUsed: number): Promise<void> {
     const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://eunacom-backend-v3.onrender.com'}/api/admin/users/${userId}/control-purchases/${purchaseId}`, {
       method: 'PUT',
