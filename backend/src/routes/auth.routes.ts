@@ -368,9 +368,15 @@ router.get('/verify', async (req: Request, res: Response): Promise<Response | vo
     }
 
     if (!user.isVerified) {
-      // Mark verified and grant 1 free control idempotently
+      // Mark verified, ensure active, and grant 1 free control idempotently
       await prisma.$transaction(async (tx) => {
-        await tx.user.update({ where: { id: user.id }, data: { isVerified: true } });
+        await tx.user.update({
+          where: { id: user.id },
+          data: {
+            isVerified: true,
+            isActive: true // Ensure user is active after email verification
+          }
+        });
       });
 
       // Check if user already has a free control purchase
