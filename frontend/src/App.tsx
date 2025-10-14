@@ -189,7 +189,7 @@ const AppContent: React.FC = () => {
               <h2 className="text-2xl font-semibold text-gray-800 mb-4">Por qué prepararte aquí</h2>
               <ul className="text-left text-gray-700 space-y-2 list-disc list-inside">
                 <li>Más de <strong>10.000 ejercicios</strong> con <strong>explicación</strong> clara.</li>
-                <li><strong>Prueba gratis</strong>: accede a <strong>10 ejercicios</strong> sin costo.</li>
+                <li><strong>Prueba gratis</strong>: accede a <strong>1 control de 15 preguntas</strong> sin costo.</li>
                 <li><strong>Sólo prepago</strong>: sin contratos ni planes mensuales.</li>
                 <li>Progreso y recomendaciones para optimizar tu estudio.</li>
               </ul>
@@ -198,7 +198,7 @@ const AppContent: React.FC = () => {
                   onClick={() => { setAuthMode('register'); setShowAuthModal(true); }}
                   className="px-6 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition duration-200 shadow-md"
                 >
-                  🚀 Probar 10 ejercicios gratis
+                  🚀 Probar 1 control gratis
                 </button>
                 <button
                   onClick={() => { setAuthMode('login'); setShowAuthModal(true); }}
@@ -232,7 +232,7 @@ const AppContent: React.FC = () => {
               <div className="p-4 border-2 border-green-200 rounded-lg">
                 <h3 className="font-semibold text-green-800 mb-2">🆓 Prueba gratis</h3>
                 <ul className="text-sm text-gray-600 space-y-1">
-                  <li>• 10 ejercicios gratis para evaluar la plataforma</li>
+                  <li>• 1 control de 15 preguntas gratis para evaluar la plataforma</li>
                   <li>• Sin tarjeta para probar</li>
                   <li>• Empieza en minutos</li>
                 </ul>

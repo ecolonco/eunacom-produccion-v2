@@ -368,25 +368,55 @@ router.get('/verify', async (req: Request, res: Response): Promise<Response | vo
     }
 
     if (!user.isVerified) {
-      // Mark verified and grant signup bonus idempotently
+      // Mark verified and grant 1 free control idempotently
       await prisma.$transaction(async (tx) => {
         await tx.user.update({ where: { id: user.id }, data: { isVerified: true } });
+      });
 
-        const existingBonus = await tx.creditTransaction.findFirst({
-          where: { userId: user.id, type: 'BONUS', description: 'SIGNUP_BONUS' }
-        });
-
-        if (!existingBonus) {
-          // Use CreditsService to add credits (outside tx)
+      // Check if user already has a free control purchase
+      const existingFreeControl = await prisma.controlPurchase.findFirst({
+        where: {
+          userId: user.id,
+          paymentId: null // Free controls have no payment ID
         }
       });
 
-      // Add credits (+10) outside the transaction to use service abstraction
-      const existingBonus = await prisma.creditTransaction.findFirst({
-        where: { userId: user.id, type: 'BONUS', description: 'SIGNUP_BONUS' }
-      });
-      if (!existingBonus) {
-        await CreditsService.addCredits(user.id, 10, 'BONUS', 'SIGNUP_BONUS', { reason: 'Email verification bonus' });
+      if (!existingFreeControl) {
+        // Find or create a free control package (1 control, price 0)
+        let freeControlPackage = await prisma.controlPackage.findFirst({
+          where: {
+            controlQty: 1,
+            price: 0,
+            name: 'Control Gratis de Bienvenida'
+          }
+        });
+
+        // Create the package if it doesn't exist
+        if (!freeControlPackage) {
+          freeControlPackage = await prisma.controlPackage.create({
+            data: {
+              name: 'Control Gratis de Bienvenida',
+              description: 'Control gratuito de 15 preguntas al verificar tu email',
+              price: 0,
+              controlQty: 1,
+              isActive: true
+            }
+          });
+        }
+
+        // Create the free control purchase for the user
+        await prisma.controlPurchase.create({
+          data: {
+            userId: user.id,
+            packageId: freeControlPackage.id,
+            controlsTotal: 1,
+            controlsUsed: 0,
+            status: 'ACTIVE',
+            paymentId: null // No payment for free control
+          }
+        });
+
+        logger.info(`Free control granted to user ${user.id} upon email verification`);
       }
     }
 
