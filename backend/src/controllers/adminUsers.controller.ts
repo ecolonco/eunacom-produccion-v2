@@ -421,6 +421,69 @@ export class AdminUsersController {
       res.status(500).json({ success: false, message: 'Error al listar paquetes' });
     }
   }
+
+  // POST /api/admin/users/:id/toggle-active
+  static async toggleUserActive(req: AuthenticatedRequest, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+
+      // Get current user state
+      const user = await prisma.user.findUnique({
+        where: { id },
+        select: {
+          id: true,
+          email: true,
+          firstName: true,
+          lastName: true,
+          isActive: true,
+          role: true
+        }
+      });
+
+      if (!user) {
+        res.status(404).json({ success: false, message: 'Usuario no encontrado' });
+        return;
+      }
+
+      // Prevent deactivating admin users
+      if (user.role === 'ADMIN' && user.isActive) {
+        res.status(403).json({
+          success: false,
+          message: 'No se puede desactivar un usuario administrador'
+        });
+        return;
+      }
+
+      // Toggle isActive
+      const updated = await prisma.user.update({
+        where: { id },
+        data: { isActive: !user.isActive },
+        select: {
+          id: true,
+          email: true,
+          firstName: true,
+          lastName: true,
+          isActive: true,
+          isVerified: true,
+          role: true,
+          credits: true,
+          createdAt: true
+        }
+      });
+
+      const action = updated.isActive ? 'activado' : 'desactivado';
+      logger.info(`User ${action}:`, { userId: id, email: user.email, isActive: updated.isActive });
+
+      res.json({
+        success: true,
+        message: `Usuario ${action} correctamente`,
+        data: { user: { ...updated, createdAt: updated.createdAt.toISOString() } }
+      });
+    } catch (error) {
+      logger.error('Error toggling user active status:', error);
+      res.status(500).json({ success: false, message: 'Error al cambiar estado del usuario' });
+    }
+  }
 }
 
 

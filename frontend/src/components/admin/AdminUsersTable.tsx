@@ -170,6 +170,28 @@ export const AdminUsersTable: React.FC<Props> = ({ onBack }) => {
     }
   };
 
+  const handleToggleActive = async (userId: string, isActive: boolean, role: string) => {
+    // Prevenir desactivar admins
+    if (role === 'ADMIN' && isActive) {
+      alert('⛔ No se puede desactivar un usuario administrador');
+      return;
+    }
+
+    const action = isActive ? 'desactivar' : 'activar';
+    if (!confirm(`¿Estás seguro de ${action} este usuario?`)) {
+      return;
+    }
+
+    try {
+      const updated = await AdminUsersService.toggleUserActive(userId);
+      setUsers(prev => prev.map(u => u.id === userId ? updated : u));
+      originalUsersRef.current = originalUsersRef.current.map(u => u.id === userId ? updated : u);
+      alert(`Usuario ${updated.isActive ? 'activado' : 'desactivado'} correctamente`);
+    } catch (e: any) {
+      alert(e?.message || 'Error al cambiar estado del usuario');
+    }
+  };
+
   if (loading) return <div className="p-6">Cargando...</div>;
   if (error) return <div className="p-6 text-red-600">{error}</div>;
 
@@ -236,7 +258,16 @@ export const AdminUsersTable: React.FC<Props> = ({ onBack }) => {
                     </td>
                     <td className="p-2"><input type="password" className="border p-1 rounded w-40" placeholder="(min 6)" onChange={e => handleChange(u.id, 'password' as any, e.target.value)} /></td>
                     <td className="p-2">
-                      <button onClick={() => handleSave(u as any)} className="px-3 py-2 bg-blue-600 text-white rounded">Guardar</button>
+                      <div className="flex gap-2">
+                        <button onClick={() => handleSave(u as any)} className="px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Guardar</button>
+                        <button
+                          onClick={() => handleToggleActive(u.id, u.isActive, u.role)}
+                          className={`px-3 py-2 rounded text-white ${u.isActive ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'}`}
+                          title={u.isActive ? 'Desactivar usuario' : 'Activar usuario'}
+                        >
+                          {u.isActive ? '🚫 Desactivar' : '✅ Activar'}
+                        </button>
+                      </div>
                     </td>
                   </tr>
                   {isExpanded && (
