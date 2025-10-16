@@ -289,6 +289,14 @@ const AppContent: React.FC = () => {
             <div className="max-w-4xl mx-auto text-center">
               <div className="flex flex-wrap justify-center gap-6 mb-4">
                 <a
+                  href="/about.html"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-gray-600 hover:text-purple-600 transition duration-200"
+                >
+                  Sobre Nosotros
+                </a>
+                <a
                   href="/faq.html"
                   target="_blank"
                   rel="noopener noreferrer"
