@@ -34,6 +34,7 @@ import examRoutes from './routes/exam.routes';
 import adminExamsRoutes from './routes/admin-exams.routes';
 import mockExamRoutes from './routes/mock-exam.routes';
 import adminMockExamsRoutes from './routes/admin-mock-exams.routes';
+import { adminTopicsRoutes } from './routes/admin-topics.routes';
 import { logger } from './utils/logger';
 
 // Load environment variables
@@ -154,6 +155,7 @@ app.use('/api/admin/exams', adminExamsRoutes);
 app.use('/api/exams', examRoutes);
 app.use('/api/admin/mock-exams', adminMockExamsRoutes);
 app.use('/api/mock-exams', mockExamRoutes);
+app.use('/api/admin', adminTopicsRoutes);
 app.use('/api/exercise-factory', exerciseFactoryRoutes);
 app.use('/api/taxonomy-admin', taxonomyAdminRoutes);
 app.use('/api/qa-sweep', qaSweepRoutes);
