@@ -151,9 +151,12 @@ const AppContent: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       <div className="container mx-auto px-4 py-8">
         <header className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-800 mb-4">
-            🩺 EUNACOM Learning Platform
+          <h1 className="text-5xl font-bold text-gray-800 mb-2">
+            🩺 EUNACOM Test
           </h1>
+          <p className="text-2xl text-gray-600 mb-4">
+            Learning Platform
+          </p>
           <p className="text-xl text-gray-600 mb-6">
             Prepárate para el EUNACOM practicando con ejercicios explicados y contenido curado
           </p>
@@ -223,26 +226,20 @@ const AppContent: React.FC = () => {
 
           {/* What is EUNACOM Exam Section */}
           <div className="bg-white rounded-lg shadow-lg p-8 mb-6">
-            <h2 className="text-3xl font-bold text-gray-800 mb-6 text-center">
-              📋 ¿Qué es el examen EUNACOM?
+            <h2 className="text-3xl font-bold text-gray-800 mb-3 text-center">
+              📋 ¿Qué es la EUNACOM en Chile?
             </h2>
+            <p className="text-sm text-gray-500 italic text-center mb-6">
+              Visión general creada por IA
+            </p>
             <div className="prose max-w-none">
               <p className="text-lg text-gray-700 mb-4">
-                El <strong>EUNACOM (Examen Único Nacional de Conocimientos de Medicina)</strong> es la
-                evaluación que deben rendir los médicos titulados en el extranjero para ejercer
-                la medicina en Chile. Es administrado por <strong>ASOFAMECH (Asociación de Facultades de
-                Medicina de Chile)</strong> y es requisito obligatorio para la revalidación del título médico.
-              </p>
-              <p className="text-lg text-gray-700 mb-4">
-                El examen consta de <strong>180 preguntas</strong> de selección múltiple que evalúan
-                conocimientos en todas las especialidades médicas, con una duración de <strong>3 horas</strong>.
-                Las áreas principales incluyen medicina familiar, medicina interna, cirugía, pediatría,
-                ginecología-obstetricia y psiquiatría.
+                <strong>EUNACOM (Examen Único Nacional de Conocimientos de Medicina)</strong> es un examen en Chile
+                administrado por la <strong>Asociación de Facultades de Medicina de Chile (ASOFAMECh)</strong> que
+                evalúa la capacidad de médicos nacionales y extranjeros para ejercer la medicina en el país.
               </p>
               <p className="text-lg text-gray-700">
-                Nuestra plataforma te ayuda a prepararte con <strong>más de 10.000 ejercicios
-                explicados</strong>, organizados por especialidad y dificultad, para que maximices
-                tus posibilidades de aprobación y puedas ejercer tu profesión en Chile.
+                El examen incluye una <strong>sección teórica (ST)</strong> y una <strong>sección práctica (SP)</strong>.
               </p>
             </div>
           </div>
