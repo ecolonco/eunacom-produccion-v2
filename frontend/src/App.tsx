@@ -297,7 +297,7 @@ const AppContent: React.FC = () => {
                   Preguntas Frecuentes
                 </a>
                 <a
-                  href="mailto:contacto@eunacom.cl"
+                  href="mailto:softwaredatamatic@gmail.com"
                   className="text-gray-600 hover:text-purple-600 transition duration-200"
                 >
                   Contacto
