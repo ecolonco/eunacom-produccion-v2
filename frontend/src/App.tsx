@@ -283,7 +283,7 @@ const AppContent: React.FC = () => {
               🎯 Beneficios clave
             </h2>
 
-            <div className="grid md:grid-cols-3 gap-4">
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
               <div className="p-4 border-2 border-blue-200 rounded-lg">
                 <h3 className="font-semibold text-blue-800 mb-2">📘 Ejercicios explicados</h3>
                 <ul className="text-sm text-gray-600 space-y-1">
@@ -299,6 +299,15 @@ const AppContent: React.FC = () => {
                   <li>• 1 control de 15 preguntas gratis para evaluar la plataforma</li>
                   <li>• Sin tarjeta para probar</li>
                   <li>• Empieza en minutos</li>
+                </ul>
+              </div>
+
+              <div className="p-4 border-2 border-orange-200 rounded-lg">
+                <h3 className="font-semibold text-orange-800 mb-2">🎯 Estudio personalizado</h3>
+                <ul className="text-sm text-gray-600 space-y-1">
+                  <li>• Practica por especialidad específica</li>
+                  <li>• O estudia aleatoriamente</li>
+                  <li>• Enfócate donde más necesites</li>
                 </ul>
               </div>
 
@@ -404,7 +413,7 @@ const AppContent: React.FC = () => {
                       "bestRating": "5"
                     },
                     "datePublished": "2025-07-18",
-                    "reviewBody": "Estudié medicina en Colombia y necesitaba revalidar mi título en Chile. Esta plataforma tiene ejercicios de altísima calidad con explicaciones médicas precisas. El dashboard de progreso me permitió enfocarme en las especialidades donde tenía más dificultades."
+                    "reviewBody": "Estudié medicina en Colombia y necesitaba revalidar mi título en Chile. Este sitio web me ayudó a practicar ejercicios específicamente en Pediatría, una especialidad donde necesitaba reforzar conocimientos. Poder filtrar por especialidad fue fundamental para mi preparación."
                   }
                 ]
               })}
@@ -417,7 +426,7 @@ const AppContent: React.FC = () => {
                   <div className="text-4xl mr-4">👩‍⚕️</div>
                   <div>
                     <h4 className="font-bold text-lg text-gray-800">Dr. María González</h4>
-                    <p className="text-sm text-gray-600">Médico Cirujano, Chile</p>
+                    <p className="text-sm text-gray-600">Médico, Chile</p>
                   </div>
                 </div>
                 <div className="flex mb-3">
@@ -455,7 +464,7 @@ const AppContent: React.FC = () => {
                   <div className="text-4xl mr-4">👩‍⚕️</div>
                   <div>
                     <h4 className="font-bold text-lg text-gray-800">Dra. Claudia Morales</h4>
-                    <p className="text-sm text-gray-600">Médico Internista, Chile</p>
+                    <p className="text-sm text-gray-600">Médico, Chile</p>
                   </div>
                 </div>
                 <div className="flex mb-3">
@@ -480,9 +489,9 @@ const AppContent: React.FC = () => {
                   <span className="text-yellow-500 text-xl">⭐⭐⭐⭐⭐</span>
                 </div>
                 <p className="text-gray-700 italic leading-relaxed">
-                  "Estudié medicina en Colombia y necesitaba revalidar mi título en Chile. Esta plataforma tiene
-                  ejercicios de altísima calidad con explicaciones médicas precisas. El dashboard de progreso me
-                  permitió enfocarme en las especialidades donde tenía más dificultades."
+                  "Estudié medicina en Colombia y necesitaba revalidar mi título en Chile. Este sitio web me ayudó
+                  a practicar ejercicios específicamente en Pediatría, una especialidad donde necesitaba reforzar
+                  conocimientos. Poder filtrar por especialidad fue fundamental para mi preparación."
                 </p>
               </div>
             </div>
