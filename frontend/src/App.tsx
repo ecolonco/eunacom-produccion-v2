@@ -159,7 +159,7 @@ const AppContent: React.FC = () => {
           </p>
 
           {/* Auth Buttons */}
-          <div className="flex justify-center gap-4 mb-8">
+          <div className="flex flex-wrap justify-center items-center gap-4 mb-8">
             <button
               onClick={() => {
                 console.log('Login button clicked');
@@ -182,6 +182,14 @@ const AppContent: React.FC = () => {
             >
               📝 Registrarse
             </button>
+            <a
+              href="/faq.html"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-6 py-3 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700 transition duration-200 shadow-md"
+            >
+              ❓ Preguntas Frecuentes
+            </a>
           </div>
           {/* Benefits */}
           <div className="max-w-4xl mx-auto mb-8">
