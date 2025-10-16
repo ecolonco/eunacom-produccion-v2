@@ -40,7 +40,7 @@ export const MockExamsDashboard: React.FC<MockExamsDashboardProps> = ({ onBack }
 
   const handleStartNewMockExam = async () => {
     console.log('🎯 handleStartNewMockExam called');
-    
+
     const activePurchase = purchases.find(
       (p) => p.status === 'ACTIVE' && p.mockExamsUsed < p.mockExamsTotal
     );
@@ -64,6 +64,12 @@ export const MockExamsDashboard: React.FC<MockExamsDashboardProps> = ({ onBack }
       console.error('❌ Error starting mock exam:', error);
       alert(error.message || 'Error al iniciar ensayo');
     }
+  };
+
+  const handleContinueMockExam = (mockExamId: string) => {
+    console.log('🔄 Continuing mock exam:', mockExamId);
+    setCurrentMockExamId(mockExamId);
+    setCurrentView('session');
   };
 
   const handleMockExamComplete = (mockExam: MockExam) => {
@@ -132,6 +138,7 @@ export const MockExamsDashboard: React.FC<MockExamsDashboardProps> = ({ onBack }
     (sum, p) => sum + (p.mockExamsTotal - p.mockExamsUsed),
     0
   );
+  const inProgressMockExams = mockExams.filter((e) => e.status === 'IN_PROGRESS');
   const completedMockExams = mockExams.filter((e) => e.status === 'COMPLETED');
   const avgScore =
     completedMockExams.length > 0
@@ -179,6 +186,57 @@ export const MockExamsDashboard: React.FC<MockExamsDashboardProps> = ({ onBack }
           <div className="text-purple-900 font-medium">Promedio de Puntaje</div>
         </div>
       </div>
+
+      {/* Ensayos en Progreso */}
+      {inProgressMockExams.length > 0 && (
+        <div className="bg-orange-50 border border-orange-300 rounded-lg p-6 mb-8 shadow-sm">
+          <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center">
+            <span className="mr-2">⏳</span>
+            Ensayos en Progreso
+          </h2>
+          <div className="space-y-3">
+            {inProgressMockExams.map((exam) => {
+              const answeredCount = exam.answers?.length || 0;
+              const progressPercentage = Math.round((answeredCount / exam.totalQuestions) * 100);
+
+              return (
+                <div
+                  key={exam.id}
+                  className="flex items-center justify-between p-4 bg-white rounded-lg border border-orange-200"
+                >
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-2">
+                      <span className="px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-sm font-semibold">
+                        En Progreso
+                      </span>
+                      <span className="text-sm text-gray-600">
+                        {answeredCount} de {exam.totalQuestions} respondidas ({progressPercentage}%)
+                      </span>
+                    </div>
+                    <div className="text-sm text-gray-600">
+                      Iniciado: {new Date(exam.startedAt).toLocaleString()}
+                    </div>
+                    {/* Barra de progreso */}
+                    <div className="mt-2 w-full bg-gray-200 rounded-full h-2">
+                      <div
+                        className="bg-orange-500 h-2 rounded-full transition-all"
+                        style={{ width: `${progressPercentage}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => handleContinueMockExam(exam.id)}
+                    className="ml-4 px-6 py-3 bg-orange-600 text-white rounded-lg font-semibold hover:bg-orange-700 transition-colors"
+                  >
+                    ▶ Continuar Ensayo
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Mis compras activas */}
       <div className="bg-white border border-gray-200 rounded-lg p-6 mb-8 shadow-sm">
