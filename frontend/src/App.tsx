@@ -257,6 +257,18 @@ const AppContent: React.FC = () => {
             </div>
           </div>
 
+          {/* FAQ Link - Subtle text link after benefits */}
+          <div className="text-center mb-6">
+            <a
+              href="/faq.html"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-purple-600 hover:text-purple-800 underline text-sm font-medium"
+            >
+              ¿Tienes dudas? Consulta nuestras Preguntas Frecuentes →
+            </a>
+          </div>
+
           {/* Login Form Section */}
           <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
             <h2 className="text-2xl font-semibold text-gray-800 mb-4 text-center">
@@ -271,6 +283,39 @@ const AppContent: React.FC = () => {
               />
             </div>
           </div>
+
+          {/* Footer */}
+          <footer className="mt-12 pt-8 border-t border-gray-200">
+            <div className="max-w-4xl mx-auto text-center">
+              <div className="flex flex-wrap justify-center gap-6 mb-4">
+                <a
+                  href="/faq.html"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-gray-600 hover:text-purple-600 transition duration-200"
+                >
+                  Preguntas Frecuentes
+                </a>
+                <a
+                  href="mailto:contacto@eunacom.cl"
+                  className="text-gray-600 hover:text-purple-600 transition duration-200"
+                >
+                  Contacto
+                </a>
+                <a
+                  href="/terminos.html"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-gray-600 hover:text-purple-600 transition duration-200"
+                >
+                  Términos y Condiciones
+                </a>
+              </div>
+              <p className="text-sm text-gray-500">
+                © 2025 EUNACOM Learning Platform. Todos los derechos reservados.
+              </p>
+            </div>
+          </footer>
         </div>
       </div>
 
