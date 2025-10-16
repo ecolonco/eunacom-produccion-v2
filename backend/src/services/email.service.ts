@@ -98,14 +98,13 @@ export function buildVerificationEmail(recipientEmail: string, verificationUrl: 
       <h2>Confirma tu correo</h2>
       <p>Gracias por registrarte en EUNACOM. Por favor confirma tu correo para activar tu cuenta.</p>
       <p>
-        <a href="${verificationUrl}"
+        <a href="${apiVerifyUrl}"
            style="display:inline-block; padding:12px 20px; background:#2563eb; color:#fff; text-decoration:none; border-radius:6px;">
           Confirmar mi correo
         </a>
       </p>
       <p>Si el botón no funciona, copia y pega este enlace en tu navegador:</p>
-      <p><a href="${verificationUrl}">${verificationUrl}</a></p>
-      <p>Alternativa directa (API): <a href="${apiVerifyUrl}">${apiVerifyUrl}</a></p>
+      <p><a href="${apiVerifyUrl}">${apiVerifyUrl}</a></p>
       <p>Este enlace expira en ${process.env.EMAIL_TOKEN_TTL_HOURS || '24'} horas.</p>
     </div>
   `;
