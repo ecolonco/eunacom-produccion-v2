@@ -88,31 +88,18 @@ class MockExamService {
 
       logger.info(`   - ${dist.topicName}: buscando ${dist.questionsNeeded} preguntas (${dist.percentage}%)`);
 
-      // Obtener todas las preguntas de este topic
-      const topicQuestions = await prisma.question.findMany({
-        where: {
-          topicId: dist.topicId,
-          isActive: true,
-        },
-        select: {
-          id: true,
-        },
-      });
-
-      if (topicQuestions.length === 0) {
-        logger.warn(`   ⚠️  Topic "${dist.topicName}" no tiene preguntas, saltando`);
-        continue;
-      }
-
-      // Obtener variaciones activas para estas preguntas
+      // Obtener variaciones cuyo aiAnalysis.topic coincide con el nombre del topic
       const variations = await prisma.questionVariation.findMany({
         where: {
-          baseQuestion: {
-            id: { in: topicQuestions.map((q) => q.id) },
-            topicId: dist.topicId,
-            isActive: true,
-          },
           isVisible: true,
+          baseQuestion: {
+            aiAnalysis: {
+              topic: {
+                equals: dist.topicName,
+                mode: 'insensitive',
+              },
+            },
+          },
         },
         select: {
           id: true,
@@ -121,6 +108,11 @@ class MockExamService {
           version: true,
         },
       });
+
+      if (variations.length === 0) {
+        logger.warn(`   ⚠️  Topic "${dist.topicName}" no tiene preguntas, saltando`);
+        continue;
+      }
 
       // Deduplicar: mantener solo la versión más reciente de cada variación
       const variationMap = new Map<string, typeof variations[0]>();
