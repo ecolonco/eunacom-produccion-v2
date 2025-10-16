@@ -1,0 +1,33 @@
+# robots.txt para EUNACOM Platform
+# https://eunacom-nuevo.vercel.app
+
+# Permitir todos los crawlers
+User-agent: *
+Allow: /
+
+# Bloquear rutas privadas/administrativas
+Disallow: /admin
+Disallow: /dashboard
+Disallow: /api/
+
+# Crawlers de LLMs específicos
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+# Sitemap
+Sitemap: https://eunacom-nuevo.vercel.app/sitemap.xml
