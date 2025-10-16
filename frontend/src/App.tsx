@@ -545,6 +545,17 @@ const AppContent: React.FC = () => {
                   Términos y Condiciones
                 </a>
               </div>
+
+              {/* Medical Disclaimer */}
+              <div className="max-w-3xl mx-auto mb-4 px-4">
+                <p className="text-xs text-gray-400 leading-relaxed">
+                  ⚠️ <strong>Aviso importante:</strong> Los ejercicios y contenidos de esta plataforma tienen fines
+                  exclusivamente educativos y de preparación para el examen EUNACOM. No deben ser considerados como
+                  base para realizar diagnósticos médicos, establecer tratamientos o tomar decisiones clínicas.
+                  Consulte siempre con profesionales de la salud calificados para casos clínicos reales.
+                </p>
+              </div>
+
               <p className="text-sm text-gray-500">
                 © 2025 EUNACOM Learning Platform. Todos los derechos reservados.
               </p>
