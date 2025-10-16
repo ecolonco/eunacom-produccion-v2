@@ -221,6 +221,65 @@ const AppContent: React.FC = () => {
 
         <div className="max-w-4xl mx-auto">
 
+          {/* What is EUNACOM Exam Section */}
+          <div className="bg-white rounded-lg shadow-lg p-8 mb-6">
+            <h2 className="text-3xl font-bold text-gray-800 mb-6 text-center">
+              📋 ¿Qué es el examen EUNACOM?
+            </h2>
+            <div className="prose max-w-none">
+              <p className="text-lg text-gray-700 mb-4">
+                El <strong>EUNACOM (Examen Único Nacional de Conocimientos de Medicina)</strong> es la
+                evaluación que deben rendir los médicos titulados en el extranjero para ejercer
+                la medicina en Chile. Es administrado por <strong>ASOFAMECH (Asociación de Facultades de
+                Medicina de Chile)</strong> y es requisito obligatorio para la revalidación del título médico.
+              </p>
+              <p className="text-lg text-gray-700 mb-4">
+                El examen consta de <strong>180 preguntas</strong> de selección múltiple que evalúan
+                conocimientos en todas las especialidades médicas, con una duración de <strong>3 horas</strong>.
+                Las áreas principales incluyen medicina familiar, medicina interna, cirugía, pediatría,
+                ginecología-obstetricia y psiquiatría.
+              </p>
+              <p className="text-lg text-gray-700">
+                Nuestra plataforma te ayuda a prepararte con <strong>más de 10.000 ejercicios
+                explicados</strong>, organizados por especialidad y dificultad, para que maximices
+                tus posibilidades de aprobación y puedas ejercer tu profesión en Chile.
+              </p>
+            </div>
+          </div>
+
+          {/* How it Works Section */}
+          <div className="bg-white rounded-lg shadow-lg p-8 mb-6">
+            <h2 className="text-3xl font-bold text-gray-800 mb-6 text-center">
+              🚀 ¿Cómo funciona nuestra plataforma?
+            </h2>
+            <div className="grid md:grid-cols-3 gap-8">
+              <div className="text-center">
+                <div className="text-6xl mb-4">1️⃣</div>
+                <h3 className="font-bold text-xl mb-3 text-blue-800">Regístrate</h3>
+                <p className="text-gray-600 text-base leading-relaxed">
+                  Crea tu cuenta gratis en menos de 2 minutos y recibe <strong>1 control de 15 preguntas</strong> para
+                  probar la calidad de nuestros ejercicios sin compromiso
+                </p>
+              </div>
+              <div className="text-center">
+                <div className="text-6xl mb-4">2️⃣</div>
+                <h3 className="font-bold text-xl mb-3 text-green-800">Practica</h3>
+                <p className="text-gray-600 text-base leading-relaxed">
+                  Resuelve ejercicios organizados por especialidad con <strong>explicaciones detalladas</strong>,
+                  identifica tus áreas débiles y mejora continuamente tu desempeño
+                </p>
+              </div>
+              <div className="text-center">
+                <div className="text-6xl mb-4">3️⃣</div>
+                <h3 className="font-bold text-xl mb-3 text-purple-800">Aprueba</h3>
+                <p className="text-gray-600 text-base leading-relaxed">
+                  Mide tu progreso con <strong>ensayos completos de 180 preguntas</strong>,
+                  simula el examen real y prepárate con confianza para aprobar el EUNACOM
+                </p>
+              </div>
+            </div>
+          </div>
+
           {/* Features Overview */}
           <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
             <h2 className="text-2xl font-semibold text-gray-800 mb-4">
