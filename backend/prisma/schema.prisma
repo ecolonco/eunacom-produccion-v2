@@ -37,6 +37,7 @@ model User {
   exams                Exam[]
   mockExamPurchases    MockExamPurchase[]
   mockExams            MockExam[]
+  examAIAnalyses       ExamAIAnalysis[]
 
   @@map("users")
 }
@@ -890,6 +891,7 @@ model MockExam {
   user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   questions       MockExamQuestion[]
   answers         MockExamAnswer[]
+  aiAnalyses      ExamAIAnalysis[]
 
   @@index([userId])
   @@index([status])
@@ -926,6 +928,45 @@ model MockExamAnswer {
   @@unique([mockExamId, variationId])
   @@index([mockExamId])
   @@map("mock_exam_answers")
+}
+
+// Análisis IA de rendimiento en ensayos
+model ExamAIAnalysis {
+  id                    String    @id @default(cuid())
+  userId                String    @map("user_id")
+  mockExamId            String?   @map("mock_exam_id") // NULL para análisis evolutivos
+  analysisType          AnalysisType @map("analysis_type") // 'INDIVIDUAL' | 'EVOLUTIONARY'
+
+  // Individual analysis fields
+  strengths             String[] // Especialidades >70%
+  mediumPerformance     String[]  @map("medium_performance") // Especialidades 50-70%
+  weaknesses            String[] // Especialidades <50%
+  individualSummary     String?   @map("individual_summary") @db.Text // ~300 caracteres
+
+  // Evolutionary analysis fields
+  evolutionarySummary   String?   @map("evolutionary_summary") @db.Text // ~400 caracteres
+  examsAnalyzed         Int?      @map("exams_analyzed") // Número de ensayos analizados
+  lastExamAnalyzed      String?   @map("last_exam_analyzed") // ID del último ensayo analizado
+
+  // Metadata
+  aiModel               String    @map("ai_model") // 'gpt-5-mini'
+  tokensUsed            Int       @map("tokens_used")
+  latencyMs             Int       @map("latency_ms")
+  createdAt             DateTime  @default(now()) @map("created_at")
+
+  // Relations
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mockExam              MockExam? @relation(fields: [mockExamId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([mockExamId])
+  @@index([analysisType])
+  @@map("exam_ai_analyses")
+}
+
+enum AnalysisType {
+  INDIVIDUAL    // Análisis post-ensayo individual
+  EVOLUTIONARY  // Análisis evolutivo global
 }
 
 enum MockExamPurchaseStatus {
