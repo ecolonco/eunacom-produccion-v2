@@ -382,7 +382,8 @@ router.post('/upload-csv', authenticate, async (req: MulterRequest, res: Respons
 
       logger.info(`🔥 ABOUT TO START BACKGROUND PROCESSING for job ${job.id} with ${lines.length} questions`);
 
-      // Capture variables needed in async block BEFORE it starts
+      // CRITICAL FIX: Capture variables needed in async block BEFORE it starts
+      // This ensures userId and fileName are available inside the async closure
       const userId = user.userId;
       const fileName = req.file.originalname;
 
