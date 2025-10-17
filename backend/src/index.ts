@@ -213,14 +213,14 @@ if (NODE_ENV !== 'test') {
   app.listen(PORT, () => {
     // Use both console.log and logger to ensure visibility
     console.log('='.repeat(80));
-    console.log('🆔 CODE VERSION: 2025-10-17-v10-GPT5-MINI');
-    console.log('📦 Exercise Factory: Use gpt-5-mini for variation generation');
+    console.log('🆔 CODE VERSION: 2025-10-17-v11-TAXONOMY-FIX');
+    console.log('📦 Exercise Factory: AI receives official EUNACOM taxonomy');
     console.log('='.repeat(80));
 
     logger.info(`🚀 EUNACOM API server running on port ${PORT}`);
     logger.info(`📚 Environment: ${NODE_ENV}`);
     logger.info(`🔧 Health check: http://localhost:${PORT}/health`);
-    logger.info(`🆔 CODE VERSION: 2025-10-17-v10-GPT5-MINI - Exercise Factory using gpt-5-mini`);
+    logger.info(`🆔 CODE VERSION: 2025-10-17-v11-TAXONOMY-FIX - AI receives official EUNACOM taxonomy`);
   });
 }
 
