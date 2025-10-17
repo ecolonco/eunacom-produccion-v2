@@ -13,6 +13,7 @@ import PaymentsTable from './components/admin/PaymentsTable';
 import { QAControlPanel } from './components/admin/QAControlPanel';
 import { QASweep2Panel } from './components/admin/QASweep2Panel';
 import { MockExamPercentageManager } from './components/admin';
+import ManualTopicUpload from './components/admin/ManualTopicUpload';
 import './App.css';
 
 // Main App Content Component - Deploy trigger
@@ -23,7 +24,7 @@ const AppContent: React.FC = () => {
   const [apiStatus, setApiStatus] = useState<string>('Checking...');
   const [apiData, setApiData] = useState<any>(null);
   const [currentView, setCurrentView] = useState<'dashboard' | 'exercise-factory'>('dashboard');
-  const [adminView, setAdminView] = useState<'menu' | 'factory' | 'taxonomyInventory' | 'taxonomyAdmin' | 'exerciseManagement' | 'adminUsers' | 'payments' | 'qaControl' | 'qaSweep2' | 'mockExamPercentages'>('menu');
+  const [adminView, setAdminView] = useState<'menu' | 'factory' | 'manualTopicUpload' | 'taxonomyInventory' | 'taxonomyAdmin' | 'exerciseManagement' | 'adminUsers' | 'payments' | 'qaControl' | 'qaSweep2' | 'mockExamPercentages'>('menu');
   const [showPaymentSuccess, setShowPaymentSuccess] = useState(false);
 
   // Debug logging
@@ -91,6 +92,9 @@ const AppContent: React.FC = () => {
     if (adminView === 'factory') {
       return <ExerciseFactory onBack={() => setAdminView('menu')} />;
     }
+    if (adminView === 'manualTopicUpload') {
+      return <ManualTopicUpload onBack={() => setAdminView('menu')} />;
+    }
     if (adminView === 'taxonomyInventory') {
       return <TaxonomyInventory onBack={() => setAdminView('menu')} />;
     }
@@ -124,6 +128,7 @@ const AppContent: React.FC = () => {
           <p className="text-gray-600 mb-6">Bienvenido, {state.user.firstName}.</p>
           <div className="space-y-3 text-left">
             <button className="w-full px-6 py-3 bg-green-600 text-white rounded-md hover:bg-green-700" onClick={() => setAdminView('factory')}>🏭 Fábrica de Ejercicios</button>
+            <button className="w-full px-6 py-3 bg-lime-600 text-white rounded-md hover:bg-lime-700" onClick={() => setAdminView('manualTopicUpload')}>🎯 Carga Manual por Tópico</button>
             <button className="w-full px-6 py-3 bg-indigo-600 text-white rounded-md hover:bg-indigo-700" onClick={() => setAdminView('adminUsers')}>👥 Gestión de Usuarios</button>
             <button className="w-full px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700" onClick={() => setAdminView('payments')}>💳 Pagos y Transacciones</button>
             <button className="w-full px-6 py-3 bg-red-600 text-white rounded-md hover:bg-red-700" onClick={() => setAdminView('qaControl')}>🔍 Control QA - Variaciones</button>

@@ -487,6 +487,228 @@ router.post('/upload-csv', authenticate, async (req: MulterRequest, res: Respons
     });
   }
 });
+
+// POST /api/exercise-factory/upload-csv-manual - Upload CSV with manual taxonomy selection
+router.post('/upload-csv-manual', authenticate, async (req: MulterRequest, res: Response): Promise<Response | void> => {
+  try {
+    logger.info('🎯 Manual CSV upload endpoint with pre-selected taxonomy');
+
+    const user = (req as any).user;
+    if (!['ADMIN', 'CONTENT_MANAGER'].includes(user.role)) {
+      return res.status(403).json({
+        success: false,
+        message: 'No tienes permisos para cargar ejercicios'
+      });
+    }
+
+    // Handle file upload with multer
+    upload.single('csvFile')(req, res, async (err) => {
+      if (err) {
+        logger.error('❌ Multer error:', err);
+        return res.status(400).json({
+          success: false,
+          message: `Error uploading file: ${err.message}`
+        });
+      }
+
+      if (!req.file) {
+        return res.status(400).json({
+          success: false,
+          message: 'No se proporcionó archivo CSV'
+        });
+      }
+
+      // Get manual taxonomy selection from body
+      const { specialtyId, topicId } = req.body;
+
+      if (!specialtyId || !topicId) {
+        return res.status(400).json({
+          success: false,
+          message: 'Se requiere seleccionar especialidad y tópico'
+        });
+      }
+
+      // Verify specialty and topic exist
+      const [specialty, topic] = await Promise.all([
+        prisma.specialty.findUnique({ where: { id: specialtyId } }),
+        prisma.topic.findUnique({ where: { id: topicId } })
+      ]);
+
+      if (!specialty) {
+        return res.status(400).json({
+          success: false,
+          message: 'Especialidad no encontrada'
+        });
+      }
+
+      if (!topic || topic.specialtyId !== specialtyId) {
+        return res.status(400).json({
+          success: false,
+          message: 'Tópico no encontrado o no pertenece a la especialidad seleccionada'
+        });
+      }
+
+      logger.info(`✅ Manual taxonomy validated: ${specialty.name} -> ${topic.name}`);
+
+      // Parse CSV content
+      const csvData = req.file.buffer.toString('utf-8');
+      const lines = csvData.split('\n').filter(line => line.trim().length > 10);
+
+      if (lines.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'No se encontraron preguntas válidas en el CSV'
+        });
+      }
+
+      // Create job for tracking
+      const job = await prisma.processingJob.create({
+        data: {
+          type: 'CSV_UPLOAD_MANUAL',
+          status: 'RUNNING',
+          totalItems: lines.length,
+          processedItems: 0,
+          inputData: {
+            fileName: req.file.originalname,
+            uploadedBy: user.id,
+            specialtyId,
+            specialtyName: specialty.name,
+            topicId,
+            topicName: topic.name
+          },
+          startedAt: new Date()
+        }
+      });
+
+      logger.info(`✅ Manual upload job created: ${job.id}, ${lines.length} questions, ${specialty.name} -> ${topic.name}`);
+
+      // Return immediate response
+      res.json({
+        success: true,
+        message: `Se cargaron ${lines.length} preguntas con clasificación: ${specialty.name} -> ${topic.name}`,
+        data: {
+          jobId: job.id,
+          questionsCount: lines.length,
+          fileName: req.file.originalname,
+          taxonomy: {
+            specialty: specialty.name,
+            topic: topic.name
+          }
+        }
+      });
+
+      // Process questions in background with manual classification
+      (async () => {
+        try {
+          console.log('='.repeat(80));
+          console.log('🎯 MANUAL CSV PROCESSING - v12-TAXONOMY-VERIFIED');
+          console.log(`📦 Job ID: ${job.id}`);
+          console.log(`📊 Questions: ${lines.length}`);
+          console.log(`🏥 Specialty: ${specialty.name}`);
+          console.log(`📚 Topic: ${topic.name}`);
+          console.log('='.repeat(80));
+
+          const { ExerciseFactoryService } = await import('../services/exercise-factory.service');
+          const exerciseFactory = new ExerciseFactoryService();
+
+          for (let i = 0; i < lines.length; i++) {
+            const question = lines[i].trim();
+
+            try {
+              console.log(`\n🔧 Creating baseQuestion ${i + 1}/${lines.length}`);
+
+              // Create base question
+              const baseQuestion = await prisma.baseQuestion.create({
+                data: {
+                  content: question,
+                  sourceFile: req.file!.originalname,
+                  uploadedBy: user.id,
+                  status: 'PENDING'
+                }
+              });
+
+              console.log(`✅ BaseQuestion created: ${baseQuestion.id}`);
+
+              // Create AI analysis with manual classification (skip AI analysis)
+              await prisma.aIAnalysis.create({
+                data: {
+                  baseQuestionId: baseQuestion.id,
+                  specialty: specialty.name,
+                  topic: topic.name,
+                  difficulty: 'MEDIUM', // Default difficulty
+                  analysisResult: JSON.stringify({
+                    specialty: specialty.name,
+                    topic: topic.name,
+                    difficulty: 'MEDIUM',
+                    source: 'MANUAL_CLASSIFICATION',
+                    confidence: 1.0,
+                    keywords: [],
+                    learningObjectives: [],
+                    questionType: 'CLINICAL_CASE'
+                  })
+                }
+              });
+
+              console.log(`✅ Manual classification applied: ${specialty.name} -> ${topic.name}`);
+
+              // Update status and generate variations directly
+              await prisma.baseQuestion.update({
+                where: { id: baseQuestion.id },
+                data: { status: 'GENERATING_VARIATIONS' }
+              });
+
+              // Generate variations with manual classification
+              await exerciseFactory.generateVariations(baseQuestion.id, {
+                specialty: specialty.name,
+                topic: topic.name,
+                subtopic: undefined,
+                difficulty: 'MEDIUM',
+                confidence: 1.0,
+                keywords: [],
+                learningObjectives: [],
+                questionType: 'CLINICAL_CASE'
+              });
+
+              console.log(`✅ Variations generated for question ${i + 1}`);
+
+              // Update progress
+              await prisma.processingJob.update({
+                where: { id: job.id },
+                data: { processedItems: i + 1 }
+              });
+
+            } catch (error) {
+              logger.error(`❌ Error processing question ${i + 1}:`, error);
+              continue;
+            }
+          }
+
+          // Mark job as completed
+          await prisma.processingJob.update({
+            where: { id: job.id },
+            data: { status: 'COMPLETED', completedAt: new Date() }
+          });
+
+          logger.info(`🎉 Manual CSV job ${job.id} completed successfully`);
+        } catch (error) {
+          logger.error(`❌ Manual CSV job ${job.id} failed:`, error);
+          await prisma.processingJob.update({
+            where: { id: job.id },
+            data: { status: 'FAILED', errorMessage: error.message, completedAt: new Date() }
+          });
+        }
+      })();
+    });
+
+  } catch (error) {
+    logger.error('❌ Manual CSV upload error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error interno del servidor'
+    });
+  }
+});
+
 // Apply auth middleware to all other routes
 router.use(authenticate);
 // GET /api/exercise-factory/jobs - Get processing jobs
