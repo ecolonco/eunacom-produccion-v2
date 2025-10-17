@@ -499,8 +499,8 @@ Responde solo con el texto del análisis (sin comillas, sin JSON, solo el texto)
 
     lastExam.performanceBySpecialty.forEach((s: any) => {
       const firstPercentage = firstSpecialties.get(s.specialty);
-      if (firstPercentage !== undefined) {
-        const diff = s.percentage - firstPercentage;
+      if (firstPercentage !== undefined && typeof s.percentage === 'number') {
+        const diff = Number(s.percentage) - Number(firstPercentage);
         if (diff > 15) {
           improving.push(s.specialty);
         } else if (diff < -15) {

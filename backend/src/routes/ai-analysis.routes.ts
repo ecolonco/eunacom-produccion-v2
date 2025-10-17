@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { authenticateToken } from '../middleware/auth.middleware';
+import { authenticate } from '../middleware/auth.middleware';
 import { aiAnalysisService } from '../services/ai-analysis.service';
 import { logger } from '../utils/logger';
 
@@ -9,7 +9,7 @@ const router = Router();
  * POST /api/ai-analysis/individual/:mockExamId
  * Genera análisis individual de un ensayo completado
  */
-router.post('/individual/:mockExamId', authenticateToken, async (req: Request, res: Response) => {
+router.post('/individual/:mockExamId', authenticate, async (req: Request, res: Response) => {
   try {
     const userId = req.user?.userId;
     const { mockExamId } = req.params;
@@ -71,7 +71,7 @@ router.post('/individual/:mockExamId', authenticateToken, async (req: Request, r
  * GET /api/ai-analysis/individual/:mockExamId
  * Obtiene el análisis individual de un ensayo (si existe)
  */
-router.get('/individual/:mockExamId', authenticateToken, async (req: Request, res: Response) => {
+router.get('/individual/:mockExamId', authenticate, async (req: Request, res: Response) => {
   try {
     const userId = req.user?.userId;
     const { mockExamId } = req.params;
@@ -120,7 +120,7 @@ router.get('/individual/:mockExamId', authenticateToken, async (req: Request, re
  * POST /api/ai-analysis/evolutionary
  * Genera análisis evolutivo de todos los ensayos del usuario
  */
-router.post('/evolutionary', authenticateToken, async (req: Request, res: Response) => {
+router.post('/evolutionary', authenticate, async (req: Request, res: Response) => {
   try {
     const userId = req.user?.userId;
 
@@ -149,7 +149,7 @@ router.post('/evolutionary', authenticateToken, async (req: Request, res: Respon
  * GET /api/ai-analysis/evolutionary
  * Obtiene el análisis evolutivo más reciente del usuario
  */
-router.get('/evolutionary', authenticateToken, async (req: Request, res: Response) => {
+router.get('/evolutionary', authenticate, async (req: Request, res: Response) => {
   try {
     const userId = req.user?.userId;
 
