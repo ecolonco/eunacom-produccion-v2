@@ -395,17 +395,26 @@ router.post('/upload-csv', authenticate, async (req: MulterRequest, res: Respons
           logger.info(`🚀 BACKGROUND ASYNC STARTED for job ${job.id} - BUILD VERSION 2025-10-17-v6-CONSOLE-LOG`);
 
           // Get job data from database to ensure we have fresh data
+          console.log(`🔍 Fetching job data for: ${job.id}`);
           const jobData = await prisma.processingJob.findUnique({
             where: { id: job.id }
           });
 
           if (!jobData) {
+            console.log(`❌ Job ${job.id} NOT FOUND in database!`);
             throw new Error(`Job ${job.id} not found`);
           }
 
+          console.log(`✅ Job data fetched:`, JSON.stringify(jobData, null, 2));
+
           const jobInput = jobData.inputData as any;
+          console.log(`📦 jobInput:`, JSON.stringify(jobInput, null, 2));
+
           const uploadedByUser = jobInput.uploadedBy;
           const sourceFileName = jobInput.fileName;
+
+          console.log(`👤 uploadedByUser: ${uploadedByUser} (type: ${typeof uploadedByUser})`);
+          console.log(`📄 sourceFileName: ${sourceFileName} (type: ${typeof sourceFileName})`);
 
           logger.info(`✅ JOB DATA LOADED - userId: ${uploadedByUser}, fileName: ${sourceFileName}`);
 
@@ -420,6 +429,12 @@ router.post('/upload-csv', authenticate, async (req: MulterRequest, res: Respons
 
             try {
               // Create base question using data from job
+              console.log(`\n🔧 Creating baseQuestion ${i + 1} with:`);
+              console.log(`   content: ${question.substring(0, 50)}...`);
+              console.log(`   sourceFile: ${sourceFileName} (type: ${typeof sourceFileName})`);
+              console.log(`   uploadedBy: ${uploadedByUser} (type: ${typeof uploadedByUser})`);
+              console.log(`   status: PENDING`);
+
               const baseQuestion = await prisma.baseQuestion.create({
                 data: {
                   content: question,
@@ -428,6 +443,8 @@ router.post('/upload-csv', authenticate, async (req: MulterRequest, res: Respons
                   status: 'PENDING'
                 }
               });
+
+              console.log(`✅ BaseQuestion ${i + 1} created successfully: ${baseQuestion.id}`);
 
               // Use the WORKING analyzeQuestion method
               await exerciseFactory.analyzeQuestion(baseQuestion);
