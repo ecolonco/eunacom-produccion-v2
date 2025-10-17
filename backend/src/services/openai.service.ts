@@ -374,7 +374,7 @@ Responde en formato JSON:
   ]
 }`;
 
-      const result = await this.callOpenAI('gpt-4o', systemPrompt, userPrompt);
+      const result = await this.callOpenAI('gpt-5-mini', systemPrompt, userPrompt);
       return result.content;
     } catch (error) {
       logger.error('Question variation generation failed:', error);
