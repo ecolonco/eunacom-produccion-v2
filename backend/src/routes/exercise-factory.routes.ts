@@ -387,6 +387,8 @@ router.post('/upload-csv', authenticate, async (req: MulterRequest, res: Respons
       const userId = user.userId;
       const fileName = req.file.originalname;
 
+      logger.info(`✅ VARIABLES CAPTURED - userId: ${userId}, fileName: ${fileName} - BUILD VERSION 2025-10-17-v3`);
+
       // Process questions in background using the WORKING individual logic
       (async () => {
         try {
