@@ -314,14 +314,24 @@ Responde en formato JSON:
         throw new Error('Respuesta de OpenAI no válida');
       }
       
-      // Asegurar que tenga los campos requeridos
-      const evaluation = result.content as any;
-      if (!evaluation.scorecard || !evaluation.etiquetas || evaluation.severidad_global === undefined || !evaluation.recomendacion) {
-        logger.error('Missing required fields in evaluation:', evaluation);
-        throw new Error('Campos requeridos faltantes en la evaluación');
+      // Asegurar que tenga los campos requeridos para analyzeQuestion
+      const analysis = result.content as any;
+      if (!analysis.specialty || !analysis.topic || !analysis.difficulty) {
+        logger.error('Missing required fields in analysis:', analysis);
+        // Usar valores por defecto en lugar de fallar
+        return {
+          specialty: analysis.specialty || 'MEDICINA GENERAL',
+          topic: analysis.topic || 'General',
+          subtopic: analysis.subtopic,
+          difficulty: analysis.difficulty || 'MEDIUM',
+          confidence: analysis.confidence || 0.5,
+          keywords: analysis.keywords || [],
+          learningObjectives: analysis.learningObjectives || [],
+          questionType: analysis.questionType || 'CLINICAL_CASE'
+        };
       }
-      
-      return evaluation;
+
+      return analysis;
     } catch (error) {
       logger.error('Question analysis failed:', error);
       throw error;
