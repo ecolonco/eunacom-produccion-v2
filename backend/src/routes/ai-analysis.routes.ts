@@ -11,7 +11,7 @@ const router = Router();
  */
 router.post('/individual/:mockExamId', authenticate, async (req: Request, res: Response) => {
   try {
-    const userId = req.user?.userId;
+    const userId = req.user?.id;
     const { mockExamId } = req.params;
 
     if (!userId) {
@@ -73,7 +73,7 @@ router.post('/individual/:mockExamId', authenticate, async (req: Request, res: R
  */
 router.get('/individual/:mockExamId', authenticate, async (req: Request, res: Response) => {
   try {
-    const userId = req.user?.userId;
+    const userId = req.user?.id;
     const { mockExamId } = req.params;
 
     if (!userId) {
@@ -122,7 +122,7 @@ router.get('/individual/:mockExamId', authenticate, async (req: Request, res: Re
  */
 router.post('/evolutionary', authenticate, async (req: Request, res: Response) => {
   try {
-    const userId = req.user?.userId;
+    const userId = req.user?.id;
 
     if (!userId) {
       return res.status(401).json({ error: 'Usuario no autenticado' });
@@ -151,7 +151,7 @@ router.post('/evolutionary', authenticate, async (req: Request, res: Response) =
  */
 router.get('/evolutionary', authenticate, async (req: Request, res: Response) => {
   try {
-    const userId = req.user?.userId;
+    const userId = req.user?.id;
 
     if (!userId) {
       return res.status(401).json({ error: 'Usuario no autenticado' });
