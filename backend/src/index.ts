@@ -214,6 +214,7 @@ if (NODE_ENV !== 'test') {
     logger.info(`🚀 EUNACOM API server running on port ${PORT}`);
     logger.info(`📚 Environment: ${NODE_ENV}`);
     logger.info(`🔧 Health check: http://localhost:${PORT}/health`);
+    logger.info(`🆔 CODE VERSION: 2025-10-17-v5-STARTUP-CHECK - Exercise Factory fix deployed`);
   });
 }
 
