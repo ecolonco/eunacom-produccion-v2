@@ -403,7 +403,7 @@ Responde solo con el texto del diagnóstico (sin comillas, sin JSON, solo el tex
         },
         { role: 'user', content: prompt }
       ],
-      max_tokens: 150,
+      max_completion_tokens: 150,
       temperature: 0.7
     });
 
@@ -465,7 +465,7 @@ Responde solo con el texto del análisis (sin comillas, sin JSON, solo el texto)
         },
         { role: 'user', content: prompt }
       ],
-      max_tokens: 200,
+      max_completion_tokens: 200,
       temperature: 0.7
     });
 
