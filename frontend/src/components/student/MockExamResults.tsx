@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { MockExam } from '../../services/mock-exam.service';
+import { aiAnalysisService, IndividualAnalysis } from '../../services/ai-analysis.service';
 
 interface MockExamResultsProps {
   mockExam: MockExam;
@@ -13,6 +14,39 @@ export const MockExamResults: React.FC<MockExamResultsProps> = ({ mockExam: exam
   const timeSpent = exam.timeSpentSecs || 0;
   const minutes = Math.floor(timeSpent / 60);
   const seconds = timeSpent % 60;
+
+  // Estado para análisis IA
+  const [analysis, setAnalysis] = useState<IndividualAnalysis | null>(null);
+  const [loadingAnalysis, setLoadingAnalysis] = useState<boolean>(true);
+  const [analysisError, setAnalysisError] = useState<string | null>(null);
+
+  // Cargar análisis al montar el componente
+  useEffect(() => {
+    const loadAnalysis = async () => {
+      try {
+        setLoadingAnalysis(true);
+
+        // Intentar obtener análisis existente
+        let existingAnalysis = await aiAnalysisService.getIndividualAnalysis(exam.id);
+
+        // Si no existe, generar uno nuevo
+        if (!existingAnalysis) {
+          existingAnalysis = await aiAnalysisService.generateIndividualAnalysis(exam.id);
+        }
+
+        setAnalysis(existingAnalysis);
+      } catch (error: any) {
+        console.error('Error loading AI analysis:', error);
+        setAnalysisError(error.message || 'Error al cargar el análisis IA');
+      } finally {
+        setLoadingAnalysis(false);
+      }
+    };
+
+    if (exam.status === 'COMPLETED') {
+      loadAnalysis();
+    }
+  }, [exam.id, exam.status]);
 
   // Determinar color según el porcentaje
   const getScoreColor = (pct: number) => {
@@ -72,6 +106,95 @@ export const MockExamResults: React.FC<MockExamResultsProps> = ({ mockExam: exam
             Volver al Dashboard
           </button>
         </div>
+      </div>
+
+      {/* Diagnóstico IA del rendimiento */}
+      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-lg p-6 mb-6 shadow-lg">
+        <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
+          <span className="text-2xl mr-3">🤖</span>
+          Diagnóstico Inteligente de tu Rendimiento
+        </h3>
+
+        {loadingAnalysis ? (
+          <div className="flex items-center justify-center py-8">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            <span className="ml-4 text-gray-600">Analizando tu rendimiento...</span>
+          </div>
+        ) : analysisError ? (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+            <p className="text-red-700 text-sm">⚠️ {analysisError}</p>
+          </div>
+        ) : analysis ? (
+          <div className="space-y-4">
+            {/* Resumen principal */}
+            <div className="bg-white rounded-lg p-5 border-2 border-blue-300 shadow-sm">
+              <p className="text-gray-800 leading-relaxed text-lg">
+                {analysis.summary}
+              </p>
+            </div>
+
+            {/* Categorías de especialidades */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Fortalezas */}
+              {analysis.strengths.length > 0 && (
+                <div className="bg-green-50 border-2 border-green-300 rounded-lg p-4">
+                  <h4 className="font-bold text-green-800 mb-2 flex items-center">
+                    <span className="mr-2">💪</span>
+                    Especialidades Fuertes
+                  </h4>
+                  <div className="space-y-1">
+                    {analysis.strengths.map((specialty, idx) => (
+                      <div key={idx} className="text-sm text-green-700 flex items-start">
+                        <span className="mr-1">•</span>
+                        <span>{specialty}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Rendimiento medio */}
+              {analysis.mediumPerformance.length > 0 && (
+                <div className="bg-yellow-50 border-2 border-yellow-300 rounded-lg p-4">
+                  <h4 className="font-bold text-yellow-800 mb-2 flex items-center">
+                    <span className="mr-2">⚖️</span>
+                    Rendimiento Medio
+                  </h4>
+                  <div className="space-y-1">
+                    {analysis.mediumPerformance.map((specialty, idx) => (
+                      <div key={idx} className="text-sm text-yellow-700 flex items-start">
+                        <span className="mr-1">•</span>
+                        <span>{specialty}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Áreas de mejora */}
+              {analysis.weaknesses.length > 0 && (
+                <div className="bg-red-50 border-2 border-red-300 rounded-lg p-4">
+                  <h4 className="font-bold text-red-800 mb-2 flex items-center">
+                    <span className="mr-2">📚</span>
+                    Áreas de Mejora
+                  </h4>
+                  <div className="space-y-1">
+                    {analysis.weaknesses.map((specialty, idx) => (
+                      <div key={idx} className="text-sm text-red-700 flex items-start">
+                        <span className="mr-1">•</span>
+                        <span>{specialty}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="text-xs text-gray-500 text-center">
+              ✨ Análisis generado por IA basado en tu rendimiento por especialidad
+            </div>
+          </div>
+        ) : null}
       </div>
 
       {/* Revisión detallada de preguntas */}

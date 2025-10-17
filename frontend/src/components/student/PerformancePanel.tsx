@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { controlService, Control } from '../../services/control.service';
 import { examService, Exam } from '../../services/exam.service';
 import { mockExamService, MockExam } from '../../services/mock-exam.service';
+import { aiAnalysisService, EvolutionaryAnalysis } from '../../services/ai-analysis.service';
 
 interface PerformanceStats {
   total: number;
@@ -19,6 +20,11 @@ export const PerformancePanel: React.FC<{ onBack: () => void }> = ({ onBack }) =
   const [loading, setLoading] = useState(true);
   const [selectedView, setSelectedView] = useState<'all' | 'controls' | 'exams' | 'mockExams'>('all');
 
+  // Estado para análisis evolutivo IA
+  const [evolutionaryAnalysis, setEvolutionaryAnalysis] = useState<EvolutionaryAnalysis | null>(null);
+  const [loadingEvolutionary, setLoadingEvolutionary] = useState<boolean>(false);
+  const [evolutionaryError, setEvolutionaryError] = useState<string | null>(null);
+
   useEffect(() => {
     loadData();
   }, []);
@@ -30,14 +36,58 @@ export const PerformancePanel: React.FC<{ onBack: () => void }> = ({ onBack }) =
         examService.listUserExams(),
         mockExamService.listUserMockExams(),
       ]);
-      
+
+      const completedMockExams = mockExamsData.filter((m) => m.status === 'COMPLETED');
+
       setControls(controlsData.filter((c) => c.status === 'COMPLETED'));
       setExams(examsData.filter((e) => e.status === 'COMPLETED'));
-      setMockExams(mockExamsData.filter((m) => m.status === 'COMPLETED'));
+      setMockExams(completedMockExams);
+
+      // Cargar análisis evolutivo si hay ensayos completados
+      if (completedMockExams.length > 0) {
+        loadEvolutionaryAnalysis();
+      }
     } catch (error) {
       console.error('Error loading performance data:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadEvolutionaryAnalysis = async () => {
+    try {
+      setLoadingEvolutionary(true);
+      setEvolutionaryError(null);
+
+      // Intentar obtener análisis existente
+      let analysis = await aiAnalysisService.getEvolutionaryAnalysis();
+
+      // Si no existe, generar uno nuevo
+      if (!analysis) {
+        analysis = await aiAnalysisService.generateEvolutionaryAnalysis();
+      }
+
+      setEvolutionaryAnalysis(analysis);
+    } catch (error: any) {
+      console.error('Error loading evolutionary analysis:', error);
+      setEvolutionaryError(error.message || 'Error al cargar análisis evolutivo');
+    } finally {
+      setLoadingEvolutionary(false);
+    }
+  };
+
+  const handleRegenerateAnalysis = async () => {
+    try {
+      setLoadingEvolutionary(true);
+      setEvolutionaryError(null);
+
+      const analysis = await aiAnalysisService.generateEvolutionaryAnalysis();
+      setEvolutionaryAnalysis(analysis);
+    } catch (error: any) {
+      console.error('Error regenerating evolutionary analysis:', error);
+      setEvolutionaryError(error.message || 'Error al regenerar análisis');
+    } finally {
+      setLoadingEvolutionary(false);
     }
   };
 
@@ -234,6 +284,76 @@ export const PerformancePanel: React.FC<{ onBack: () => void }> = ({ onBack }) =
         <p className="text-gray-600 mb-8">
           Estadísticas detalladas de tu desempeño en Controles, Pruebas y Ensayos EUNACOM
         </p>
+
+        {/* Análisis Evolutivo IA (solo si hay ensayos completados) */}
+        {mockExams.length > 0 && (
+          <div className="bg-gradient-to-r from-purple-50 via-indigo-50 to-blue-50 border-2 border-indigo-300 rounded-xl p-6 mb-8 shadow-lg">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-2xl font-bold text-gray-800 flex items-center">
+                <span className="text-3xl mr-3">📈</span>
+                Análisis de tu Evolución
+              </h2>
+              {evolutionaryAnalysis && !loadingEvolutionary && (
+                <button
+                  onClick={handleRegenerateAnalysis}
+                  className="px-4 py-2 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700 transition-colors font-semibold"
+                  title="Actualizar análisis con tus últimos ensayos"
+                >
+                  🔄 Actualizar
+                </button>
+              )}
+            </div>
+
+            {loadingEvolutionary ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+                <span className="ml-4 text-gray-600">Analizando tu evolución...</span>
+              </div>
+            ) : evolutionaryError ? (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                <p className="text-red-700 text-sm">⚠️ {evolutionaryError}</p>
+                <button
+                  onClick={loadEvolutionaryAnalysis}
+                  className="mt-3 px-4 py-2 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700 transition-colors"
+                >
+                  Reintentar
+                </button>
+              </div>
+            ) : evolutionaryAnalysis ? (
+              <div>
+                {/* Resumen principal */}
+                <div className="bg-white rounded-lg p-6 border-2 border-indigo-200 shadow-sm mb-4">
+                  <p className="text-gray-800 leading-relaxed text-lg">
+                    {evolutionaryAnalysis.summary}
+                  </p>
+                </div>
+
+                {/* Metadata */}
+                <div className="flex items-center justify-between text-sm text-gray-600">
+                  <div className="flex items-center gap-4">
+                    <span>📊 Ensayos analizados: <strong>{evolutionaryAnalysis.examsAnalyzed}</strong></span>
+                    {evolutionaryAnalysis.createdAt && (
+                      <span>🕒 Última actualización: {new Date(evolutionaryAnalysis.createdAt).toLocaleDateString('es-CL')}</span>
+                    )}
+                  </div>
+                  <span className="text-xs text-gray-500">✨ Análisis generado por IA</span>
+                </div>
+              </div>
+            ) : (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <p className="text-blue-700 text-sm mb-3">
+                  💡 Genera un análisis de tu evolución a través de todos tus ensayos EUNACOM
+                </p>
+                <button
+                  onClick={loadEvolutionaryAnalysis}
+                  className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Generar Análisis
+                </button>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Estadísticas Consolidadas */}
         <div className="bg-gradient-to-r from-purple-500 to-indigo-600 text-white rounded-xl p-8 mb-8 shadow-lg">

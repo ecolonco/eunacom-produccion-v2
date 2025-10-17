@@ -35,6 +35,7 @@ import adminExamsRoutes from './routes/admin-exams.routes';
 import mockExamRoutes from './routes/mock-exam.routes';
 import adminMockExamsRoutes from './routes/admin-mock-exams.routes';
 import { adminTopicsRoutes } from './routes/admin-topics.routes';
+import { aiAnalysisRoutes } from './routes/ai-analysis.routes';
 import { logger } from './utils/logger';
 
 // Load environment variables
@@ -156,6 +157,7 @@ app.use('/api/exams', examRoutes);
 app.use('/api/admin/mock-exams', adminMockExamsRoutes);
 app.use('/api/mock-exams', mockExamRoutes);
 app.use('/api/admin', adminTopicsRoutes);
+app.use('/api/ai-analysis', aiAnalysisRoutes);
 app.use('/api/exercise-factory', exerciseFactoryRoutes);
 app.use('/api/taxonomy-admin', taxonomyAdminRoutes);
 app.use('/api/qa-sweep', qaSweepRoutes);
@@ -213,7 +215,8 @@ if (NODE_ENV !== 'test') {
   app.listen(PORT, () => {
     // Use both console.log and logger to ensure visibility
     console.log('='.repeat(80));
-    console.log('🆔 CODE VERSION: 2025-10-17-v13-MANUAL-UPLOAD');
+    console.log('🆔 CODE VERSION: 2025-10-17-v14-AI-ANALYSIS');
+    console.log('🤖 AI Student Analysis: Individual post-exam + Evolutionary performance analysis');
     console.log('🎯 Manual Topic Upload: Admin can select specialty/topic before CSV upload');
     console.log('📦 Exercise Factory: Both AI classification and manual classification available');
     console.log('='.repeat(80));
@@ -221,7 +224,7 @@ if (NODE_ENV !== 'test') {
     logger.info(`🚀 EUNACOM API server running on port ${PORT}`);
     logger.info(`📚 Environment: ${NODE_ENV}`);
     logger.info(`🔧 Health check: http://localhost:${PORT}/health`);
-    logger.info(`🆔 CODE VERSION: 2025-10-17-v13-MANUAL-UPLOAD - Manual topic upload + AI classification`);
+    logger.info(`🆔 CODE VERSION: 2025-10-17-v14-AI-ANALYSIS - AI student performance analysis`);
   });
 }
 
