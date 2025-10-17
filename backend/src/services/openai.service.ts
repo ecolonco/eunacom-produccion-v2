@@ -271,7 +271,10 @@ export class OpenAIService {
   /**
    * Analiza una pregunta para determinar especialidad y tema
    */
-  async analyzeQuestion(questionContent: string): Promise<{
+  async analyzeQuestion(
+    questionContent: string,
+    availableTaxonomy?: { specialty: string; topics: string[] }[]
+  ): Promise<{
     specialty: string;
     topic: string;
     subtopic?: string;
@@ -282,22 +285,34 @@ export class OpenAIService {
     questionType: 'CLINICAL_CASE' | 'CONCEPT' | 'PROCEDURE' | 'DIAGNOSIS' | 'TREATMENT' | 'PREVENTION';
   }> {
     try {
-      const systemPrompt = 'Eres un experto en medicina que clasifica preguntas médicas por especialidad, tema y dificultad.';
+      const systemPrompt = 'Eres un experto en medicina que clasifica preguntas médicas por especialidad, tema y dificultad según la taxonomía oficial del examen EUNACOM de Chile.';
+
+      // Build taxonomy list if provided
+      let taxonomySection = '';
+      if (availableTaxonomy && availableTaxonomy.length > 0) {
+        taxonomySection = '\n\n⚠️ IMPORTANTE: Debes elegir SOLO de la siguiente taxonomía oficial EUNACOM:\n\n';
+        for (const spec of availableTaxonomy) {
+          taxonomySection += `**${spec.specialty}**:\n`;
+          taxonomySection += `  Temas: ${spec.topics.join(', ')}\n\n`;
+        }
+        taxonomySection += '⚠️ Si la pregunta no cabe en un tema específico, usa el tema más general de esa especialidad (ejemplo: "Cirugía General" para Cirugía).\n';
+      }
+
       const userPrompt = `Analiza esta pregunta médica y determina:
-1. Especialidad médica (ej: OBSTETRICIA Y GINECOLOGÍA, PEDIATRÍA, etc.)
-2. Tema específico (ej: Ginecología, Neumonía, etc.)
+1. Especialidad médica (debe ser EXACTAMENTE una de las listadas abajo)
+2. Tema específico (debe ser EXACTAMENTE uno de los temas de esa especialidad)
 3. Subtema opcional si aplica
 4. Confianza en la clasificación (0-1)
 5. Palabras clave médicas
 6. Objetivos de aprendizaje
 7. Tipo de pregunta médica
-
+${taxonomySection}
 Pregunta: ${questionContent}
 
 Responde en formato JSON:
 {
-  "specialty": "ESPECIALIDAD",
-  "topic": "TEMA",
+  "specialty": "ESPECIALIDAD_EXACTA",
+  "topic": "TEMA_EXACTO",
   "subtopic": "SUBTEMA_OPCIONAL",
   "difficulty": "MEDIUM",
   "confidence": 0.95,

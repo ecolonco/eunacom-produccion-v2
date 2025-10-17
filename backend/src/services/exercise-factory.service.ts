@@ -283,11 +283,30 @@ export class ExerciseFactoryService {
       // Track classification attempt
       this.classificationMetrics.totalAttempts++;
 
-      // Use OpenAI to analyze the question
+      // Load available taxonomy from database
+      logger.info('Loading official EUNACOM taxonomy from database');
+      const specialties = await prisma.specialty.findMany({
+        where: { isActive: true },
+        include: {
+          topics: {
+            orderBy: { name: 'asc' }
+          }
+        },
+        orderBy: { name: 'asc' }
+      });
+
+      const availableTaxonomy = specialties.map(spec => ({
+        specialty: spec.name,
+        topics: spec.topics.map(t => t.name)
+      }));
+
+      logger.info(`Loaded ${specialties.length} specialties with topics for AI classification`);
+
+      // Use OpenAI to analyze the question with official taxonomy
       if (!this.openAIService) {
         throw new Error('OpenAI service not available - API key not configured');
       }
-      const analysis = await this.openAIService.analyzeQuestion(baseQuestion.content);
+      const analysis = await this.openAIService.analyzeQuestion(baseQuestion.content, availableTaxonomy);
 
       // VALIDATE AI classification against official taxonomy
       const validationResult = await this.validateClassification(analysis.specialty, analysis.topic);
