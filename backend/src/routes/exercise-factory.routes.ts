@@ -382,6 +382,10 @@ router.post('/upload-csv', authenticate, async (req: MulterRequest, res: Respons
 
       logger.info(`🔥 ABOUT TO START BACKGROUND PROCESSING for job ${job.id} with ${lines.length} questions`);
 
+      // Capture variables needed in async block BEFORE it starts
+      const userId = user.userId;
+      const fileName = req.file.originalname;
+
       // Process questions in background using the WORKING individual logic
       (async () => {
         try {
@@ -400,8 +404,8 @@ router.post('/upload-csv', authenticate, async (req: MulterRequest, res: Respons
               const baseQuestion = await prisma.baseQuestion.create({
                 data: {
                   content: question,
-                  sourceFile: req.file!.originalname,
-                  uploadedBy: user.userId,
+                  sourceFile: fileName,
+                  uploadedBy: userId,
                   status: 'PENDING'
                 }
               });
