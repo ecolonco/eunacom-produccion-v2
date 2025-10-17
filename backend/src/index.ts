@@ -211,10 +211,16 @@ process.on('SIGINT', () => {
 // Start server
 if (NODE_ENV !== 'test') {
   app.listen(PORT, () => {
+    // Use both console.log and logger to ensure visibility
+    console.log('='.repeat(80));
+    console.log('🆔 CODE VERSION: 2025-10-17-v6-CONSOLE-LOG');
+    console.log('📦 Exercise Factory fix: Get uploadedBy from job database record');
+    console.log('='.repeat(80));
+
     logger.info(`🚀 EUNACOM API server running on port ${PORT}`);
     logger.info(`📚 Environment: ${NODE_ENV}`);
     logger.info(`🔧 Health check: http://localhost:${PORT}/health`);
-    logger.info(`🆔 CODE VERSION: 2025-10-17-v5-STARTUP-CHECK - Exercise Factory fix deployed`);
+    logger.info(`🆔 CODE VERSION: 2025-10-17-v6-CONSOLE-LOG - Exercise Factory fix deployed`);
   });
 }
 
