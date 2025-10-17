@@ -382,17 +382,26 @@ router.post('/upload-csv', authenticate, async (req: MulterRequest, res: Respons
 
       logger.info(`🔥 ABOUT TO START BACKGROUND PROCESSING for job ${job.id} with ${lines.length} questions`);
 
-      // CRITICAL FIX: Capture variables needed in async block BEFORE it starts
-      // This ensures userId and fileName are available inside the async closure
-      const userId = user.userId;
-      const fileName = req.file.originalname;
-
-      logger.info(`✅ VARIABLES CAPTURED - userId: ${userId}, fileName: ${fileName} - BUILD VERSION 2025-10-17-v3`);
-
-      // Process questions in background using the WORKING individual logic
+      // Process questions in background - NEW APPROACH: Get data from job object
       (async () => {
         try {
-          logger.info(`🚀 BACKGROUND ASYNC STARTED for job ${job.id}`);
+          logger.info(`🚀 BACKGROUND ASYNC STARTED for job ${job.id} - BUILD VERSION 2025-10-17-v4-FINAL`);
+
+          // Get job data from database to ensure we have fresh data
+          const jobData = await prisma.processingJob.findUnique({
+            where: { id: job.id }
+          });
+
+          if (!jobData) {
+            throw new Error(`Job ${job.id} not found`);
+          }
+
+          const jobInput = jobData.inputData as any;
+          const uploadedByUser = jobInput.uploadedBy;
+          const sourceFileName = jobInput.fileName;
+
+          logger.info(`✅ JOB DATA LOADED - userId: ${uploadedByUser}, fileName: ${sourceFileName}`);
+
           const { ExerciseFactoryService } = await import('../services/exercise-factory.service');
           logger.info(`✅ ExerciseFactoryService imported for job ${job.id}`);
           const exerciseFactory = new ExerciseFactoryService();
@@ -403,12 +412,12 @@ router.post('/upload-csv', authenticate, async (req: MulterRequest, res: Respons
             logger.info(`📝 Processing question ${i + 1}/${lines.length}: ${question.substring(0, 50)}...`);
 
             try {
-              // Create base question
+              // Create base question using data from job
               const baseQuestion = await prisma.baseQuestion.create({
                 data: {
                   content: question,
-                  sourceFile: fileName,
-                  uploadedBy: userId,
+                  sourceFile: sourceFileName,
+                  uploadedBy: uploadedByUser,
                   status: 'PENDING'
                 }
               });
