@@ -284,7 +284,7 @@ export class ExerciseFactoryService {
       this.classificationMetrics.totalAttempts++;
 
       // Load available taxonomy from database
-      logger.info('Loading official EUNACOM taxonomy from database');
+      logger.info('📚 Loading official EUNACOM taxonomy from database');
       const specialties = await prisma.specialty.findMany({
         where: { isActive: true },
         include: {
@@ -300,7 +300,17 @@ export class ExerciseFactoryService {
         topics: spec.topics.map(t => t.name)
       }));
 
-      logger.info(`Loaded ${specialties.length} specialties with topics for AI classification`);
+      const totalTopics = availableTaxonomy.reduce((sum, spec) => sum + spec.topics.length, 0);
+      logger.info(`✅ Loaded ${specialties.length} specialties with ${totalTopics} topics for AI classification`);
+
+      // Log taxonomy for verification (first 5 specialties)
+      logger.info('📋 Available taxonomy (sample):');
+      availableTaxonomy.slice(0, 5).forEach(spec => {
+        logger.info(`  - ${spec.specialty}: ${spec.topics.join(', ')}`);
+      });
+      if (specialties.length > 5) {
+        logger.info(`  ... and ${specialties.length - 5} more specialties`);
+      }
 
       // Use OpenAI to analyze the question with official taxonomy
       if (!this.openAIService) {
