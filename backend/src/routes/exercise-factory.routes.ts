@@ -385,7 +385,14 @@ router.post('/upload-csv', authenticate, async (req: MulterRequest, res: Respons
       // Process questions in background - NEW APPROACH: Get data from job object
       (async () => {
         try {
-          logger.info(`🚀 BACKGROUND ASYNC STARTED for job ${job.id} - BUILD VERSION 2025-10-17-v4-FINAL`);
+          // CRITICAL: Using console.log to ensure visibility in Render logs
+          console.log('='.repeat(80));
+          console.log('🆔 CSV PROCESSING VERSION: 2025-10-17-v6-CONSOLE-LOG');
+          console.log(`📦 Job ID: ${job.id}`);
+          console.log(`📊 Questions to process: ${lines.length}`);
+          console.log('='.repeat(80));
+
+          logger.info(`🚀 BACKGROUND ASYNC STARTED for job ${job.id} - BUILD VERSION 2025-10-17-v6-CONSOLE-LOG`);
 
           // Get job data from database to ensure we have fresh data
           const jobData = await prisma.processingJob.findUnique({
