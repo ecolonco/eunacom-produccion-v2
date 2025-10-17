@@ -6,9 +6,10 @@ import multer from 'multer';
 import { parse } from 'csv-parse/sync';
 import { prisma } from '../lib/prisma';
 
-// Extend Express Request type to include file
+// Extend Express Request type to include file and body
 interface MulterRequest extends Request {
   file?: any;
+  body: any;
 }
 
 const router = Router();
@@ -662,7 +663,6 @@ router.post('/upload-csv-manual', authenticate, async (req: MulterRequest, res: 
                 specialty: specialty.name,
                 topic: topic.name,
                 subtopic: undefined,
-                difficulty: 'MEDIUM',
                 confidence: 1.0,
                 keywords: [],
                 learningObjectives: [],
