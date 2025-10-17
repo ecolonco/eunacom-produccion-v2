@@ -380,11 +380,16 @@ router.post('/upload-csv', authenticate, async (req: MulterRequest, res: Respons
         }
       });
 
+      logger.info(`🔥 ABOUT TO START BACKGROUND PROCESSING for job ${job.id} with ${lines.length} questions`);
+
       // Process questions in background using the WORKING individual logic
       (async () => {
         try {
+          logger.info(`🚀 BACKGROUND ASYNC STARTED for job ${job.id}`);
           const { ExerciseFactoryService } = await import('../services/exercise-factory.service');
+          logger.info(`✅ ExerciseFactoryService imported for job ${job.id}`);
           const exerciseFactory = new ExerciseFactoryService();
+          logger.info(`✅ ExerciseFactory instantiated for job ${job.id}`);
 
           for (let i = 0; i < lines.length; i++) {
             const question = lines[i].trim();
