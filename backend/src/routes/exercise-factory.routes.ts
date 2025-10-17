@@ -362,7 +362,7 @@ router.post('/upload-csv', authenticate, async (req: MulterRequest, res: Respons
           status: 'RUNNING',
           totalItems: lines.length,
           processedItems: 0,
-          inputData: { fileName: req.file.originalname, uploadedBy: user.userId },
+          inputData: { fileName: req.file.originalname, uploadedBy: user.id },  // FIX: user.id not user.userId
           startedAt: new Date()
         }
       });
