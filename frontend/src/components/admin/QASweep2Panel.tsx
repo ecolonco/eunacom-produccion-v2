@@ -60,11 +60,15 @@ export const QASweep2Panel: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   const [reportModalOpen, setReportModalOpen] = useState(false);
   const [currentReport, setCurrentReport] = useState<any>(null);
   const [reportLoading, setReportLoading] = useState(false);
-  
+
   // Paginación para resultados
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const resultsPerPage = 25;
+
+  // Preview de variaciones a procesar
+  const [preview, setPreview] = useState<any>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
 
   // Estados para crear nuevo run
   const [newRun, setNewRun] = useState({
@@ -85,6 +89,21 @@ export const QASweep2Panel: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     loadStats();
     loadMetadata();
   }, []);
+
+  // Actualizar preview cuando cambien los filtros
+  useEffect(() => {
+    if (activeTab === 'create') {
+      loadPreview();
+    }
+  }, [
+    newRun.specialty,
+    newRun.topic,
+    newRun.baseQuestionFrom,
+    newRun.baseQuestionTo,
+    newRun.maxConfidenceScore,
+    newRun.maxConcurrency,
+    activeTab
+  ]);
 
   const loadRuns = async () => {
     try {
@@ -125,6 +144,35 @@ export const QASweep2Panel: React.FC<{ onBack: () => void }> = ({ onBack }) => {
       }
     } catch (error) {
       console.error('Error loading metadata:', error);
+    }
+  };
+
+  const loadPreview = async () => {
+    setPreviewLoading(true);
+    try {
+      const response = await fetch(`${API_BASE}/api/admin/qa-sweep-2/preview`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          specialty: newRun.specialty || undefined,
+          topic: newRun.topic || undefined,
+          baseQuestionFrom: newRun.baseQuestionFrom || undefined,
+          baseQuestionTo: newRun.baseQuestionTo || undefined,
+          maxConfidenceScore: newRun.maxConfidenceScore || undefined,
+          maxConcurrency: newRun.maxConcurrency
+        })
+      });
+      const data = await response.json();
+      if (data.success) {
+        setPreview(data.data);
+      }
+    } catch (error) {
+      console.error('Error loading preview:', error);
+    } finally {
+      setPreviewLoading(false);
     }
   };
 
@@ -633,6 +681,88 @@ export const QASweep2Panel: React.FC<{ onBack: () => void }> = ({ onBack }) => {
               </div>
             </div>
           </div>
+
+          {/* Cuadro Resumen de Preview */}
+          {preview && (
+            <div className="mt-6 p-4 bg-gradient-to-r from-purple-50 to-blue-50 border-2 border-purple-300 rounded-lg">
+              <h4 className="font-semibold mb-3 text-gray-800 flex items-center gap-2">
+                <span>📊</span>
+                <span>Resumen de Variaciones a Procesar</span>
+                {previewLoading && <span className="text-sm text-gray-500">(actualizando...)</span>}
+              </h4>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Columna izquierda: Datos */}
+                <div className="space-y-2">
+                  <div className="text-sm">
+                    <span className="text-gray-600">Total variaciones activas:</span>
+                    <span className="ml-2 font-bold text-gray-900">{preview.totalActive?.toLocaleString()}</span>
+                  </div>
+
+                  {preview.baseQuestionsInRange > 0 && (
+                    <div className="text-sm">
+                      <span className="text-gray-600">Ejercicios base en rango:</span>
+                      <span className="ml-2 font-bold text-blue-700">
+                        {preview.baseQuestionsInRange} × 4 = {preview.baseQuestionsInRange * 4} variaciones
+                      </span>
+                    </div>
+                  )}
+
+                  {preview.filters.maxConfidenceScore !== null && (
+                    <div className="text-sm">
+                      <span className="text-gray-600">Confidence máximo:</span>
+                      <span className="ml-2 font-bold text-orange-700">{preview.filters.maxConfidenceScore}%</span>
+                    </div>
+                  )}
+
+                  <div className="pt-2 border-t border-purple-200">
+                    <div className="text-lg font-bold text-purple-700">
+                      ✨ {preview.matchingFilters.toLocaleString()} variaciones a procesar
+                    </div>
+                  </div>
+                </div>
+
+                {/* Columna derecha: Estimaciones */}
+                <div className="space-y-2 bg-white/50 p-3 rounded">
+                  <div className="text-sm font-semibold text-gray-700 mb-2">Estimaciones:</div>
+
+                  <div className="text-sm flex justify-between">
+                    <span className="text-gray-600">⏱️ Tiempo estimado:</span>
+                    <span className="font-semibold text-gray-900">
+                      ~{preview.estimations?.minutes || 0} min
+                    </span>
+                  </div>
+
+                  <div className="text-sm flex justify-between">
+                    <span className="text-gray-600">💰 Costo estimado:</span>
+                    <span className="font-semibold text-green-700">
+                      ${preview.estimations?.costUSD?.toFixed(2) || '0.00'} USD
+                    </span>
+                  </div>
+
+                  <div className="text-sm flex justify-between">
+                    <span className="text-gray-600">🔄 Concurrencia:</span>
+                    <span className="font-semibold text-gray-900">
+                      {preview.estimations?.concurrency || 3}
+                    </span>
+                  </div>
+
+                  <div className="text-sm flex justify-between">
+                    <span className="text-gray-600">🪙 Tokens estimados:</span>
+                    <span className="font-semibold text-gray-900">
+                      {preview.estimations?.tokens?.toLocaleString() || 0}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {preview.matchingFilters === 0 && (
+                <div className="mt-3 p-2 bg-yellow-100 border border-yellow-400 rounded text-sm text-yellow-800">
+                  ⚠️ No hay variaciones que cumplan con los filtros seleccionados.
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Opción de clasificación taxonómica */}
           <div className="mt-6 p-4 bg-yellow-50 border-2 border-yellow-300 rounded-lg">
