@@ -44,11 +44,11 @@ async function backfillConfidenceScores() {
       SELECT
         r."variationId" as variation_id,
         r.confidence_score,
-        r.created_at
+        r."createdAt" as created_at
       FROM qa_sweep_2_results r
       INNER JOIN question_variations v ON v.id = r."variationId"
       WHERE v.confidence_score IS NULL
-      ORDER BY r.created_at DESC
+      ORDER BY r."createdAt" DESC
     `;
 
     console.log(`   Encontradas ${variationsWithQA.length} variaciones con QA sin score`);
