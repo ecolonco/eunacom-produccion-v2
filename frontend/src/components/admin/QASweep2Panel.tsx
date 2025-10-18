@@ -61,6 +61,11 @@ export const QASweep2Panel: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   const [currentReport, setCurrentReport] = useState<any>(null);
   const [reportLoading, setReportLoading] = useState(false);
 
+  // Database report modal
+  const [dbReportModalOpen, setDbReportModalOpen] = useState(false);
+  const [dbReport, setDbReport] = useState<any>(null);
+  const [dbReportLoading, setDbReportLoading] = useState(false);
+
   // Paginación para resultados
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -391,6 +396,34 @@ export const QASweep2Panel: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     }
   };
 
+  const loadDatabaseReport = async () => {
+    setDbReportLoading(true);
+    setDbReportModalOpen(true);
+    setDbReport(null);
+
+    try {
+      const response = await fetch(`${API_BASE}/api/admin/qa-sweep-2/database-report`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+        }
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setDbReport(data.data);
+      } else {
+        alert(`Error: ${data.message}`);
+        setDbReportModalOpen(false);
+      }
+    } catch (error) {
+      console.error('Error loading database report:', error);
+      alert('Error al cargar el reporte de base de datos');
+      setDbReportModalOpen(false);
+    } finally {
+      setDbReportLoading(false);
+    }
+  };
+
   const generateReport = async (runId: string, regenerate = true) => {
     setReportLoading(true);
     setReportModalOpen(true);
@@ -530,7 +563,15 @@ export const QASweep2Panel: React.FC<{ onBack: () => void }> = ({ onBack }) => {
       {/* Estadísticas Tab */}
       {activeTab === 'stats' && stats && (
         <div className="bg-white shadow-md rounded-lg p-6">
-          <h3 className="text-xl font-bold mb-4">📊 Estadísticas QA Sweep 2.0</h3>
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-xl font-bold">📊 Estadísticas QA Sweep 2.0</h3>
+            <button
+              onClick={loadDatabaseReport}
+              className="px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-semibold rounded-md hover:from-purple-700 hover:to-blue-700 transition duration-200 flex items-center gap-2"
+            >
+              📊 Ver Reporte Completo de Base de Datos
+            </button>
+          </div>
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
             <div className="text-center p-4 bg-blue-50 rounded-lg">
               <div className="text-2xl font-bold text-blue-600">{stats.totalRuns}</div>
@@ -1434,6 +1475,205 @@ export const QASweep2Panel: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                   {/* Footer */}
                   <div className="text-center text-xs text-gray-500 pt-4 border-t">
                     <p>Reporte generado automáticamente por GPT-5</p>
+                    <p>EUNACOM QA Sweep 2.0 © 2025</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-600">
+                  No se pudo cargar el reporte
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Reporte Completo de Base de Datos */}
+      {dbReportModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-7xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center">
+              <h3 className="text-2xl font-bold">📊 Reporte Completo de Base de Datos</h3>
+              <button
+                onClick={() => setDbReportModalOpen(false)}
+                className="text-gray-500 hover:text-gray-700 text-2xl font-bold"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="p-6">
+              {dbReportLoading ? (
+                <div className="text-center py-12">
+                  <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+                  <p className="mt-4 text-gray-600">Cargando reporte...</p>
+                </div>
+              ) : dbReport ? (
+                <div className="space-y-6">
+                  {/* Total Variaciones Activas */}
+                  <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-6 rounded-lg border-2 border-blue-200">
+                    <h4 className="text-3xl font-bold text-center text-gray-800 mb-2">
+                      {dbReport.totalActive.toLocaleString()}
+                    </h4>
+                    <p className="text-center text-gray-600 font-semibold">Total Variaciones Activas</p>
+                  </div>
+
+                  {/* Distribución por Confidence Score */}
+                  <div className="bg-white border-2 border-gray-200 rounded-lg p-6">
+                    <h4 className="font-bold text-xl mb-4 text-gray-800">📊 Distribución por Confidence Score</h4>
+                    <div className="space-y-3">
+                      {dbReport.distribution.map((item: any, idx: number) => {
+                        const percentage = parseFloat(item.porcentaje);
+                        const colorClass = item.categoria.includes('Alta') ? 'bg-green-500' :
+                                          item.categoria.includes('Media') ? 'bg-yellow-500' :
+                                          item.categoria.includes('Baja') ? 'bg-orange-500' :
+                                          item.categoria.includes('Perfecta') ? 'bg-blue-500' :
+                                          'bg-gray-400';
+
+                        return (
+                          <div key={idx} className="flex items-center gap-4">
+                            <div className="w-48 text-sm font-medium text-gray-700">{item.categoria}</div>
+                            <div className="flex-1 bg-gray-200 rounded-full h-8 relative overflow-hidden">
+                              <div
+                                className={`h-full ${colorClass} transition-all duration-500 flex items-center justify-end pr-3`}
+                                style={{ width: `${percentage}%` }}
+                              >
+                                <span className="text-white font-semibold text-sm">
+                                  {item.cantidad.toLocaleString()} ({item.porcentaje}%)
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Estadísticas QA Sweep 2.0 */}
+                  <div className="bg-white border-2 border-purple-200 rounded-lg p-6">
+                    <h4 className="font-bold text-xl mb-4 text-gray-800">🤖 Estadísticas QA Sweep 2.0</h4>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                      <div className="bg-blue-50 p-4 rounded-lg text-center">
+                        <div className="text-3xl font-bold text-blue-600">{dbReport.qaStats.totalAnalisis.toLocaleString()}</div>
+                        <div className="text-sm text-gray-600 mt-1">Total Análisis</div>
+                      </div>
+                      <div className="bg-green-50 p-4 rounded-lg text-center">
+                        <div className="text-3xl font-bold text-green-600">{dbReport.qaStats.variacionesUnicasAnalizadas.toLocaleString()}</div>
+                        <div className="text-sm text-gray-600 mt-1">Variaciones Únicas</div>
+                      </div>
+                      <div className="bg-purple-50 p-4 rounded-lg text-center">
+                        <div className="text-3xl font-bold text-purple-600">{dbReport.qaStats.correccionesAplicadas.toLocaleString()}</div>
+                        <div className="text-sm text-gray-600 mt-1">Correcciones Aplicadas</div>
+                      </div>
+                      <div className="bg-yellow-50 p-4 rounded-lg text-center">
+                        <div className="text-3xl font-bold text-yellow-600">{(dbReport.qaStats.confidencePromedio * 100).toFixed(1)}%</div>
+                        <div className="text-sm text-gray-600 mt-1">Confidence Promedio</div>
+                      </div>
+                      <div className="bg-orange-50 p-4 rounded-lg text-center">
+                        <div className="text-3xl font-bold text-orange-600">{dbReport.qaStats.totalTokens.toLocaleString()}</div>
+                        <div className="text-sm text-gray-600 mt-1">Total Tokens</div>
+                      </div>
+                      <div className="bg-pink-50 p-4 rounded-lg text-center">
+                        <div className="text-2xl font-bold text-pink-600">
+                          {dbReport.qaStats.totalTokensIn.toLocaleString()} → {dbReport.qaStats.totalTokensOut.toLocaleString()}
+                        </div>
+                        <div className="text-sm text-gray-600 mt-1">Tokens In → Out</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Runs por Estado */}
+                  <div className="bg-white border-2 border-gray-200 rounded-lg p-6">
+                    <h4 className="font-bold text-xl mb-4 text-gray-800">🔄 Runs por Estado</h4>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      {dbReport.runsByStatus.map((item: any, idx: number) => {
+                        const emoji = {
+                          RUNNING: '🔄',
+                          PENDING: '⏳',
+                          COMPLETED: '✅',
+                          FAILED: '❌'
+                        }[item.status] || '❓';
+
+                        const bgColor = {
+                          RUNNING: 'bg-blue-50',
+                          PENDING: 'bg-yellow-50',
+                          COMPLETED: 'bg-green-50',
+                          FAILED: 'bg-red-50'
+                        }[item.status] || 'bg-gray-50';
+
+                        const textColor = {
+                          RUNNING: 'text-blue-600',
+                          PENDING: 'text-yellow-600',
+                          COMPLETED: 'text-green-600',
+                          FAILED: 'text-red-600'
+                        }[item.status] || 'text-gray-600';
+
+                        return (
+                          <div key={idx} className={`${bgColor} p-4 rounded-lg text-center`}>
+                            <div className="text-xl mb-1">{emoji}</div>
+                            <div className={`text-2xl font-bold ${textColor}`}>{item.count}</div>
+                            <div className="text-sm text-gray-600 mt-1">{item.status}</div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Últimos Runs */}
+                  <div className="bg-white border-2 border-green-200 rounded-lg p-6">
+                    <h4 className="font-bold text-xl mb-4 text-gray-800">🕐 Últimos 5 Runs Creados</h4>
+                    <div className="space-y-3">
+                      {dbReport.recentRuns.map((run: any, idx: number) => {
+                        const emoji = {
+                          RUNNING: '🔄',
+                          PENDING: '⏳',
+                          COMPLETED: '✅',
+                          FAILED: '❌'
+                        }[run.status] || '❓';
+
+                        return (
+                          <div key={idx} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-3">
+                                <span className="text-xl">{emoji}</span>
+                                <span className="font-semibold text-gray-800">{run.name}</span>
+                                <span className="text-sm text-gray-600">({run.resultsCount} resultados)</span>
+                              </div>
+                              <div className="text-xs text-gray-500 mt-1">
+                                Creado: {new Date(run.createdAt).toLocaleString('es-CL')}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Resumen de Calidad */}
+                  <div className="bg-gradient-to-r from-green-50 to-blue-50 border-2 border-green-300 rounded-lg p-6">
+                    <h4 className="font-bold text-xl mb-4 text-gray-800">✅ Resumen de Calidad</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      <div className="text-center">
+                        <div className="text-4xl font-bold text-orange-600">{dbReport.qualitySummary.needsReview.toLocaleString()}</div>
+                        <div className="text-sm text-gray-600 mt-2">⚠️ Variaciones que necesitan revisión</div>
+                        <div className="text-xs text-gray-500 mt-1">(sin score o baja confianza)</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-4xl font-bold text-green-600">{dbReport.qualitySummary.goodQuality.toLocaleString()}</div>
+                        <div className="text-sm text-gray-600 mt-2">✅ Variaciones de buena calidad</div>
+                        <div className="text-xs text-gray-500 mt-1">(≥67% confidence)</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-4xl font-bold text-blue-600">{dbReport.qualitySummary.coveragePercentage}%</div>
+                        <div className="text-sm text-gray-600 mt-2">📊 Cobertura QA</div>
+                        <div className="text-xs text-gray-500 mt-1">(variaciones analizadas/total)</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Footer */}
+                  <div className="text-center text-xs text-gray-500 pt-4 border-t">
+                    <p>Reporte generado en tiempo real</p>
                     <p>EUNACOM QA Sweep 2.0 © 2025</p>
                   </div>
                 </div>
