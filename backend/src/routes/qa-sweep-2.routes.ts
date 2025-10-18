@@ -695,6 +695,146 @@ router.post('/runs/:id/generate-report', async (req: Request, res: Response) => 
   }
 });
 
+// GET /api/admin/qa-sweep-2/database-report - Reporte completo de estado de la base de datos
+router.get('/database-report', async (req: Request, res: Response) => {
+  try {
+    logger.info('Generating complete database stats report');
+
+    // 1. Total de variaciones activas
+    const totalActive = await prisma.questionVariation.count({
+      where: { isVisible: true }
+    });
+
+    // 2. Distribución por confidence score
+    const distribution = await prisma.$queryRaw<Array<{
+      categoria: string;
+      cantidad: number;
+      porcentaje: number;
+    }>>`
+      SELECT
+        CASE
+          WHEN confidence_score IS NULL THEN 'Sin score (nunca analizadas)'
+          WHEN confidence_score = 0 THEN 'Perfecta (0% - sin errores)'
+          WHEN confidence_score < 0.34 THEN 'Baja (1-33% - severidad alta)'
+          WHEN confidence_score < 0.67 THEN 'Media (34-66% - severidad moderada)'
+          ELSE 'Alta (67-100% - severidad leve o corregidas)'
+        END as categoria,
+        COUNT(*)::int as cantidad,
+        ROUND(COUNT(*) * 100.0 / SUM(COUNT(*)) OVER (), 2) as porcentaje
+      FROM question_variations
+      WHERE is_visible = true
+      GROUP BY
+        CASE
+          WHEN confidence_score IS NULL THEN 'Sin score (nunca analizadas)'
+          WHEN confidence_score = 0 THEN 'Perfecta (0% - sin errores)'
+          WHEN confidence_score < 0.34 THEN 'Baja (1-33% - severidad alta)'
+          WHEN confidence_score < 0.67 THEN 'Media (34-66% - severidad moderada)'
+          ELSE 'Alta (67-100% - severidad leve o corregidas)'
+        END
+      ORDER BY cantidad DESC
+    `;
+
+    // 3. Estadísticas de QA Sweep 2.0
+    const qaStats = await prisma.$queryRaw<Array<{
+      total_analisis: number;
+      variaciones_unicas_analizadas: number;
+      correcciones_aplicadas: number;
+      confidence_promedio: number;
+      total_tokens_in: bigint;
+      total_tokens_out: bigint;
+    }>>`
+      SELECT
+        COUNT(DISTINCT r.id)::int as total_analisis,
+        COUNT(DISTINCT r."variationId")::int as variaciones_unicas_analizadas,
+        COUNT(DISTINCT CASE WHEN r.status = 'APPLIED' THEN r.id END)::int as correcciones_aplicadas,
+        ROUND(AVG(r.confidence_score)::numeric, 4) as confidence_promedio,
+        SUM(r.tokens_in)::bigint as total_tokens_in,
+        SUM(r.tokens_out)::bigint as total_tokens_out
+      FROM qa_sweep_2_results r
+    `;
+
+    const stats = qaStats[0];
+    const totalTokensIn = Number(stats.total_tokens_in || 0);
+    const totalTokensOut = Number(stats.total_tokens_out || 0);
+
+    // 4. Runs por estado
+    const runsByStatus = await prisma.qASweep2Run.groupBy({
+      by: ['status'],
+      _count: true
+    });
+
+    // 5. Últimos 5 runs
+    const recentRuns = await prisma.qASweep2Run.findMany({
+      take: 5,
+      orderBy: { createdAt: 'desc' },
+      include: {
+        _count: {
+          select: { results: true }
+        }
+      }
+    });
+
+    // 6. Resumen de calidad
+    const needsReview = await prisma.questionVariation.count({
+      where: {
+        isVisible: true,
+        OR: [
+          { confidenceScore: null },
+          { confidenceScore: { lt: 0.34 } }
+        ]
+      }
+    });
+
+    const goodQuality = await prisma.questionVariation.count({
+      where: {
+        isVisible: true,
+        confidenceScore: { gte: 0.67 }
+      }
+    });
+
+    const coveragePercentage = ((totalActive - needsReview) / totalActive * 100).toFixed(2);
+
+    res.json({
+      success: true,
+      data: {
+        totalActive,
+        distribution,
+        qaStats: {
+          totalAnalisis: stats.total_analisis || 0,
+          variacionesUnicasAnalizadas: stats.variaciones_unicas_analizadas || 0,
+          correccionesAplicadas: stats.correcciones_aplicadas || 0,
+          confidencePromedio: Number(stats.confidence_promedio || 0),
+          totalTokensIn,
+          totalTokensOut,
+          totalTokens: totalTokensIn + totalTokensOut
+        },
+        runsByStatus: runsByStatus.map(r => ({
+          status: r.status,
+          count: r._count
+        })),
+        recentRuns: recentRuns.map(r => ({
+          id: r.id,
+          name: r.name,
+          status: r.status,
+          resultsCount: r._count.results,
+          createdAt: r.createdAt
+        })),
+        qualitySummary: {
+          needsReview,
+          goodQuality,
+          coveragePercentage: parseFloat(coveragePercentage)
+        }
+      }
+    });
+  } catch (error) {
+    logger.error('Error generating database report:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al generar el reporte de base de datos'
+    });
+  }
+});
+
 // Export named and default to be compatible with different import styles
 export const qaSweep2Routes = router;
 export default router;
