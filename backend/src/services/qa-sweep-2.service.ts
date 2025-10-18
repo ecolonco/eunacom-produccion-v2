@@ -14,6 +14,8 @@ export interface QASweep2Config {
   // Nuevo: rango de ejercicios base
   baseQuestionFrom?: number;
   baseQuestionTo?: number;
+  // Opción para saltar clasificación taxonómica
+  skipTaxonomyClassification?: boolean;
 }
 
 export interface ExerciseData {
@@ -67,7 +69,11 @@ export class QASweep2Service {
   /**
    * Crea una nueva versión de la variación aplicando correcciones y desactiva la anterior
    */
-  async applyCorrectionsAsNewVersion(variationId: string, corrections: any): Promise<{ newVariationId: string }> {
+  async applyCorrectionsAsNewVersion(
+    variationId: string,
+    corrections: any,
+    skipTaxonomyUpdate: boolean = false
+  ): Promise<{ newVariationId: string }> {
     return await prisma.$transaction(async (tx) => {
       const original = await tx.questionVariation.findUnique({
         where: { id: variationId },
@@ -120,22 +126,24 @@ export class QASweep2Service {
 
       // Optional: update baseQuestion.aiAnalysis if corrections include new taxonomy
       // Validate against Specialty/Topic tables; apply only if valid
-      const inferTaxonomy = (): { specialty?: string; topic?: string } => {
-        const text = `${original.content} ${corrections?.enunciado_corregido || ''}`.toLowerCase();
-        if (text.includes('citolog') && text.includes('anal')) {
-          // Caso típico de VPH/citología anal
-          return { specialty: 'Medicina Interna', topic: 'Infectologia' };
-        }
-        return {};
-      };
+      // SOLO si skipTaxonomyUpdate es false (es decir, SI queremos clasificar)
+      if (!skipTaxonomyUpdate) {
+        const inferTaxonomy = (): { specialty?: string; topic?: string } => {
+          const text = `${original.content} ${corrections?.enunciado_corregido || ''}`.toLowerCase();
+          if (text.includes('citolog') && text.includes('anal')) {
+            // Caso típico de VPH/citología anal
+            return { specialty: 'Medicina Interna', topic: 'Infectologia' };
+          }
+          return {};
+        };
 
-      const desired: { specialty?: string; topic?: string } = {
-        specialty: corrections?.specialty,
-        topic: corrections?.topic,
-        ...(!corrections?.specialty && !corrections?.topic ? inferTaxonomy() : {})
-      };
+        const desired: { specialty?: string; topic?: string } = {
+          specialty: corrections?.specialty,
+          topic: corrections?.topic,
+          ...(!corrections?.specialty && !corrections?.topic ? inferTaxonomy() : {})
+        };
 
-      if (desired.specialty || desired.topic) {
+        if (desired.specialty || desired.topic) {
         // Validate names against catalog
         let validSpecialtyName: string | undefined = undefined;
         let validTopicName: string | undefined = undefined;
@@ -165,31 +173,32 @@ export class QASweep2Service {
           }
         }
 
-        // Apply only if at least specialty is valid; topic optional
-        if (validSpecialtyName) {
-          await tx.baseQuestion.update({
-            where: { id: original.baseQuestionId },
-            data: {
-              aiAnalysis: {
-                upsert: {
-                  create: {
-                    specialty: validSpecialtyName,
-                    topic: validTopicName ?? original.baseQuestion?.aiAnalysis?.topic ?? 'Unknown',
-                    difficulty: original.baseQuestion?.aiAnalysis?.difficulty ?? 'MEDIUM',
-                    analysisResult: JSON.stringify({ source: 'QA_SWEEP_2', reason: 'AUTO_RECLASSIFIED' })
-                  },
-                  update: {
-                    specialty: validSpecialtyName,
-                    topic: validTopicName ?? original.baseQuestion?.aiAnalysis?.topic ?? 'Unknown',
-                    difficulty: original.baseQuestion?.aiAnalysis?.difficulty ?? 'MEDIUM',
-                    analysisResult: JSON.stringify({ source: 'QA_SWEEP_2', reason: 'AUTO_RECLASSIFIED' })
+          // Apply only if at least specialty is valid; topic optional
+          if (validSpecialtyName) {
+            await tx.baseQuestion.update({
+              where: { id: original.baseQuestionId },
+              data: {
+                aiAnalysis: {
+                  upsert: {
+                    create: {
+                      specialty: validSpecialtyName,
+                      topic: validTopicName ?? original.baseQuestion?.aiAnalysis?.topic ?? 'Unknown',
+                      difficulty: original.baseQuestion?.aiAnalysis?.difficulty ?? 'MEDIUM',
+                      analysisResult: JSON.stringify({ source: 'QA_SWEEP_2', reason: 'AUTO_RECLASSIFIED' })
+                    },
+                    update: {
+                      specialty: validSpecialtyName,
+                      topic: validTopicName ?? original.baseQuestion?.aiAnalysis?.topic ?? 'Unknown',
+                      difficulty: original.baseQuestion?.aiAnalysis?.difficulty ?? 'MEDIUM',
+                      analysisResult: JSON.stringify({ source: 'QA_SWEEP_2', reason: 'AUTO_RECLASSIFIED' })
+                    }
                   }
                 }
               }
-            }
-          });
+            });
+          }
         }
-      }
+      } // Fin del if (!skipTaxonomyUpdate)
 
       return { newVariationId: newVariation.id };
     });
@@ -405,9 +414,9 @@ export class QASweep2Service {
       const batchSize = Math.min(config.maxConcurrency, 5); // Máximo 5 concurrentes
       for (let i = 0; i < variations.length; i += batchSize) {
         const batch = variations.slice(i, i + batchSize);
-        
+
         await Promise.all(
-          batch.map(variation => this.processVariation(runId, variation))
+          batch.map(variation => this.processVariation(runId, variation, config))
         );
 
         logger.info(`Processed batch ${Math.floor(i / batchSize) + 1}`, {
@@ -443,7 +452,7 @@ export class QASweep2Service {
   /**
    * Procesa una variación individual con aplicación automática de correcciones
    */
-  private async processVariation(runId: string, variation: any): Promise<void> {
+  private async processVariation(runId: string, variation: any, config: QASweep2Config): Promise<void> {
     try {
       // Convertir a formato de ejercicio
       const exerciseData = this.variationToExerciseData(variation);
@@ -460,17 +469,22 @@ export class QASweep2Service {
       // AUTO-APLICAR correcciones si existen
       if (result.correction) {
         try {
-          // Preparar corrección con taxonomía sugerida
+          // Preparar corrección con taxonomía sugerida SOLO si no se debe saltar
+          const skipTaxonomy = config.skipTaxonomyClassification ?? false;
           const correctionWithTaxonomy = {
             ...result.correction,
-            specialty: result.evaluation?.specialty_sugerida || undefined,
-            topic: result.evaluation?.tema_sugerido || undefined
+            // Solo incluir specialty/topic si NO se debe saltar la clasificación
+            ...(skipTaxonomy ? {} : {
+              specialty: result.evaluation?.specialty_sugerida || undefined,
+              topic: result.evaluation?.tema_sugerido || undefined
+            })
           };
 
           // Aplicar como nueva versión
           const applied = await this.applyCorrectionsAsNewVersion(
             variation.id,
-            correctionWithTaxonomy
+            correctionWithTaxonomy,
+            skipTaxonomy
           );
           newVariationId = applied.newVariationId;
 
