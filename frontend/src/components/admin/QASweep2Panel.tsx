@@ -364,6 +364,33 @@ export const QASweep2Panel: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     }
   };
 
+  const cancelRun = async (runId: string, runName: string) => {
+    if (!confirm(`¿Estás seguro de cancelar el run "${runName}"?`)) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API_BASE}/api/admin/qa-sweep-2/runs/${runId}/cancel`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        alert('✅ Run cancelado exitosamente');
+        loadRuns();
+      } else {
+        alert(`Error: ${data.message}`);
+      }
+    } catch (error) {
+      console.error('Error cancelling run:', error);
+      alert('Error al cancelar el run');
+    }
+  };
+
   const generateReport = async (runId: string, regenerate = true) => {
     setReportLoading(true);
     setReportModalOpen(true);
@@ -870,6 +897,15 @@ export const QASweep2Panel: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                           title="El worker procesará este run automáticamente"
                         >
                           ▶️ Iniciar Análisis
+                        </button>
+                      )}
+                      {(run.status === 'RUNNING' || run.status === 'PENDING') && (
+                        <button
+                          onClick={() => cancelRun(run.id, run.name)}
+                          className="px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700 flex items-center gap-1"
+                          title="Cancelar este run"
+                        >
+                          ⛔ Cancelar
                         </button>
                       )}
                     </div>
