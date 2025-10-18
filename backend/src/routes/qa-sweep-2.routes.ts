@@ -26,7 +26,10 @@ router.post('/runs', async (req: Request, res: Response) => {
       modelFix: req.body.modelFix || 'gpt-4o',
       // Nuevo: rango de ejercicios base
       baseQuestionFrom: req.body.baseQuestionFrom ? parseInt(req.body.baseQuestionFrom) : undefined,
-      baseQuestionTo: req.body.baseQuestionTo ? parseInt(req.body.baseQuestionTo) : undefined
+      baseQuestionTo: req.body.baseQuestionTo ? parseInt(req.body.baseQuestionTo) : undefined,
+      // Nuevo: filtro de confidence score
+      skipTaxonomyClassification: req.body.skipTaxonomyClassification ?? true,
+      maxConfidenceScore: req.body.maxConfidenceScore ? parseFloat(req.body.maxConfidenceScore) : undefined
     };
 
     // Validación del rango
@@ -309,6 +312,138 @@ router.get('/metadata', async (req: Request, res: Response) => {
   } catch (error) {
     logger.error('Error fetching QA Sweep 2.0 metadata:', error);
     res.status(500).json({ success: false, message: 'Error fetching metadata' });
+  }
+});
+
+// POST /api/admin/qa-sweep-2/preview - Preview de variaciones que se procesarán
+router.post('/preview', async (req: Request, res: Response) => {
+  try {
+    const {
+      specialty,
+      topic,
+      baseQuestionFrom,
+      baseQuestionTo,
+      maxConfidenceScore
+    } = req.body;
+
+    let whereConditions: any = {
+      isVisible: true
+    };
+
+    // Filtro por rango de ejercicios base
+    if (baseQuestionFrom !== undefined || baseQuestionTo !== undefined) {
+      const baseQuestions = await prisma.baseQuestion.findMany({
+        where: {
+          displaySequence: {
+            ...(baseQuestionFrom && { gte: parseInt(baseQuestionFrom) }),
+            ...(baseQuestionTo && { lte: parseInt(baseQuestionTo) })
+          }
+        },
+        select: { id: true }
+      });
+
+      const baseQuestionIds = baseQuestions.map(bq => bq.id);
+      if (baseQuestionIds.length === 0) {
+        return res.json({
+          success: true,
+          data: {
+            totalActive: 0,
+            matchingFilters: 0,
+            baseQuestionsInRange: 0,
+            estimatedVariations: 0,
+            filters: { specialty, topic, baseQuestionFrom, baseQuestionTo, maxConfidenceScore }
+          }
+        });
+      }
+      whereConditions.baseQuestionId = { in: baseQuestionIds };
+    }
+
+    // Filtro por especialidad/tema
+    if (specialty || topic) {
+      const aiAnalysisConditions: any = {};
+      if (specialty) aiAnalysisConditions.specialty = specialty;
+      if (topic) aiAnalysisConditions.topic = topic;
+
+      whereConditions.baseQuestion = {
+        ...(whereConditions.baseQuestionId && { id: whereConditions.baseQuestionId }),
+        aiAnalysis: aiAnalysisConditions
+      };
+
+      if (whereConditions.baseQuestionId) {
+        delete whereConditions.baseQuestionId;
+      }
+    }
+
+    // Filtro por confidence score máximo
+    if (maxConfidenceScore !== undefined && maxConfidenceScore !== null && maxConfidenceScore !== '') {
+      const scoreThreshold = parseFloat(maxConfidenceScore) > 1
+        ? parseFloat(maxConfidenceScore) / 100
+        : parseFloat(maxConfidenceScore);
+      whereConditions.confidenceScore = {
+        lte: scoreThreshold
+      };
+    }
+
+    // Contar total de variaciones activas
+    const totalActive = await prisma.questionVariation.count({
+      where: { isVisible: true }
+    });
+
+    // Contar variaciones que matchean los filtros
+    const matchingFilters = await prisma.questionVariation.count({
+      where: whereConditions
+    });
+
+    // Si hay rango de ejercicios, calcular cuántos ejercicios base hay
+    let baseQuestionsInRange = 0;
+    if (baseQuestionFrom !== undefined || baseQuestionTo !== undefined) {
+      baseQuestionsInRange = await prisma.baseQuestion.count({
+        where: {
+          displaySequence: {
+            ...(baseQuestionFrom && { gte: parseInt(baseQuestionFrom) }),
+            ...(baseQuestionTo && { lte: parseInt(baseQuestionTo) })
+          }
+        }
+      });
+    }
+
+    // Estimaciones de costo y tiempo
+    const avgTokensPerVariation = 2000; // Estimado: 1500 input + 500 output
+    const costPer1MTokens = 0.15; // GPT-4o-mini aprox
+    const estimatedTokens = matchingFilters * avgTokensPerVariation;
+    const estimatedCost = (estimatedTokens / 1000000) * costPer1MTokens;
+    const avgSecondsPerVariation = 5; // Depende de concurrencia
+    const concurrency = req.body.maxConcurrency || 3;
+    const estimatedMinutes = Math.ceil((matchingFilters * avgSecondsPerVariation) / (concurrency * 60));
+
+    res.json({
+      success: true,
+      data: {
+        totalActive,
+        matchingFilters,
+        baseQuestionsInRange,
+        estimatedVariations: matchingFilters,
+        estimations: {
+          tokens: estimatedTokens,
+          costUSD: parseFloat(estimatedCost.toFixed(2)),
+          minutes: estimatedMinutes,
+          concurrency
+        },
+        filters: {
+          specialty: specialty || null,
+          topic: topic || null,
+          baseQuestionFrom: baseQuestionFrom ? parseInt(baseQuestionFrom) : null,
+          baseQuestionTo: baseQuestionTo ? parseInt(baseQuestionTo) : null,
+          maxConfidenceScore: maxConfidenceScore ? parseFloat(maxConfidenceScore) : null
+        }
+      }
+    });
+  } catch (error) {
+    logger.error('Error getting preview:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al obtener preview de variaciones'
+    });
   }
 });
 
