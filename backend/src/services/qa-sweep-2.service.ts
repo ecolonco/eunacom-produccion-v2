@@ -16,6 +16,8 @@ export interface QASweep2Config {
   baseQuestionTo?: number;
   // Opción para saltar clasificación taxonómica
   skipTaxonomyClassification?: boolean;
+  // Filtro de confidence score máximo (0-100 en frontend, convertir a 0-1)
+  maxConfidenceScore?: number;
 }
 
 export interface ExerciseData {
@@ -72,7 +74,8 @@ export class QASweep2Service {
   async applyCorrectionsAsNewVersion(
     variationId: string,
     corrections: any,
-    skipTaxonomyUpdate: boolean = false
+    skipTaxonomyUpdate: boolean = false,
+    originalSeverity?: number
   ): Promise<{ newVariationId: string }> {
     return await prisma.$transaction(async (tx) => {
       const original = await tx.questionVariation.findUnique({
@@ -83,6 +86,10 @@ export class QASweep2Service {
 
       const parentVersionId = original.parentVersionId ?? original.id;
       const nextVersion = (original.version ?? 1) + 1;
+
+      // Calcular confidence score mejorado basado en la severidad original
+      // Si no hay severidad, asumimos que hubo correcciones (severidad 1)
+      const improvedConfidence = this.calculateImprovedConfidence(originalSeverity ?? 1);
 
       // Crear nueva versión visible
       const newVariation = await tx.questionVariation.create({
@@ -96,7 +103,9 @@ export class QASweep2Service {
           version: nextVersion,
           isVisible: true,
           modifiedAt: new Date(),
-          parentVersionId
+          parentVersionId,
+          confidenceScore: improvedConfidence,
+          lastQADate: new Date()
         }
       });
 
@@ -234,7 +243,8 @@ export class QASweep2Service {
     topic?: string,
     limit: number = 100,
     baseQuestionFrom?: number,
-    baseQuestionTo?: number
+    baseQuestionTo?: number,
+    maxConfidenceScore?: number
   ): Promise<any[]> {
     try {
       let whereConditions: any = {};
@@ -291,6 +301,20 @@ export class QASweep2Service {
       // Filtrar solo variaciones visibles (puede ser v1, v2, v3, etc.)
       // Esto permite reprocesar ejercicios que ya fueron corregidos
       whereConditions.isVisible = true;
+
+      // Filtro por confidence score máximo (si se especifica)
+      if (maxConfidenceScore !== undefined && maxConfidenceScore !== null) {
+        // Convertir de porcentaje (0-100) a decimal (0-1) si es necesario
+        const scoreThreshold = maxConfidenceScore > 1 ? maxConfidenceScore / 100 : maxConfidenceScore;
+        whereConditions.confidenceScore = {
+          lte: scoreThreshold
+        };
+
+        logger.info('Filtering by max confidence score', {
+          maxConfidenceScore,
+          scoreThreshold
+        });
+      }
 
       const allVariations = await prisma.questionVariation.findMany({
         where: whereConditions,
@@ -404,7 +428,8 @@ export class QASweep2Service {
           config.topic,
           config.batchSize,
           config.baseQuestionFrom,
-          config.baseQuestionTo
+          config.baseQuestionTo,
+          config.maxConfidenceScore
         );
       }
 
@@ -466,6 +491,16 @@ export class QASweep2Service {
       let newVariationId: string | undefined;
       let appliedTaxonomy: { specialty: string; topic: string } | undefined;
 
+      // Guardar confidence score en la variación original
+      const originalSeverity = result.evaluation?.severidad_global ?? 0;
+      await prisma.questionVariation.update({
+        where: { id: variation.id },
+        data: {
+          confidenceScore,
+          lastQADate: new Date()
+        }
+      });
+
       // AUTO-APLICAR correcciones si existen
       if (result.correction) {
         try {
@@ -480,11 +515,12 @@ export class QASweep2Service {
             })
           };
 
-          // Aplicar como nueva versión
+          // Aplicar como nueva versión, pasando la severidad original
           const applied = await this.applyCorrectionsAsNewVersion(
             variation.id,
             correctionWithTaxonomy,
-            skipTaxonomy
+            skipTaxonomy,
+            originalSeverity
           );
           newVariationId = applied.newVariationId;
 
@@ -579,9 +615,30 @@ export class QASweep2Service {
 
     const scores = Object.values(evaluation.scorecard) as number[];
     const maxScore = Math.max(...scores);
-    
+
     // Invertir el score (0 = alta confianza, 3 = baja confianza)
     return Math.max(0, 1 - (maxScore / 3));
+  }
+
+  /**
+   * Calcula el confidence score mejorado después de aplicar correcciones
+   * Basado en la severidad de los problemas encontrados en la versión original
+   */
+  private calculateImprovedConfidence(severityGlobal: number): number {
+    // Mapeo de severidad a confidence mejorado:
+    // severidad_global 0 (perfecto) → 100% (1.0)
+    // severidad_global 1 (leve) → 85% (0.85)
+    // severidad_global 2 (moderado) → 75% (0.75)
+    // severidad_global 3 (grave) → 60% (0.60)
+
+    const confidenceMap: { [key: number]: number } = {
+      0: 1.0,   // Perfecto, sin cambios necesarios
+      1: 0.85,  // Correcciones leves aplicadas
+      2: 0.75,  // Correcciones moderadas aplicadas
+      3: 0.60   // Correcciones graves aplicadas (reescritura profunda)
+    };
+
+    return confidenceMap[severityGlobal] ?? 0.70; // Default si hay valor inesperado
   }
 
   /**
