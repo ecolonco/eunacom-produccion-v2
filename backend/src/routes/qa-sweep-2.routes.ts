@@ -29,7 +29,10 @@ router.post('/runs', async (req: Request, res: Response) => {
       baseQuestionTo: req.body.baseQuestionTo ? parseInt(req.body.baseQuestionTo) : undefined,
       // Nuevo: filtro de confidence score
       skipTaxonomyClassification: req.body.skipTaxonomyClassification ?? true,
-      maxConfidenceScore: req.body.maxConfidenceScore ? parseFloat(req.body.maxConfidenceScore) : undefined
+      // FIX: Tratar 0 como valor válido
+      maxConfidenceScore: (req.body.maxConfidenceScore !== undefined && req.body.maxConfidenceScore !== '' && req.body.maxConfidenceScore !== null)
+        ? parseFloat(req.body.maxConfidenceScore)
+        : undefined
     };
 
     // Validación del rango
@@ -139,6 +142,53 @@ router.post('/runs/:id/analyze', async (req: Request, res: Response) => {
     res.status(500).json({
       success: false,
       message: 'Error al verificar el run de QA Sweep 2.0'
+    });
+  }
+});
+
+// POST /api/admin/qa-sweep-2/runs/:id/cancel - Cancelar run en ejecución
+router.post('/runs/:id/cancel', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    const run = await prisma.qASweep2Run.findUnique({
+      where: { id }
+    });
+
+    if (!run) {
+      return res.status(404).json({
+        success: false,
+        message: 'Run no encontrado'
+      });
+    }
+
+    if (run.status !== 'RUNNING' && run.status !== 'PENDING') {
+      return res.status(400).json({
+        success: false,
+        message: `No se puede cancelar un run en estado ${run.status}`
+      });
+    }
+
+    // Actualizar estado a FAILED con mensaje de cancelación
+    await prisma.qASweep2Run.update({
+      where: { id },
+      data: {
+        status: 'FAILED',
+        updatedAt: new Date()
+      }
+    });
+
+    logger.info(`Run ${id} cancelled by user`);
+
+    res.json({
+      success: true,
+      message: 'Run cancelado exitosamente'
+    });
+  } catch (error) {
+    logger.error('Error cancelling QA Sweep 2.0 run:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al cancelar el run'
     });
   }
 });
