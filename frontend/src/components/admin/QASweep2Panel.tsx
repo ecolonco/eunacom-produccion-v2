@@ -75,7 +75,8 @@ export const QASweep2Panel: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     specialty: '',
     topic: '',
     baseQuestionFrom: '',
-    baseQuestionTo: ''
+    baseQuestionTo: '',
+    skipTaxonomyClassification: true  // Por defecto NO clasificar
   });
 
   useEffect(() => {
@@ -227,7 +228,8 @@ export const QASweep2Panel: React.FC<{ onBack: () => void }> = ({ onBack }) => {
           specialty: '',
           topic: '',
           baseQuestionFrom: '',
-          baseQuestionTo: ''
+          baseQuestionTo: '',
+          skipTaxonomyClassification: true
         });
         loadRuns();
         setActiveTab('runs');
@@ -594,6 +596,40 @@ export const QASweep2Panel: React.FC<{ onBack: () => void }> = ({ onBack }) => {
               </select>
             </div>
           </div>
+
+          {/* Opción de clasificación taxonómica */}
+          <div className="mt-6 p-4 bg-yellow-50 border-2 border-yellow-300 rounded-lg">
+            <h4 className="font-semibold mb-3 text-gray-800">🏷️ Clasificación Taxonómica</h4>
+            <div className="flex items-start gap-3">
+              <input
+                type="checkbox"
+                id="classifyExercises"
+                checked={!newRun.skipTaxonomyClassification}
+                onChange={(e) => setNewRun({ ...newRun, skipTaxonomyClassification: !e.target.checked })}
+                className="mt-1 h-5 w-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+              />
+              <div className="flex-1">
+                <label htmlFor="classifyExercises" className="block text-sm font-medium text-gray-900 cursor-pointer">
+                  ¿Quiere que la IA clasifique los ejercicios madre?
+                </label>
+                <p className="text-xs text-gray-600 mt-1">
+                  {newRun.skipTaxonomyClassification ? (
+                    <span className="text-green-700">
+                      <strong>✓ Desactivado (recomendado)</strong> - La IA solo analizará enunciados, alternativas y explicaciones.
+                      La clasificación de especialidad y tópico se mantendrá sin cambios.
+                      Ideal para ejercicios de Carga Manual por Tópicos.
+                    </span>
+                  ) : (
+                    <span className="text-orange-700">
+                      <strong>⚠️ Activado</strong> - La IA podrá reclasificar la especialidad y tópico del ejercicio madre si detecta errores.
+                      Usar solo si sospechas que la clasificación actual es incorrecta.
+                    </span>
+                  )}
+                </p>
+              </div>
+            </div>
+          </div>
+
           <div className="mt-4">
             <button
               onClick={createRun}
