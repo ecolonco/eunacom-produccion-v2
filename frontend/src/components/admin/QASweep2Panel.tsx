@@ -76,7 +76,8 @@ export const QASweep2Panel: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     topic: '',
     baseQuestionFrom: '',
     baseQuestionTo: '',
-    skipTaxonomyClassification: true  // Por defecto NO clasificar
+    skipTaxonomyClassification: true,  // Por defecto NO clasificar
+    maxConfidenceScore: ''  // Filtrar por confidence score máximo (opcional)
   });
 
   useEffect(() => {
@@ -229,7 +230,8 @@ export const QASweep2Panel: React.FC<{ onBack: () => void }> = ({ onBack }) => {
           topic: '',
           baseQuestionFrom: '',
           baseQuestionTo: '',
-          skipTaxonomyClassification: true
+          skipTaxonomyClassification: true,
+          maxConfidenceScore: ''
         });
         loadRuns();
         setActiveTab('runs');
@@ -594,6 +596,41 @@ export const QASweep2Panel: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                   </option>
                 ))}
               </select>
+            </div>
+          </div>
+
+          {/* Filtro de Confidence Score */}
+          <div className="mt-6 p-4 bg-blue-50 border-2 border-blue-300 rounded-lg">
+            <h4 className="font-semibold mb-3 text-gray-800">📊 Filtro de Calidad (Confidence Score)</h4>
+            <p className="text-sm text-gray-600 mb-3">
+              Procesa solo variaciones activas con un confidence score igual o menor al especificado.
+              Útil para reprocesar ejercicios de baja calidad en sweeps iterativos.
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">Confidence Score Máximo (%)</label>
+                <input
+                  type="number"
+                  value={newRun.maxConfidenceScore}
+                  onChange={(e) => setNewRun({ ...newRun, maxConfidenceScore: e.target.value })}
+                  placeholder="Ej: 33 (solo baja confianza)"
+                  min="0"
+                  max="100"
+                  step="1"
+                  className="w-full p-2 border rounded"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Dejar vacío para procesar todas las variaciones
+                </p>
+              </div>
+              <div className="flex flex-col justify-center">
+                <div className="space-y-1 text-sm">
+                  <p className="text-gray-700"><strong>Sugerencias:</strong></p>
+                  <p className="text-gray-600">• <strong>33%:</strong> Solo variaciones con severidad alta (2-3)</p>
+                  <p className="text-gray-600">• <strong>66%:</strong> Incluye severidad media (1-2)</p>
+                  <p className="text-gray-600">• <strong>85%:</strong> Incluye variaciones corregidas previamente</p>
+                </div>
+              </div>
             </div>
           </div>
 

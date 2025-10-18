@@ -357,6 +357,8 @@ model QuestionVariation {
   isVisible       Boolean           @default(true) @map("is_visible")
   modifiedAt      DateTime?         @map("modified_at")
   parentVersionId String?           @map("parent_version_id")
+  confidenceScore Float?            @map("confidence_score") // 0.0-1.0, null = nunca analizada
+  lastQADate      DateTime?         @map("last_qa_date") // Fecha del último análisis QA
   alternatives      Alternative[]
   baseQuestion      BaseQuestion      @relation(fields: [baseQuestionId], references: [id], onDelete: Cascade)
   qaSweep2Results   QASweep2Result[]
