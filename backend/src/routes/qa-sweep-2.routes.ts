@@ -428,11 +428,13 @@ router.post('/preview', async (req: Request, res: Response) => {
     }
 
     // Filtro por confidence score máximo
+    // Excluye automáticamente las variaciones "Perfecta (0%)" para no reprocesarlas
     if (maxConfidenceScore !== undefined && maxConfidenceScore !== null && maxConfidenceScore !== '') {
       const scoreThreshold = parseFloat(maxConfidenceScore) > 1
         ? parseFloat(maxConfidenceScore) / 100
         : parseFloat(maxConfidenceScore);
       whereConditions.confidenceScore = {
+        gt: 0,  // Excluir las perfectas (0% = sin errores, no necesitan reprocesamiento)
         lte: scoreThreshold
       };
     }

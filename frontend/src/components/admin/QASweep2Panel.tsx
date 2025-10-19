@@ -724,7 +724,8 @@ export const QASweep2Panel: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             <h4 className="font-semibold mb-3 text-gray-800">📊 Filtro de Calidad (Confidence Score)</h4>
             <p className="text-sm text-gray-600 mb-3">
               Procesa solo variaciones activas con un confidence score igual o menor al especificado.
-              Útil para reprocesar ejercicios de baja calidad en sweeps iterativos.
+              <strong className="text-blue-700"> Excluye automáticamente las variaciones "Perfecta (0%)"</strong> para no reprocesarlas.
+              Útil para reprocesar ejercicios de baja/media calidad en sweeps iterativos.
             </p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>

@@ -306,14 +306,16 @@ export class QASweep2Service {
       whereConditions.isVisible = true;
 
       // Filtro por confidence score máximo (si se especifica)
+      // Excluye automáticamente las variaciones "Perfecta (0%)" para no reprocesarlas
       if (maxConfidenceScore !== undefined && maxConfidenceScore !== null) {
         // Convertir de porcentaje (0-100) a decimal (0-1) si es necesario
         const scoreThreshold = maxConfidenceScore > 1 ? maxConfidenceScore / 100 : maxConfidenceScore;
         whereConditions.confidenceScore = {
+          gt: 0,  // Excluir las perfectas (0% = sin errores, no necesitan reprocesamiento)
           lte: scoreThreshold
         };
 
-        logger.info('Filtering by max confidence score', {
+        logger.info('Filtering by max confidence score (excluding perfect 0%)', {
           maxConfidenceScore,
           scoreThreshold
         });
