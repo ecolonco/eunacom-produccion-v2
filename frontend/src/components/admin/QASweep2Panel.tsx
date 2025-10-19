@@ -86,7 +86,8 @@ export const QASweep2Panel: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     baseQuestionFrom: '',
     baseQuestionTo: '',
     skipTaxonomyClassification: true,  // Por defecto NO clasificar
-    maxConfidenceScore: ''  // Filtrar por confidence score máximo (opcional)
+    maxConfidenceScore: '',  // Filtrar por confidence score máximo (opcional)
+    onlyWithoutScore: false  // Filtrar SOLO variaciones sin score (nunca analizadas)
   });
 
   useEffect(() => {
@@ -106,6 +107,7 @@ export const QASweep2Panel: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     newRun.baseQuestionFrom,
     newRun.baseQuestionTo,
     newRun.maxConfidenceScore,
+    newRun.onlyWithoutScore,
     newRun.maxConcurrency,
     activeTab
   ]);
@@ -167,6 +169,7 @@ export const QASweep2Panel: React.FC<{ onBack: () => void }> = ({ onBack }) => {
           baseQuestionFrom: newRun.baseQuestionFrom || undefined,
           baseQuestionTo: newRun.baseQuestionTo || undefined,
           maxConfidenceScore: newRun.maxConfidenceScore || undefined,
+          onlyWithoutScore: newRun.onlyWithoutScore,
           maxConcurrency: newRun.maxConcurrency
         })
       });
@@ -284,7 +287,8 @@ export const QASweep2Panel: React.FC<{ onBack: () => void }> = ({ onBack }) => {
           baseQuestionFrom: '',
           baseQuestionTo: '',
           skipTaxonomyClassification: true,
-          maxConfidenceScore: ''
+          maxConfidenceScore: '',
+          onlyWithoutScore: false
         });
         loadRuns();
         setActiveTab('runs');
@@ -746,6 +750,35 @@ export const QASweep2Panel: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                   <p className="text-gray-600">• <strong>66%:</strong> Incluye severidad media (1-2)</p>
                   <p className="text-gray-600">• <strong>85%:</strong> Incluye variaciones corregidas previamente</p>
                 </div>
+              </div>
+            </div>
+
+            {/* Checkbox para SOLO sin score */}
+            <div className="mt-4 flex items-start gap-3">
+              <input
+                type="checkbox"
+                id="onlyWithoutScore"
+                checked={newRun.onlyWithoutScore}
+                onChange={(e) => setNewRun({ ...newRun, onlyWithoutScore: e.target.checked })}
+                className="mt-1 h-5 w-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+              />
+              <div className="flex-1">
+                <label htmlFor="onlyWithoutScore" className="block text-sm font-medium text-gray-900 cursor-pointer">
+                  Solo procesar variaciones SIN score (nunca analizadas)
+                </label>
+                <p className="text-xs text-gray-600 mt-1">
+                  {newRun.onlyWithoutScore ? (
+                    <span className="text-green-700">
+                      <strong>✓ Activado</strong> - Se procesarán SOLO las 1,102 variaciones que nunca han sido analizadas (confidenceScore IS NULL).
+                      Este filtro es exacto y excluyente.
+                    </span>
+                  ) : (
+                    <span className="text-gray-700">
+                      Filtra EXACTAMENTE las variaciones que no tienen confidence score (nunca analizadas).
+                      Útil para el primer sweep de calidad sobre ejercicios nuevos.
+                    </span>
+                  )}
+                </p>
               </div>
             </div>
           </div>
