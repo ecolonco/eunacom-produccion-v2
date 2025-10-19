@@ -1555,32 +1555,24 @@ export const QASweep2Panel: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                   {/* Distribución por Confidence Score */}
                   <div className="bg-white border-2 border-gray-200 rounded-lg p-6">
                     <h4 className="font-bold text-xl mb-4 text-gray-800">📊 Distribución por Confidence Score</h4>
-                    <div className="space-y-3">
-                      {dbReport.distribution.map((item: any, idx: number) => {
-                        const percentage = parseFloat(item.porcentaje);
-                        const colorClass = item.categoria.includes('Alta') ? 'bg-green-500' :
-                                          item.categoria.includes('Media') ? 'bg-yellow-500' :
-                                          item.categoria.includes('Baja') ? 'bg-orange-500' :
-                                          item.categoria.includes('Perfecta') ? 'bg-blue-500' :
-                                          'bg-gray-400';
-
-                        return (
-                          <div key={idx} className="flex items-center gap-4">
-                            <div className="w-48 text-sm font-medium text-gray-700">{item.categoria}</div>
-                            <div className="flex-1 bg-gray-200 rounded-full h-8 relative overflow-hidden">
-                              <div
-                                className={`h-full ${colorClass} transition-all duration-500 flex items-center justify-end pr-3`}
-                                style={{ width: `${percentage}%` }}
-                              >
-                                <span className="text-white font-semibold text-sm">
-                                  {item.cantidad.toLocaleString()} ({item.porcentaje}%)
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
+                    <table className="w-full border-collapse">
+                      <thead>
+                        <tr className="bg-gray-100">
+                          <th className="border border-gray-300 px-4 py-2 text-left">Categoría</th>
+                          <th className="border border-gray-300 px-4 py-2 text-right">Cantidad de Ejercicios</th>
+                          <th className="border border-gray-300 px-4 py-2 text-right">Porcentaje</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {dbReport.distribution.map((item: any, idx: number) => (
+                          <tr key={idx} className="hover:bg-gray-50">
+                            <td className="border border-gray-300 px-4 py-2">{item.categoria}</td>
+                            <td className="border border-gray-300 px-4 py-2 text-right font-semibold">{item.cantidad.toLocaleString()}</td>
+                            <td className="border border-gray-300 px-4 py-2 text-right">{item.porcentaje}%</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
 
                   {/* Estadísticas QA Sweep 2.0 */}
