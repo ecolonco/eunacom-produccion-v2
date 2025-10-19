@@ -1,20 +1,32 @@
-import React, { useState } from 'react';
+import React, { useState, Suspense } from 'react';
 import { QueryProvider } from './contexts/QueryProvider';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { AuthModal } from './components/AuthModal';
 import { LoginForm } from './components/LoginForm';
 import { StudentDashboard } from './components/dashboard/StudentDashboard';
-import ExerciseFactory from './ExerciseFactory';
-import TaxonomyInventory from './components/TaxonomyInventory';
-import TaxonomyAdmin from './components/TaxonomyAdmin';
-import AdminUsersTable from './components/admin/AdminUsersTable';
-import ExerciseManagement from './components/admin/ExerciseManagement';
-import PaymentsTable from './components/admin/PaymentsTable';
-import { QAControlPanel } from './components/admin/QAControlPanel';
-import { QASweep2Panel } from './components/admin/QASweep2Panel';
-import { MockExamPercentageManager } from './components/admin';
-import ManualTopicUpload from './components/admin/ManualTopicUpload';
 import './App.css';
+
+// Lazy load admin components (code splitting for performance)
+const ExerciseFactory = React.lazy(() => import('./ExerciseFactory'));
+const TaxonomyInventory = React.lazy(() => import('./components/TaxonomyInventory'));
+const TaxonomyAdmin = React.lazy(() => import('./components/TaxonomyAdmin'));
+const AdminUsersTable = React.lazy(() => import('./components/admin/AdminUsersTable'));
+const ExerciseManagement = React.lazy(() => import('./components/admin/ExerciseManagement'));
+const PaymentsTable = React.lazy(() => import('./components/admin/PaymentsTable'));
+const QAControlPanel = React.lazy(() => import('./components/admin/QAControlPanel').then(m => ({ default: m.QAControlPanel })));
+const QASweep2Panel = React.lazy(() => import('./components/admin/QASweep2Panel').then(m => ({ default: m.QASweep2Panel })));
+const MockExamPercentageManager = React.lazy(() => import('./components/admin').then(m => ({ default: m.MockExamPercentageManager })));
+const ManualTopicUpload = React.lazy(() => import('./components/admin/ManualTopicUpload'));
+
+// Loading fallback component
+const LoadingFallback = () => (
+  <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+    <div className="text-center">
+      <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto mb-4"></div>
+      <p className="text-gray-600">Cargando componente...</p>
+    </div>
+  </div>
+);
 
 // Main App Content Component - Deploy trigger
 const AppContent: React.FC = () => {
@@ -76,49 +88,93 @@ const AppContent: React.FC = () => {
 
   // Show Exercise Factory if selected
   if (state.isAuthenticated && state.user && currentView === 'exercise-factory') {
-    return <ExerciseFactory onBack={() => setCurrentView('dashboard')} />;
+    return (
+      <Suspense fallback={<LoadingFallback />}>
+        <ExerciseFactory onBack={() => setCurrentView('dashboard')} />
+      </Suspense>
+    );
   }
 
   // Show dashboard if user is authenticated
   if (state.isAuthenticated && state.user) {
     console.log('Showing Dashboard for user:', state.user.firstName, 'Role:', state.user.role);
-    
+
     // Show StudentDashboard ONLY for students
     if (state.user.role === 'STUDENT') {
       return <StudentDashboard />;
     }
-    
-    // Panel completo para ADMIN/otros roles
+
+    // Panel completo para ADMIN/otros roles (all lazy-loaded with Suspense)
     if (adminView === 'factory') {
-      return <ExerciseFactory onBack={() => setAdminView('menu')} />;
+      return (
+        <Suspense fallback={<LoadingFallback />}>
+          <ExerciseFactory onBack={() => setAdminView('menu')} />
+        </Suspense>
+      );
     }
     if (adminView === 'manualTopicUpload') {
-      return <ManualTopicUpload onBack={() => setAdminView('menu')} />;
+      return (
+        <Suspense fallback={<LoadingFallback />}>
+          <ManualTopicUpload onBack={() => setAdminView('menu')} />
+        </Suspense>
+      );
     }
     if (adminView === 'taxonomyInventory') {
-      return <TaxonomyInventory onBack={() => setAdminView('menu')} />;
+      return (
+        <Suspense fallback={<LoadingFallback />}>
+          <TaxonomyInventory onBack={() => setAdminView('menu')} />
+        </Suspense>
+      );
     }
     if (adminView === 'taxonomyAdmin') {
-      return <TaxonomyAdmin onBack={() => setAdminView('menu')} />;
+      return (
+        <Suspense fallback={<LoadingFallback />}>
+          <TaxonomyAdmin onBack={() => setAdminView('menu')} />
+        </Suspense>
+      );
     }
     if (adminView === 'exerciseManagement') {
-      return <ExerciseManagement onBack={() => setAdminView('menu')} />;
+      return (
+        <Suspense fallback={<LoadingFallback />}>
+          <ExerciseManagement onBack={() => setAdminView('menu')} />
+        </Suspense>
+      );
     }
     if (adminView === 'adminUsers') {
-      return <AdminUsersTable onBack={() => setAdminView('menu')} />;
+      return (
+        <Suspense fallback={<LoadingFallback />}>
+          <AdminUsersTable onBack={() => setAdminView('menu')} />
+        </Suspense>
+      );
     }
     if (adminView === 'payments') {
-      return <PaymentsTable onBack={() => setAdminView('menu')} />;
+      return (
+        <Suspense fallback={<LoadingFallback />}>
+          <PaymentsTable onBack={() => setAdminView('menu')} />
+        </Suspense>
+      );
     }
 
     if (adminView === 'qaControl') {
-      return <QAControlPanel onBack={() => setAdminView('menu')} />;
+      return (
+        <Suspense fallback={<LoadingFallback />}>
+          <QAControlPanel onBack={() => setAdminView('menu')} />
+        </Suspense>
+      );
     }
     if (adminView === 'qaSweep2') {
-      return <QASweep2Panel onBack={() => setAdminView('menu')} />;
+      return (
+        <Suspense fallback={<LoadingFallback />}>
+          <QASweep2Panel onBack={() => setAdminView('menu')} />
+        </Suspense>
+      );
     }
     if (adminView === 'mockExamPercentages') {
-      return <MockExamPercentageManager onBack={() => setAdminView('menu')} />;
+      return (
+        <Suspense fallback={<LoadingFallback />}>
+          <MockExamPercentageManager onBack={() => setAdminView('menu')} />
+        </Suspense>
+      );
     }
 
     return (
