@@ -65,6 +65,7 @@ export const QASweep2Panel: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   const [dbReportModalOpen, setDbReportModalOpen] = useState(false);
   const [dbReport, setDbReport] = useState<any>(null);
   const [dbReportLoading, setDbReportLoading] = useState(false);
+  const [deletingLowQuality, setDeletingLowQuality] = useState(false);
 
   // Paginación para resultados
   const [currentPage, setCurrentPage] = useState(1);
@@ -459,8 +460,52 @@ export const QASweep2Panel: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     }
   };
 
+  const deleteLowQualityExercises = async () => {
+    // Find the count of "Muy baja" exercises from distribution
+    const lowQualityItem = dbReport?.distribution?.find((item: any) =>
+      item.categoria.includes('Muy baja') || item.categoria.includes('0%')
+    );
+    const count = lowQualityItem?.cantidad || 0;
+
+    if (count === 0) {
+      alert('No hay ejercicios de muy baja calidad (0%) para eliminar.');
+      return;
+    }
+
+    const confirmMessage = `⚠️ ADVERTENCIA: Estás a punto de eliminar ${count} variaciones con problemas graves (confidence score = 0%).\n\nEsta acción es IRREVERSIBLE y ocultará permanentemente estas variaciones de la base de datos.\n\n¿Estás seguro de que deseas continuar?`;
+
+    if (!confirm(confirmMessage)) {
+      return;
+    }
+
+    setDeletingLowQuality(true);
+    try {
+      const response = await fetch(`${API_BASE}/api/admin/qa-sweep-2/delete-low-quality`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        alert(`✅ Eliminadas exitosamente ${data.data.deletedCount} variaciones de baja calidad.`);
+        // Reload the database report to show updated stats
+        loadDatabaseReport();
+      } else {
+        alert(`Error: ${data.message}`);
+      }
+    } catch (error) {
+      console.error('Error deleting low quality exercises:', error);
+      alert('Error al eliminar los ejercicios de baja calidad');
+    } finally {
+      setDeletingLowQuality(false);
+    }
+  };
+
   const getRunNumber = (run: QASweep2Run): number => {
-    const sortedRuns = [...runs].sort((a, b) => 
+    const sortedRuns = [...runs].sort((a, b) =>
       new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
     );
     return sortedRuns.findIndex(r => r.id === run.id) + 1;
@@ -1573,6 +1618,39 @@ export const QASweep2Panel: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                         ))}
                       </tbody>
                     </table>
+
+                    {/* Botón para eliminar ejercicios de baja calidad */}
+                    <div className="mt-6 p-4 bg-red-50 border-2 border-red-300 rounded-lg">
+                      <h5 className="font-bold text-lg mb-2 text-red-800 flex items-center gap-2">
+                        <span>🗑️</span>
+                        <span>Eliminar Ejercicios de Baja Calidad</span>
+                      </h5>
+                      <p className="text-sm text-gray-700 mb-3">
+                        Eliminar permanentemente las variaciones con <strong>confidence score = 0% (severidad crítica)</strong>.
+                        Esta acción es <strong className="text-red-700">irreversible</strong> y ocultará estas variaciones de la base de datos.
+                      </p>
+                      <button
+                        onClick={deleteLowQualityExercises}
+                        disabled={deletingLowQuality}
+                        className={`px-6 py-3 rounded-md font-semibold transition duration-200 flex items-center gap-2 ${
+                          deletingLowQuality
+                            ? 'bg-gray-400 cursor-not-allowed text-gray-700'
+                            : 'bg-red-600 hover:bg-red-700 text-white'
+                        }`}
+                      >
+                        {deletingLowQuality ? (
+                          <>
+                            <div className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                            <span>Eliminando...</span>
+                          </>
+                        ) : (
+                          <>
+                            <span>🗑️</span>
+                            <span>Eliminar Ejercicios con Severidad Crítica (0%)</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
                   </div>
 
                   {/* Estadísticas QA Sweep 2.0 */}

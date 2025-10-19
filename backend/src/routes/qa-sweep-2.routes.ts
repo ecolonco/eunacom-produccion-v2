@@ -850,6 +850,40 @@ router.get('/database-report', async (req: Request, res: Response) => {
   }
 });
 
+// POST /api/admin/qa-sweep-2/delete-low-quality - Eliminar variaciones con confidence score = 0
+router.post('/delete-low-quality', async (req: Request, res: Response) => {
+  try {
+    logger.info('Deleting low quality variations (confidence_score = 0.0)');
+
+    // Update variations with confidence_score = 0.0 to set isVisible = false
+    const result = await prisma.questionVariation.updateMany({
+      where: {
+        isVisible: true,
+        confidenceScore: 0.0
+      },
+      data: {
+        isVisible: false
+      }
+    });
+
+    logger.info(`Deleted ${result.count} low quality variations`);
+
+    res.json({
+      success: true,
+      data: {
+        deletedCount: result.count
+      },
+      message: `${result.count} variaciones de baja calidad eliminadas exitosamente`
+    });
+  } catch (error) {
+    logger.error('Error deleting low quality variations:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al eliminar las variaciones de baja calidad'
+    });
+  }
+});
+
 // Export named and default to be compatible with different import styles
 export const qaSweep2Routes = router;
 export default router;
