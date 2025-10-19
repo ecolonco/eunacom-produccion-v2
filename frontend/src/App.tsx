@@ -158,14 +158,15 @@ const AppContent: React.FC = () => {
 
   // Show landing page with auth buttons
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-      <div className="container mx-auto px-4 py-8">
-        <header className="text-center mb-8">
+    <>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+        <div className="container mx-auto px-4 py-8">
+        <header className="text-center mb-8" role="banner">
           <h1 className="text-5xl font-bold text-gray-800 mb-2">
-            🩺 EUNACOM Test
+            EUNACOM Test
           </h1>
           <p className="text-2xl text-gray-600 mb-4">
-            Learning Platform
+            Plataforma de Preparación
           </p>
           <p className="text-xl text-gray-600 mb-6">
             Prepárate para el EUNACOM practicando con ejercicios explicados y contenido curado
@@ -232,12 +233,13 @@ const AppContent: React.FC = () => {
           </div>
         </header>
 
-        <div className="max-w-4xl mx-auto">
+        <main role="main">
+          <div className="max-w-4xl mx-auto">
 
           {/* What is EUNACOM Exam Section */}
-          <div className="bg-white rounded-lg shadow-lg p-8 mb-6">
-            <h2 className="text-3xl font-bold text-gray-800 mb-3 text-center">
-              📋 ¿Qué es la EUNACOM en Chile?
+          <section id="what-is-eunacom" aria-labelledby="eunacom-title" className="bg-white rounded-lg shadow-lg p-8 mb-6">
+            <h2 id="eunacom-title" className="text-3xl font-bold text-gray-800 mb-3 text-center">
+              ¿Qué es el examen EUNACOM?
             </h2>
             <p className="text-sm text-gray-500 italic text-center mb-6">
               Visión general creada por IA
@@ -252,12 +254,12 @@ const AppContent: React.FC = () => {
                 El examen incluye una <strong>sección teórica (ST)</strong> y una <strong>sección práctica (SP)</strong>.
               </p>
             </div>
-          </div>
+          </section>
 
           {/* How it Works Section */}
-          <div className="bg-white rounded-lg shadow-lg p-8 mb-6">
-            <h2 className="text-3xl font-bold text-gray-800 mb-6 text-center">
-              🚀 ¿Cómo funciona nuestra plataforma?
+          <section id="how-it-works" aria-labelledby="how-title" className="bg-white rounded-lg shadow-lg p-8 mb-6">
+            <h2 id="how-title" className="text-3xl font-bold text-gray-800 mb-6 text-center">
+              ¿Cómo funciona nuestra plataforma?
             </h2>
             <div className="grid md:grid-cols-3 gap-8">
               <div className="text-center">
@@ -285,12 +287,12 @@ const AppContent: React.FC = () => {
                 </p>
               </div>
             </div>
-          </div>
+          </section>
 
           {/* Features Overview */}
-          <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-            <h2 className="text-2xl font-semibold text-gray-800 mb-4">
-              🎯 Beneficios clave
+          <section id="features" aria-labelledby="features-title" className="bg-white rounded-lg shadow-lg p-6 mb-6">
+            <h2 id="features-title" className="text-2xl font-semibold text-gray-800 mb-4">
+              Beneficios clave
             </h2>
 
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -330,7 +332,7 @@ const AppContent: React.FC = () => {
                 </ul>
               </div>
             </div>
-          </div>
+          </section>
 
           {/* FAQ Link - Subtle text link after benefits */}
           <div className="text-center mb-6">
@@ -345,9 +347,9 @@ const AppContent: React.FC = () => {
           </div>
 
           {/* Testimonials Section with Schema.org markup */}
-          <div className="bg-white rounded-lg shadow-lg p-8 mb-6">
-            <h2 className="text-3xl font-bold text-gray-800 mb-2 text-center">
-              ⭐ Lo que dicen nuestros estudiantes
+          <section id="testimonials" aria-labelledby="testimonials-title" className="bg-white rounded-lg shadow-lg p-8 mb-6">
+            <h2 id="testimonials-title" className="text-3xl font-bold text-gray-800 mb-2 text-center">
+              Lo que dicen nuestros estudiantes
             </h2>
             <p className="text-center text-gray-600 mb-8">
               Testimonios reales de médicos que han usado nuestra plataforma
@@ -512,12 +514,12 @@ const AppContent: React.FC = () => {
               <div className="text-2xl text-yellow-500 mb-2">⭐⭐⭐⭐⭐</div>
               <p className="text-gray-700 font-semibold">Basado en 127+ opiniones verificadas</p>
             </div>
-          </div>
+          </section>
 
           {/* Login Form Section */}
-          <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-            <h2 className="text-2xl font-semibold text-gray-800 mb-4 text-center">
-              🔐 Iniciar Sesión
+          <section id="login" aria-labelledby="login-title" className="bg-white rounded-lg shadow-lg p-6 mb-6">
+            <h2 id="login-title" className="text-2xl font-semibold text-gray-800 mb-4 text-center">
+              Iniciar Sesión
             </h2>
             <div className="max-w-md mx-auto">
               <LoginForm 
@@ -527,12 +529,15 @@ const AppContent: React.FC = () => {
                 onSwitchToRegister={() => setShowAuthModal(true)}
               />
             </div>
-          </div>
+          </section>
 
-          {/* Footer */}
-          <footer className="mt-12 pt-8 border-t border-gray-200">
-            <div className="max-w-4xl mx-auto text-center">
-              <div className="flex flex-wrap justify-center gap-6 mb-4">
+          </div>
+        </main>
+
+        {/* Footer */}
+        <footer className="mt-12 pt-8 border-t border-gray-200" role="contentinfo">
+          <div className="max-w-4xl mx-auto text-center">
+            <nav aria-label="Enlaces del sitio" className="flex flex-wrap justify-center gap-6 mb-4">
                 <a
                   href="/about.html"
                   target="_blank"
@@ -563,7 +568,7 @@ const AppContent: React.FC = () => {
                 >
                   Términos y Condiciones
                 </a>
-              </div>
+              </nav>
 
               {/* Medical Disclaimer */}
               <div className="max-w-3xl mx-auto mb-4 px-4">
@@ -579,7 +584,7 @@ const AppContent: React.FC = () => {
                 © 2025 EUNACOM Learning Platform. Todos los derechos reservados.
               </p>
             </div>
-          </footer>
+        </footer>
         </div>
       </div>
 
@@ -612,7 +617,7 @@ const AppContent: React.FC = () => {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 };
 
