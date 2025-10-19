@@ -1,0 +1,29 @@
+<svg width="1200" height="630" xmlns="http://www.w3.org/2000/svg">
+  <!-- Gradiente azul de fondo -->
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#2563eb;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1e40af;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+
+  <!-- Fondo -->
+  <rect width="1200" height="630" fill="url(#bgGradient)"/>
+
+  <!-- Logo placeholder (círculo con iniciales) -->
+  <circle cx="600" cy="200" r="80" fill="white" opacity="0.9"/>
+  <text x="600" y="220" font-family="Arial, sans-serif" font-size="60" font-weight="bold" fill="#2563eb" text-anchor="middle">ET</text>
+
+  <!-- Texto principal -->
+  <text x="600" y="350" font-family="Arial, sans-serif" font-size="56" font-weight="bold" fill="white" text-anchor="middle">EUNACOM Test</text>
+
+  <!-- Subtítulo -->
+  <text x="600" y="420" font-family="Arial, sans-serif" font-size="40" fill="white" text-anchor="middle" opacity="0.95">+10,000 ejercicios explicados</text>
+
+  <!-- CTA -->
+  <rect x="450" y="480" width="300" height="70" rx="35" fill="white" opacity="0.95"/>
+  <text x="600" y="527" font-family="Arial, sans-serif" font-size="32" font-weight="bold" fill="#2563eb" text-anchor="middle">Prueba Gratis</text>
+
+  <!-- Nota temporal -->
+  <text x="600" y="610" font-family="Arial, sans-serif" font-size="16" fill="white" text-anchor="middle" opacity="0.7">PLACEHOLDER - Reemplazar con diseño profesional</text>
+</svg>
