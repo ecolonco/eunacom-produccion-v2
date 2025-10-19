@@ -462,8 +462,9 @@ export const QASweep2Panel: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
   const deleteLowQualityExercises = async () => {
     // Find the count of "Muy baja" exercises from distribution
+    // Must search for "Muy baja" specifically to avoid matching "100%" which contains "0%"
     const lowQualityItem = dbReport?.distribution?.find((item: any) =>
-      item.categoria.includes('Muy baja') || item.categoria.includes('0%')
+      item.categoria.includes('Muy baja')
     );
     const count = lowQualityItem?.cantidad || 0;
 
