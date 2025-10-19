@@ -14,7 +14,7 @@ const router = Router();
 // JWT Helper functions
 const generateAccessToken = (userId: string, email: string, role: string): string => {
   const secret = process.env.JWT_SECRET || 'fallback-secret';
-  const expiresIn = process.env.JWT_EXPIRES_IN || '15m';
+  const expiresIn = process.env.JWT_EXPIRES_IN || '1h';  // Cambiado de 15m a 1h para mejor UX
   const options: SignOptions = { expiresIn: expiresIn as any };
   return jwt.sign({ userId, email, role }, secret, options);
 };

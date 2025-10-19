@@ -36,6 +36,7 @@ import mockExamRoutes from './routes/mock-exam.routes';
 import adminMockExamsRoutes from './routes/admin-mock-exams.routes';
 import { adminTopicsRoutes } from './routes/admin-topics.routes';
 import { aiAnalysisRoutes } from './routes/ai-analysis.routes';
+import debugJwtRoutes from './routes/debug-jwt.routes';
 import { logger } from './utils/logger';
 
 // Load environment variables
@@ -171,6 +172,7 @@ app.use('/api/exercise-management', exerciseManagementRoutes);
 
 // Debug routes (temporal para diagnosticar BD)
 app.use('/debug', debugRoutes);
+app.use('/debug', debugJwtRoutes);
 
 
 // Additional routes will be added here
