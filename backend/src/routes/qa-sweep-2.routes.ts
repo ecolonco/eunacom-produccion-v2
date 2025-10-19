@@ -32,7 +32,9 @@ router.post('/runs', async (req: Request, res: Response) => {
       // FIX: Tratar 0 como valor válido
       maxConfidenceScore: (req.body.maxConfidenceScore !== undefined && req.body.maxConfidenceScore !== '' && req.body.maxConfidenceScore !== null)
         ? parseFloat(req.body.maxConfidenceScore)
-        : undefined
+        : undefined,
+      // Nuevo: filtro para SOLO variaciones sin score
+      onlyWithoutScore: req.body.onlyWithoutScore ?? false
     };
 
     // Validación del rango
@@ -373,7 +375,8 @@ router.post('/preview', async (req: Request, res: Response) => {
       topic,
       baseQuestionFrom,
       baseQuestionTo,
-      maxConfidenceScore
+      maxConfidenceScore,
+      onlyWithoutScore
     } = req.body;
 
     let whereConditions: any = {
@@ -434,6 +437,11 @@ router.post('/preview', async (req: Request, res: Response) => {
       };
     }
 
+    // Filtro para SOLO variaciones sin score (nunca analizadas)
+    if (onlyWithoutScore === true) {
+      whereConditions.confidenceScore = null;
+    }
+
     // Contar total de variaciones activas
     const totalActive = await prisma.questionVariation.count({
       where: { isVisible: true }
@@ -484,7 +492,8 @@ router.post('/preview', async (req: Request, res: Response) => {
           topic: topic || null,
           baseQuestionFrom: baseQuestionFrom ? parseInt(baseQuestionFrom) : null,
           baseQuestionTo: baseQuestionTo ? parseInt(baseQuestionTo) : null,
-          maxConfidenceScore: maxConfidenceScore ? parseFloat(maxConfidenceScore) : null
+          maxConfidenceScore: maxConfidenceScore ? parseFloat(maxConfidenceScore) : null,
+          onlyWithoutScore: onlyWithoutScore || false
         }
       }
     });

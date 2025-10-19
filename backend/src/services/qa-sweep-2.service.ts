@@ -18,6 +18,8 @@ export interface QASweep2Config {
   skipTaxonomyClassification?: boolean;
   // Filtro de confidence score máximo (0-100 en frontend, convertir a 0-1)
   maxConfidenceScore?: number;
+  // Filtro para procesar SOLO variaciones sin score (nunca analizadas)
+  onlyWithoutScore?: boolean;
 }
 
 export interface ExerciseData {
@@ -244,7 +246,8 @@ export class QASweep2Service {
     limit: number = 100,
     baseQuestionFrom?: number,
     baseQuestionTo?: number,
-    maxConfidenceScore?: number
+    maxConfidenceScore?: number,
+    onlyWithoutScore?: boolean
   ): Promise<any[]> {
     try {
       let whereConditions: any = {};
@@ -314,6 +317,13 @@ export class QASweep2Service {
           maxConfidenceScore,
           scoreThreshold
         });
+      }
+
+      // Filtro para SOLO variaciones sin score (nunca analizadas)
+      if (onlyWithoutScore === true) {
+        whereConditions.confidenceScore = null;
+
+        logger.info('Filtering ONLY variations without score (never analyzed)');
       }
 
       const allVariations = await prisma.questionVariation.findMany({
@@ -429,7 +439,8 @@ export class QASweep2Service {
           config.batchSize,
           config.baseQuestionFrom,
           config.baseQuestionTo,
-          config.maxConfidenceScore
+          config.maxConfidenceScore,
+          config.onlyWithoutScore
         );
       }
 
