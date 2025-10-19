@@ -428,14 +428,16 @@ router.post('/preview', async (req: Request, res: Response) => {
     }
 
     // Filtro por confidence score máximo
-    // Excluye automáticamente las variaciones "Perfecta (0%)" para no reprocesarlas
+    // Excluye automáticamente las variaciones "Perfecta (100% = 1.0)" para no reprocesarlas
     if (maxConfidenceScore !== undefined && maxConfidenceScore !== null && maxConfidenceScore !== '') {
       const scoreThreshold = parseFloat(maxConfidenceScore) > 1
         ? parseFloat(maxConfidenceScore) / 100
         : parseFloat(maxConfidenceScore);
+      // Cap at 0.99 to always exclude perfect scores (1.0 = 100% = sin errores)
+      const actualThreshold = Math.min(0.99, scoreThreshold);
       whereConditions.confidenceScore = {
-        gt: 0,  // Excluir las perfectas (0% = sin errores, no necesitan reprocesamiento)
-        lte: scoreThreshold
+        gte: 0,  // Incluir desde muy baja (0% = severidad crítica) hasta el threshold
+        lte: actualThreshold  // Excluir automáticamente las perfectas (1.0)
       };
     }
 
@@ -725,10 +727,11 @@ router.get('/database-report', async (req: Request, res: Response) => {
       SELECT
         CASE
           WHEN confidence_score IS NULL THEN 'Sin score (nunca analizadas)'
-          WHEN confidence_score = 0 THEN 'Perfecta (0% - sin errores)'
-          WHEN confidence_score < 0.34 THEN 'Baja (1-33% - severidad alta)'
-          WHEN confidence_score < 0.67 THEN 'Media (34-66% - severidad moderada)'
-          ELSE 'Alta (67-100% - severidad leve o corregidas)'
+          WHEN confidence_score = 1.0 THEN 'Perfecta (100% - sin errores)'
+          WHEN confidence_score >= 0.67 THEN 'Alta (67-99% - severidad leve)'
+          WHEN confidence_score >= 0.34 THEN 'Media (34-66% - severidad moderada)'
+          WHEN confidence_score > 0 THEN 'Baja (1-33% - severidad alta)'
+          ELSE 'Muy baja (0% - severidad crítica)'
         END as categoria,
         COUNT(*)::int as cantidad,
         ROUND(COUNT(*) * 100.0 / SUM(COUNT(*)) OVER (), 2) as porcentaje
@@ -737,10 +740,11 @@ router.get('/database-report', async (req: Request, res: Response) => {
       GROUP BY
         CASE
           WHEN confidence_score IS NULL THEN 'Sin score (nunca analizadas)'
-          WHEN confidence_score = 0 THEN 'Perfecta (0% - sin errores)'
-          WHEN confidence_score < 0.34 THEN 'Baja (1-33% - severidad alta)'
-          WHEN confidence_score < 0.67 THEN 'Media (34-66% - severidad moderada)'
-          ELSE 'Alta (67-100% - severidad leve o corregidas)'
+          WHEN confidence_score = 1.0 THEN 'Perfecta (100% - sin errores)'
+          WHEN confidence_score >= 0.67 THEN 'Alta (67-99% - severidad leve)'
+          WHEN confidence_score >= 0.34 THEN 'Media (34-66% - severidad moderada)'
+          WHEN confidence_score > 0 THEN 'Baja (1-33% - severidad alta)'
+          ELSE 'Muy baja (0% - severidad crítica)'
         END
       ORDER BY cantidad DESC
     `;
