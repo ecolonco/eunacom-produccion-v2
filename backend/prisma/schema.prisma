@@ -1059,15 +1059,18 @@ model Recommendation {
   campaignId      String?              @map("campaign_id")
   type            RecommendationType
   priority        RecommendationPriority
+  category        String?              // budget, targeting, creative, bidding, schedule
   title           String
   description     String               @db.Text
   actionItems     String[]             @map("action_items")
   expectedImpact  String?              @map("expected_impact") @db.Text
   estimatedROI    Float?               @map("estimated_roi")
+  aiConfidence    Float?               @map("ai_confidence") // 0.0 to 1.0
   status          RecommendationStatus @default(PENDING)
   appliedAt       DateTime?            @map("applied_at")
   appliedBy       String?              @map("applied_by")
   resultNotes     String?              @map("result_notes") @db.Text
+  expiresAt       DateTime?            @map("expires_at")
   createdAt       DateTime             @default(now()) @map("created_at")
   updatedAt       DateTime             @updatedAt @map("updated_at")
 
@@ -1084,6 +1087,8 @@ model MarketingAIAnalysis {
   id              String                @id @default(cuid())
   type            MarketingAnalysisType
   period          String                // "2024-01-15" para diario, "2024-W03" para semanal
+  startDate       DateTime              @map("start_date")
+  endDate         DateTime              @map("end_date")
 
   // Resumen del análisis
   summary         String                @db.Text
@@ -1220,6 +1225,7 @@ enum RecommendationStatus {
   APPROVED
   APPLIED
   REJECTED
+  DISMISSED
   EXPIRED
 }
 

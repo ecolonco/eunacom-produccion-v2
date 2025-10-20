@@ -78,7 +78,7 @@ export class GoogleAdsService {
         budget: row.campaign_budget
           ? row.campaign_budget.amount_micros / 1000000
           : undefined,
-        biddingStrategy: row.campaign.advertising_channel_type,
+        biddingStrategy: String(row.campaign.advertising_channel_type || 'UNKNOWN'),
       }));
     } catch (error) {
       console.error('Error fetching campaigns from Google Ads:', error);
@@ -116,11 +116,11 @@ export class GoogleAdsService {
       return {
         id: row.campaign.id.toString(),
         name: row.campaign.name,
-        status: this.mapCampaignStatus(row.campaign.status),
+        status: this.mapCampaignStatus(String(row.campaign.status)),
         budget: row.campaign_budget
           ? row.campaign_budget.amount_micros / 1000000
           : undefined,
-        biddingStrategy: row.campaign.advertising_channel_type,
+        biddingStrategy: String(row.campaign.advertising_channel_type || 'UNKNOWN'),
       };
     } catch (error) {
       console.error(`Error fetching campaign ${campaignId}:`, error);
@@ -344,14 +344,14 @@ export class GoogleAdsService {
    */
   private mapCampaignStatus(
     status: string
-  ): 'ENABLED' | 'PAUSED' | 'REMOVED' {
+  ): 'ACTIVE' | 'PAUSED' | 'ENDED' {
     switch (status) {
       case 'ENABLED':
-        return 'ENABLED';
+        return 'ACTIVE';
       case 'PAUSED':
         return 'PAUSED';
       case 'REMOVED':
-        return 'REMOVED';
+        return 'ENDED';
       default:
         return 'PAUSED';
     }

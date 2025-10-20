@@ -136,7 +136,7 @@ export class AIChatService {
         content: this.buildSystemPrompt(context),
       },
       ...history.map(m => ({
-        role: m.role as 'user' | 'assistant',
+        role: m.role,
         content: m.content,
       })),
       {
@@ -172,7 +172,7 @@ export class AIChatService {
 
     const messages: Anthropic.MessageParam[] = [
       ...history.map(m => ({
-        role: m.role as 'user' | 'assistant',
+        role: m.role,
         content: m.content,
       })),
       {
@@ -290,7 +290,7 @@ CONTEXTO DEL NEGOCIO:
       // Campañas activas
       prisma.campaign.findMany({
         where: {
-          status: { in: ['ENABLED', 'PAUSED'] },
+          status: { in: ['ACTIVE', 'PAUSED'] },
         },
         orderBy: { createdAt: 'desc' },
         take: 10,
@@ -313,7 +313,7 @@ CONTEXTO DEL NEGOCIO:
       // Recomendaciones pendientes
       prisma.recommendation.findMany({
         where: {
-          status: 'pending',
+          status: 'PENDING',
           OR: [
             { expiresAt: null },
             { expiresAt: { gt: new Date() } },
@@ -328,7 +328,7 @@ CONTEXTO DEL NEGOCIO:
 
       // Alertas activas
       prisma.alert.findMany({
-        where: { status: 'active' },
+        where: { isResolved: false },
         orderBy: [
           { severity: 'asc' },
           { createdAt: 'desc' },
@@ -363,7 +363,7 @@ CONTEXTO DEL NEGOCIO:
     });
 
     return messages.map(m => ({
-      role: m.role as 'user' | 'assistant',
+      role: m.role === 'USER' ? 'user' : 'assistant',
       content: m.content,
     }));
   }
@@ -381,14 +381,17 @@ CONTEXTO DEL NEGOCIO:
       contextUsed?: string[];
     }
   ) {
+    // Convertir role a formato de Prisma (mayúsculas)
+    const prismaRole = role === 'user' ? 'USER' : 'ASSISTANT';
+
     await prisma.chatMessage.create({
       data: {
         sessionId,
-        role,
+        role: prismaRole,
         content,
-        model: metadata?.model,
+        aiModel: metadata?.model,
         tokensUsed: metadata?.tokensUsed,
-        contextUsed: metadata?.contextUsed || [],
+        metadata: metadata?.contextUsed ? { contextUsed: metadata.contextUsed } : undefined,
       },
     });
   }
@@ -403,7 +406,7 @@ CONTEXTO DEL NEGOCIO:
     const count = await prisma.chatMessage.count({
       where: {
         sessionId,
-        role: 'user',
+        role: 'USER',
         createdAt: { gte: today },
       },
     });

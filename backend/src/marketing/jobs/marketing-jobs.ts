@@ -67,15 +67,9 @@ export function startMarketingJobs() {
       // Recopilar métricas del día anterior
       const yesterday = new Date();
       yesterday.setDate(yesterday.getDate() - 1);
-      const dateStr = yesterday.toISOString().split('T')[0];
-
-      const result = await metricsCollector.collectDailyMetrics(dateStr);
-      console.log(`✅ Recopiladas ${result.collected} métricas`);
-
-      if (result.errors.length > 0) {
-        console.log(`⚠️  ${result.errors.length} errores durante recopilación`);
-        result.errors.forEach(err => console.error('  -', err));
-      }
+      const result = await metricsCollector.collectDailyMetrics(yesterday);
+      const metricsCount = Array.isArray(result) ? result.length : 0;
+      console.log(`✅ Recopiladas ${metricsCount} métricas`);
     } catch (error) {
       console.error('❌ Error en recopilación de métricas:', error);
     }
@@ -96,12 +90,9 @@ export function startMarketingJobs() {
       const result = await recommendationEngine.generateRecommendationsFromAnalysis();
 
       console.log('✅ Análisis completado');
-      console.log(`📊 Insights generados: ${result.analysis?.insights.length || 0}`);
-      console.log(`💡 Recomendaciones creadas: ${result.recommendations.created}`);
-
-      if (result.recommendations.errors.length > 0) {
-        console.log(`⚠️  ${result.recommendations.errors.length} errores`);
-      }
+      console.log(`📊 Insights generados: ${result.analysis?.insights?.length || 0}`);
+      const recsCreated = Array.isArray(result.recommendations) ? result.recommendations.length : 0;
+      console.log(`💡 Recomendaciones creadas: ${recsCreated}`);
     } catch (error) {
       console.error('❌ Error en análisis de IA:', error);
     }
@@ -220,7 +211,7 @@ export async function runJobManually(jobName: string): Promise<void> {
     case 'collectMetrics':
       const yesterday = new Date();
       yesterday.setDate(yesterday.getDate() - 1);
-      await metricsCollector.collectDailyMetrics(yesterday.toISOString().split('T')[0]);
+      await metricsCollector.collectDailyMetrics(yesterday);
       break;
 
     case 'dailyAnalysis':

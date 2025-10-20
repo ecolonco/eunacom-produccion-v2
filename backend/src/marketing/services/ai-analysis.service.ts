@@ -367,16 +367,19 @@ Asegúrate de:
       await prisma.marketingAIAnalysis.create({
         data: {
           type: this.determineAnalysisType(input.dateRange),
+          period: input.dateRange.startDate, // Use startDate as period identifier
           startDate: new Date(input.dateRange.startDate),
           endDate: new Date(input.dateRange.endDate),
           summary: result.summary,
-          insights: result.insights as any,
-          recommendations: result.recommendations as any,
-          predictions: result.predictions as any,
-          anomalies: result.anomalies as any,
-          model: this.config.ai.model,
-          provider: this.config.ai.provider,
-          processingTimeMs: processingTime,
+          keyInsights: result.insights?.map((i: any) => i.title || i.description) || [],
+          concerns: result.anomalies?.map((a: any) => a.description) || [],
+          opportunities: result.recommendations?.map((r: any) => r.title) || [],
+          totalSpend: 0, // TODO: Calculate from metrics
+          totalRevenue: 0, // TODO: Calculate from metrics
+          overallROI: 0, // TODO: Calculate from metrics
+          aiModel: this.config.ai.model,
+          tokensUsed: 0, // TODO: Get from AI response
+          latencyMs: processingTime,
         },
       });
 

@@ -51,24 +51,14 @@ export class MetricsCollectorService {
             where: { externalId: campaign.id },
             update: {
               name: campaign.name,
-              status:
-                campaign.status === 'ENABLED'
-                  ? 'ACTIVE'
-                  : campaign.status === 'PAUSED'
-                    ? 'PAUSED'
-                    : 'ENDED',
+              status: campaign.status,
               budget: campaign.budget,
             },
             create: {
               externalId: campaign.id,
               name: campaign.name,
               platform: 'GOOGLE_ADS',
-              status:
-                campaign.status === 'ENABLED'
-                  ? 'ACTIVE'
-                  : campaign.status === 'PAUSED'
-                    ? 'PAUSED'
-                    : 'ENDED',
+              status: campaign.status,
               budget: campaign.budget,
               currency: 'CLP',
             },

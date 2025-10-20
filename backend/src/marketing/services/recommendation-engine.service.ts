@@ -12,7 +12,7 @@ const prisma = new PrismaClient();
 
 export interface CreateRecommendationInput {
   campaignId?: string;
-  priority: 'critical' | 'high' | 'medium' | 'low';
+  priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
   category: 'budget' | 'targeting' | 'creative' | 'bidding' | 'keywords' | 'schedule' | 'general';
   title: string;
   description: string;
@@ -53,9 +53,12 @@ export class RecommendationEngineService {
           campaignId = campaignIds[0];
         }
 
+        // Mapear priority de minúsculas (AI) a mayúsculas (Prisma)
+        const priority = this.normalizePriority(rec.priority);
+
         await this.createRecommendation({
           campaignId,
-          priority: rec.priority,
+          priority,
           category: rec.category,
           title: rec.title,
           description: rec.description,
@@ -63,7 +66,7 @@ export class RecommendationEngineService {
           estimatedImpact: rec.estimatedImpact,
           aiReasoning: rec.aiReasoning || rec.description,
           aiConfidence: rec.confidence,
-          expiresInDays: this.getExpirationDays(rec.priority),
+          expiresInDays: this.getExpirationDays(priority),
         });
 
         created++;
@@ -97,11 +100,10 @@ export class RecommendationEngineService {
         category: input.category,
         title: input.title,
         description: input.description,
-        action: input.action,
-        estimatedImpact: input.estimatedImpact,
-        aiReasoning: input.aiReasoning,
+        actionItems: input.action ? [input.action] : [],
+        expectedImpact: input.estimatedImpact,
         aiConfidence: input.aiConfidence,
-        status: 'pending',
+        status: 'PENDING',
         expiresAt,
       },
     });
@@ -114,13 +116,13 @@ export class RecommendationEngineService {
    * Obtiene recomendaciones pendientes
    */
   async getPendingRecommendations(filters?: {
-    priority?: 'critical' | 'high' | 'medium' | 'low';
+    priority?: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
     category?: string;
     campaignId?: string;
     limit?: number;
   }) {
     const where: any = {
-      status: 'pending',
+      status: 'PENDING',
       OR: [
         { expiresAt: null },
         { expiresAt: { gt: new Date() } },
@@ -188,26 +190,26 @@ export class RecommendationEngineService {
     const recommendation = await prisma.recommendation.update({
       where: { id },
       data: {
-        status: 'applied',
+        status: 'APPLIED',
         appliedAt: new Date(),
       },
     });
 
-    // Crear log de auditoría
-    await prisma.auditLog.create({
-      data: {
-        action: 'recommendation_applied',
-        entity: 'recommendation',
-        entityId: id,
-        userId: appliedBy,
-        details: {
-          title: recommendation.title,
-          category: recommendation.category,
-          priority: recommendation.priority,
-          notes,
-        },
-      },
-    });
+    // TODO: Crear log de auditoría (auditLog model not in schema yet)
+    // await prisma.auditLog.create({
+    //   data: {
+    //     action: 'recommendation_applied',
+    //     entity: 'recommendation',
+    //     entityId: id,
+    //     userId: appliedBy,
+    //     details: {
+    //       title: recommendation.title,
+    //       category: recommendation.category,
+    //       priority: recommendation.priority,
+    //       notes,
+    //     },
+    //   },
+    // });
 
     console.log(`✅ Recomendación ${id} aplicada`);
     return recommendation;
@@ -224,24 +226,23 @@ export class RecommendationEngineService {
     const recommendation = await prisma.recommendation.update({
       where: { id },
       data: {
-        status: 'dismissed',
-        dismissedAt: new Date(),
+        status: 'DISMISSED',
       },
     });
 
-    // Crear log de auditoría
-    await prisma.auditLog.create({
-      data: {
-        action: 'recommendation_dismissed',
-        entity: 'recommendation',
-        entityId: id,
-        userId: dismissedBy,
-        details: {
-          title: recommendation.title,
-          reason,
-        },
-      },
-    });
+    // TODO: Crear log de auditoría (auditLog model not in schema yet)
+    // await prisma.auditLog.create({
+    //   data: {
+    //     action: 'recommendation_dismissed',
+    //     entity: 'recommendation',
+    //     entityId: id,
+    //     userId: dismissedBy,
+    //     details: {
+    //       title: recommendation.title,
+    //       reason,
+    //     },
+    //   },
+    // });
 
     console.log(`✅ Recomendación ${id} descartada`);
     return recommendation;
@@ -260,25 +261,24 @@ export class RecommendationEngineService {
       }),
       prisma.recommendation.count({
         where: {
-          status: 'pending',
+          status: 'PENDING',
           createdAt: { gte: since },
         },
       }),
       prisma.recommendation.count({
         where: {
-          status: 'applied',
+          status: 'APPLIED',
           appliedAt: { gte: since },
         },
       }),
       prisma.recommendation.count({
         where: {
-          status: 'dismissed',
-          dismissedAt: { gte: since },
+          status: 'DISMISSED',
         },
       }),
       prisma.recommendation.count({
         where: {
-          status: 'expired',
+          status: 'EXPIRED',
           createdAt: { gte: since },
         },
       }),
@@ -333,7 +333,7 @@ export class RecommendationEngineService {
 
     if (campaigns.length === 0) {
       console.log('⚠️ No hay campañas para analizar');
-      return { analysis: null, recommendations: [] };
+      return { analysis: null, recommendations: { created: 0, errors: [] } };
     }
 
     // Ejecutar análisis de IA
@@ -362,13 +362,13 @@ export class RecommendationEngineService {
 
     const result = await prisma.recommendation.updateMany({
       where: {
-        status: 'pending',
+        status: 'PENDING',
         expiresAt: {
           lt: new Date(),
         },
       },
       data: {
-        status: 'expired',
+        status: 'EXPIRED',
       },
     });
 
@@ -381,17 +381,29 @@ export class RecommendationEngineService {
   // ============================================================================
 
   /**
+   * Normaliza prioridad de minúsculas (AIRecommendation) a mayúsculas (Prisma)
+   */
+  private normalizePriority(priority: string): 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL' {
+    const normalized = priority.toUpperCase();
+    if (['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'].includes(normalized)) {
+      return normalized as 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+    }
+    return 'MEDIUM'; // default
+  }
+
+  /**
    * Mapea prioridad a tipo de recomendación
    */
-  private mapPriorityToType(priority: string): string {
+  private mapPriorityToType(priority: string): 'BUDGET_OPTIMIZATION' | 'KEYWORD_ADJUSTMENT' | 'AD_COPY_IMPROVEMENT' | 'TARGETING_REFINEMENT' | 'BIDDING_STRATEGY' | 'SCHEDULE_OPTIMIZATION' | 'CREATIVE_REFRESH' | 'LANDING_PAGE' | 'OTHER' {
     switch (priority) {
-      case 'critical':
-      case 'high':
-        return 'opportunity';
-      case 'medium':
-        return 'optimization';
+      case 'CRITICAL':
+        return 'BUDGET_OPTIMIZATION';
+      case 'HIGH':
+        return 'KEYWORD_ADJUSTMENT';
+      case 'MEDIUM':
+        return 'AD_COPY_IMPROVEMENT';
       default:
-        return 'alert';
+        return 'OTHER';
     }
   }
 
@@ -400,13 +412,13 @@ export class RecommendationEngineService {
    */
   private getExpirationDays(priority: string): number {
     switch (priority) {
-      case 'critical':
+      case 'CRITICAL':
         return 3;
-      case 'high':
+      case 'HIGH':
         return 7;
-      case 'medium':
+      case 'MEDIUM':
         return 14;
-      case 'low':
+      case 'LOW':
         return 30;
       default:
         return 7;

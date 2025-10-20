@@ -23,7 +23,7 @@ export interface GoogleAdsMetrics {
 export interface GoogleAdsCampaign {
   id: string;
   name: string;
-  status: 'ENABLED' | 'PAUSED' | 'REMOVED';
+  status: 'ACTIVE' | 'PAUSED' | 'ENDED';
   budget?: number;
   biddingStrategy?: string;
   metrics?: GoogleAdsMetrics;
