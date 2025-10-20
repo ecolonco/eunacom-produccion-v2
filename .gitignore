@@ -33,3 +33,11 @@ backend/logs/
 frontend/dist/
 frontend/.vite/
 frontend/node_modules/
+
+# TypeScript build info
+*.tsbuildinfo
+
+# Generated config files (transpiled from .ts)
+frontend/vite.config.js
+frontend/vite.config.d.ts
+frontend/vite.config.js.map
