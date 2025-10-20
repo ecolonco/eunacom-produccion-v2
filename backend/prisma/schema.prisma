@@ -983,3 +983,280 @@ enum MockExamStatus {
   COMPLETED
   ABANDONED
 }
+
+// ============================================================================
+// SISTEMA DE MARKETING INTELLIGENCE
+// ============================================================================
+
+// Campaña de marketing (Google Ads, Facebook Ads, etc.)
+model Campaign {
+  id              String           @id @default(cuid())
+  externalId      String           @unique @map("external_id") // ID de Google Ads
+  name            String
+  platform        CampaignPlatform // GOOGLE_ADS, META_ADS, etc.
+  status          CampaignStatus   @default(ACTIVE)
+  budget          Float?           // Presupuesto diario
+  currency        String           @default("CLP")
+  startDate       DateTime?        @map("start_date")
+  endDate         DateTime?        @map("end_date")
+  isActive        Boolean          @default(true) @map("is_active")
+  metadata        Json?            // Configuraciones adicionales
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @updatedAt @map("updated_at")
+
+  metrics         CampaignMetric[]
+  recommendations Recommendation[]
+  alerts          Alert[]
+
+  @@index([platform])
+  @@index([status])
+  @@map("campaigns")
+}
+
+// Métricas diarias de campaña
+model CampaignMetric {
+  id              String   @id @default(cuid())
+  campaignId      String   @map("campaign_id")
+  date            DateTime
+
+  // Métricas de impresión y clics
+  impressions     Int      @default(0)
+  clicks          Int      @default(0)
+  ctr             Float    @default(0) // Click-through rate
+
+  // Métricas de conversión
+  conversions     Int      @default(0)
+  conversionRate  Float    @default(0) @map("conversion_rate")
+  conversionValue Float    @default(0) @map("conversion_value")
+
+  // Métricas de costo
+  cost            Float    @default(0)
+  cpc             Float    @default(0) // Cost per click
+  cpa             Float    @default(0) // Cost per acquisition
+
+  // ROI
+  revenue         Float    @default(0)
+  roi             Float    @default(0) // Return on investment
+  roas            Float    @default(0) // Return on ad spend
+
+  // Métricas de engagement
+  avgTimeOnSite   Float?   @map("avg_time_on_site") // Segundos
+  bounceRate      Float?   @map("bounce_rate")
+  pagesPerSession Float?   @map("pages_per_session")
+
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  campaign        Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@unique([campaignId, date])
+  @@index([date])
+  @@map("campaign_metrics")
+}
+
+// Recomendaciones generadas por IA
+model Recommendation {
+  id              String               @id @default(cuid())
+  campaignId      String?              @map("campaign_id")
+  type            RecommendationType
+  priority        RecommendationPriority
+  title           String
+  description     String               @db.Text
+  actionItems     String[]             @map("action_items")
+  expectedImpact  String?              @map("expected_impact") @db.Text
+  estimatedROI    Float?               @map("estimated_roi")
+  status          RecommendationStatus @default(PENDING)
+  appliedAt       DateTime?            @map("applied_at")
+  appliedBy       String?              @map("applied_by")
+  resultNotes     String?              @map("result_notes") @db.Text
+  createdAt       DateTime             @default(now()) @map("created_at")
+  updatedAt       DateTime             @updatedAt @map("updated_at")
+
+  campaign        Campaign?            @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@index([campaignId])
+  @@index([status])
+  @@index([priority])
+  @@map("recommendations")
+}
+
+// Análisis de IA para Marketing (diarios y semanales)
+model MarketingAIAnalysis {
+  id              String                @id @default(cuid())
+  type            MarketingAnalysisType
+  period          String                // "2024-01-15" para diario, "2024-W03" para semanal
+
+  // Resumen del análisis
+  summary         String                @db.Text
+  keyInsights     String[]              @map("key_insights")
+  concerns        String[]              // Áreas de preocupación
+  opportunities   String[]              // Oportunidades detectadas
+
+  // Datos analizados
+  totalSpend      Float                 @map("total_spend")
+  totalRevenue    Float                 @map("total_revenue")
+  overallROI      Float                 @map("overall_roi")
+
+  // Metadata de IA
+  aiModel         String                @map("ai_model") // "gpt-4-turbo", "claude-3-sonnet"
+  tokensUsed      Int                   @map("tokens_used")
+  latencyMs       Int                   @map("latency_ms")
+
+  createdAt       DateTime              @default(now()) @map("created_at")
+
+  @@unique([type, period])
+  @@index([type])
+  @@index([createdAt])
+  @@map("marketing_ai_analyses")
+}
+
+// Alertas automáticas de anomalías
+model Alert {
+  id              String       @id @default(cuid())
+  campaignId      String?      @map("campaign_id")
+  type            AlertType
+  severity        AlertSeverity
+  title           String
+  message         String       @db.Text
+  metric          String?      // Métrica que disparó la alerta
+  threshold       Float?       // Umbral configurado
+  actualValue     Float?       @map("actual_value") // Valor real
+  isRead          Boolean      @default(false) @map("is_read")
+  isResolved      Boolean      @default(false) @map("is_resolved")
+  resolvedAt      DateTime?    @map("resolved_at")
+  resolvedBy      String?      @map("resolved_by")
+  resolvedNotes   String?      @map("resolved_notes") @db.Text
+  createdAt       DateTime     @default(now()) @map("created_at")
+
+  campaign        Campaign?    @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@index([campaignId])
+  @@index([severity])
+  @@index([isRead])
+  @@index([isResolved])
+  @@map("alerts")
+}
+
+// Conversaciones con IA del dashboard
+model ChatMessage {
+  id              String   @id @default(cuid())
+  sessionId       String   @map("session_id")
+  role            ChatRole
+  content         String   @db.Text
+  metadata        Json?    // Datos adicionales (campañas consultadas, etc.)
+  aiModel         String?  @map("ai_model")
+  tokensUsed      Int?     @map("tokens_used")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  @@index([sessionId])
+  @@index([createdAt])
+  @@map("chat_messages")
+}
+
+// Configuración de tests A/B
+model ABTest {
+  id              String       @id @default(cuid())
+  name            String
+  description     String?      @db.Text
+  status          ABTestStatus @default(DRAFT)
+
+  // Variantes
+  variantA        Json         @map("variant_a") // Configuración de variante A
+  variantB        Json         @map("variant_b") // Configuración de variante B
+
+  // Distribución de tráfico
+  trafficSplit    Float        @default(0.5) @map("traffic_split") // 0.5 = 50/50
+
+  // Resultados
+  startedAt       DateTime?    @map("started_at")
+  endedAt         DateTime?    @map("ended_at")
+  winningVariant  String?      @map("winning_variant") // "A" o "B"
+  confidence      Float?       // Nivel de confianza estadística
+  results         Json?        // Resultados detallados
+
+  createdAt       DateTime     @default(now()) @map("created_at")
+  updatedAt       DateTime     @updatedAt @map("updated_at")
+
+  @@map("ab_tests")
+}
+
+// Enums para Marketing Intelligence
+enum CampaignPlatform {
+  GOOGLE_ADS
+  META_ADS
+  LINKEDIN_ADS
+  TIKTOK_ADS
+  MANUAL
+}
+
+enum CampaignStatus {
+  ACTIVE
+  PAUSED
+  ENDED
+  DRAFT
+}
+
+enum RecommendationType {
+  BUDGET_OPTIMIZATION
+  KEYWORD_ADJUSTMENT
+  AD_COPY_IMPROVEMENT
+  TARGETING_REFINEMENT
+  BIDDING_STRATEGY
+  SCHEDULE_OPTIMIZATION
+  CREATIVE_REFRESH
+  LANDING_PAGE
+  OTHER
+}
+
+enum RecommendationPriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum RecommendationStatus {
+  PENDING
+  IN_REVIEW
+  APPROVED
+  APPLIED
+  REJECTED
+  EXPIRED
+}
+
+enum MarketingAnalysisType {
+  DAILY
+  WEEKLY
+  MONTHLY
+  ON_DEMAND
+}
+
+enum AlertType {
+  BUDGET_OVERRUN
+  LOW_PERFORMANCE
+  HIGH_CPA
+  LOW_CONVERSION_RATE
+  TRAFFIC_DROP
+  COST_SPIKE
+  ANOMALY_DETECTED
+  OPPORTUNITY
+}
+
+enum AlertSeverity {
+  INFO
+  WARNING
+  ERROR
+  CRITICAL
+}
+
+enum ChatRole {
+  USER
+  ASSISTANT
+  SYSTEM
+}
+
+enum ABTestStatus {
+  DRAFT
+  RUNNING
+  COMPLETED
+  CANCELLED
+}
