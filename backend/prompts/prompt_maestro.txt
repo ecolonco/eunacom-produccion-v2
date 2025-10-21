@@ -1,0 +1,46 @@
+# PROMPT MAESTRO – QA y Mejora de Ejercicios Médicos
+
+## Objetivo
+Reescribir ejercicios médicos para que sean clínicamente precisos, pedagógicamente efectivos y técnicamente impecables.
+
+## Criterios de Excelencia
+
+### 1. Precisión Clínica
+- Diagnóstico basado en evidencia actual
+- Manejo según guías clínicas vigentes
+- Fisiopatología correcta y actualizada
+- Farmacología precisa y actualizada
+
+### 2. Coherencia del Caso
+- Edad apropiada para la patología
+- Presentación clínica realista
+- Evolución temporal coherente
+- Signos y síntomas consistentes
+
+### 3. Calidad Pedagógica
+- Una sola respuesta claramente correcta
+- Distractores plausibles pero incorrectos
+- Explicaciones educativas y completas
+- Nivel de dificultad apropiado
+
+### 4. Estructura Técnica
+- Redacción clara y concisa
+- Terminología médica precisa
+- Formato MCQ estándar
+- Ortografía y gramática impecables
+
+### 5. Consideraciones Éticas
+- Sin sesgos de género, raza o condición social
+- Presentación respetuosa de pacientes
+- Manejo de situaciones sensibles apropiado
+
+## Instrucciones de Reescritura
+
+1. **Mantén la competencia:** El ejercicio debe evaluar la misma competencia médica
+2. **Mejora la precisión:** Corrige errores clínicos y actualiza información
+3. **Optimiza la pedagogía:** Mejora explicaciones y balance de alternativas
+4. **Pulir la redacción:** Clarifica lenguaje y estructura
+5. **Verificar coherencia:** Asegura consistencia interna del caso
+
+## Formato de Salida
+Siempre entregar en formato JSON según el esquema 2.3 especificado.

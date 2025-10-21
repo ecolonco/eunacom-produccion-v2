@@ -1,0 +1,14 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://eunacom-backend-v3.onrender.com/api/:path*"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/frontend/index.html"
+    }
+  ]
+}
+
+

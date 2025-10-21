@@ -1,0 +1,1268 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                   String                @id @default(cuid())
+  email                String                @unique
+  username             String?               @unique
+  firstName            String
+  lastName             String
+  passwordHash         String
+  isActive             Boolean               @default(true)
+  isVerified           Boolean               @default(false)
+  role                 UserRole              @default(STUDENT)
+  credits              Int                   @default(50)
+  lastFreeQuestionDate DateTime?
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  quizResults          QuizResult[]
+  refreshTokens        RefreshToken[]
+  specialtyProgress    SpecialtyProgress[]
+  studyRecommendations StudyRecommendation[]
+  metrics              UserMetrics?
+  profile              UserProfile?
+  userProgress         UserProgress[]
+  creditTransactions   CreditTransaction[]
+  emailVerifications   EmailVerification[]
+  payments             Payment[]
+  controlPurchases     ControlPurchase[]
+  controls             Control[]
+  examPurchases        ExamPurchase[]
+  exams                Exam[]
+  mockExamPurchases    MockExamPurchase[]
+  mockExams            MockExam[]
+  examAIAnalyses       ExamAIAnalysis[]
+
+  @@map("users")
+}
+
+model UserProfile {
+  id                String    @id @default(cuid())
+  userId            String    @unique
+  medicalSchool     String?
+  graduationYear    Int?
+  specialty         String?
+  examDate          DateTime?
+  studyGoals        String?
+  weeklyStudyHours  Int?
+  preferredLanguage String    @default("es")
+  theme             String    @default("light")
+  notifications     Boolean   @default(true)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_profiles")
+}
+
+model Question {
+  id               String           @id @default(cuid())
+  content          String
+  explanation      String?
+  difficulty       Difficulty       @default(MEDIUM)
+  type             QuestionType     @default(MULTIPLE_CHOICE)
+  specialtyId      String?
+  topicId          String?
+  isActive         Boolean          @default(true)
+  isReviewed       Boolean          @default(false)
+  reviewedBy       String?
+  reviewedAt       DateTime?
+  aiGenerated      Boolean          @default(false)
+  aiPrompt         String?
+  aiConfidence     Float?
+  timesAsked       Int              @default(0)
+  averageScore     Float?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  contentAnalytics ContentAnalytic?
+  options          QuestionOption[]
+  specialty        Specialty?       @relation(fields: [specialtyId], references: [id])
+  topic            Topic?           @relation(fields: [topicId], references: [id])
+  quizQuestions    QuizQuestion[]
+  userProgress     UserProgress[]
+
+  @@map("questions")
+}
+
+model QuestionOption {
+  id         String   @id @default(cuid())
+  questionId String
+  text       String
+  isCorrect  Boolean  @default(false)
+  order      Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@map("question_options")
+}
+
+model Specialty {
+  id                   String                @id @default(cuid())
+  name                 String                @unique
+  description          String?
+  code                 String?               @unique
+  isActive             Boolean               @default(true)
+  parentId             String?
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  questions            Question[]
+  quizzes              Quiz[]
+  parent               Specialty?            @relation("SpecialtyHierarchy", fields: [parentId], references: [id])
+  children             Specialty[]           @relation("SpecialtyHierarchy")
+  specialtyProgress    SpecialtyProgress[]
+  studyRecommendations StudyRecommendation[]
+  topics               Topic[]
+
+  @@map("specialties")
+}
+
+model Topic {
+  id                  String     @id @default(cuid())
+  name                String
+  description         String?
+  specialtyId         String?
+  mockExamPercentage  Float?     @map("mock_exam_percentage") // Porcentaje para ensayos EUNACOM (180 preguntas)
+  createdAt           DateTime   @default(now())
+  updatedAt           DateTime   @updatedAt
+  questions           Question[]
+  specialty           Specialty? @relation(fields: [specialtyId], references: [id])
+
+  @@unique([name, specialtyId])
+  @@map("topics")
+}
+
+model Quiz {
+  id            String         @id @default(cuid())
+  title         String
+  description   String?
+  type          QuizType       @default(PRACTICE)
+  questionCount Int            @default(10)
+  timeLimit     Int?
+  passingScore  Int?
+  specialtyId   String?
+  difficulty    Difficulty?
+  isActive      Boolean        @default(true)
+  isPublic      Boolean        @default(true)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  questions     QuizQuestion[]
+  results       QuizResult[]
+  specialty     Specialty?     @relation(fields: [specialtyId], references: [id])
+
+  @@map("quizzes")
+}
+
+model QuizQuestion {
+  id         String   @id @default(cuid())
+  quizId     String
+  questionId String
+  order      Int      @default(0)
+  points     Int      @default(1)
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  quiz       Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
+
+  @@unique([quizId, questionId])
+  @@map("quiz_questions")
+}
+
+model QuizResult {
+  id             String    @id @default(cuid())
+  userId         String
+  quizId         String
+  score          Int
+  correctAnswers Int
+  totalQuestions Int
+  timeSpent      Int?
+  completed      Boolean   @default(false)
+  completedAt    DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  quiz           Quiz      @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("quiz_results")
+}
+
+model UserProgress {
+  id            String    @id @default(cuid())
+  userId        String
+  questionId    String
+  attempts      Int       @default(0)
+  correct       Int       @default(0)
+  lastAnswer    Boolean?
+  lastAttemptAt DateTime?
+  easeFactor    Float     @default(2.5)
+  interval      Int       @default(1)
+  repetitions   Int       @default(0)
+  nextReview    DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  question      Question  @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, questionId])
+  @@map("user_progress")
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  isRevoked Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("refresh_tokens")
+}
+
+model UserMetrics {
+  id                String    @id @default(cuid())
+  userId            String    @unique
+  questionsAnswered Int       @default(0)
+  correctAnswers    Int       @default(0)
+  studyStreak       Int       @default(0)
+  totalStudyTime    Int       @default(0)
+  lastActivity      DateTime?
+  averageScore      Float?
+  weeklyProgress    Json?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_metrics")
+}
+
+model SpecialtyProgress {
+  id                  String    @id @default(cuid())
+  userId              String
+  specialtyId         String
+  questionsAnswered   Int       @default(0)
+  correctPercentage   Float     @default(0)
+  difficultyBreakdown Json?
+  lastPracticed       DateTime?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  specialty           Specialty @relation(fields: [specialtyId], references: [id], onDelete: Cascade)
+  user                User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, specialtyId])
+  @@map("specialty_progress")
+}
+
+model StudyRecommendation {
+  id                 String     @id @default(cuid())
+  userId             String
+  specialtyId        String?
+  recommendationType String
+  priority           Int
+  reason             String
+  estimatedTime      Int?
+  isActive           Boolean    @default(true)
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
+  specialty          Specialty? @relation(fields: [specialtyId], references: [id])
+  user               User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("study_recommendations")
+}
+
+model PlatformMetric {
+  id          String   @id @default(cuid())
+  metricType  String
+  metricValue Float
+  metadata    Json?
+  period      String?
+  recordedAt  DateTime @default(now())
+
+  @@map("platform_metrics")
+}
+
+model ContentAnalytic {
+  id               String   @id @default(cuid())
+  questionId       String   @unique
+  totalAttempts    Int      @default(0)
+  correctAttempts  Int      @default(0)
+  averageTime      Float?
+  difficultyRating Float?
+  feedbackScore    Float?
+  popularityScore  Float?
+  lastUpdated      DateTime @default(now())
+  question         Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@map("content_analytics")
+}
+
+model ProcessingJob {
+  id             String    @id @default(cuid())
+  type           String
+  status         String
+  totalItems     Int       @default(0)
+  processedItems Int       @default(0)
+  inputData      Json?
+  outputData     Json?
+  errorMessage   String?
+  startedAt      DateTime?
+  completedAt    DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@map("processing_jobs")
+}
+
+model BaseQuestion {
+  id         String              @id @default(cuid())
+  content    String
+  sourceFile String              @map("source_file")
+  uploadedBy String              @map("uploaded_by")
+  status     String              @default("PENDING")
+  createdAt  DateTime            @default(now()) @map("created_at")
+  updatedAt  DateTime            @updatedAt @map("updated_at")
+  displaySequence Int            @map("display_sequence") @unique @default(dbgenerated("nextval('base_question_display_sequence_seq'::regclass)"))
+  aiAnalysis AIAnalysis?
+  variations QuestionVariation[]
+
+  @@map("base_questions")
+}
+
+model AIAnalysis {
+  id             String       @id @default(cuid())
+  baseQuestionId String       @unique @map("base_question_id")
+  specialty      String
+  topic          String
+  difficulty     String
+  analysisResult String       @map("analysis_result")
+  baseQuestion   BaseQuestion @relation(fields: [baseQuestionId], references: [id], onDelete: Cascade)
+
+  @@map("ai_analysis")
+}
+
+model QuestionVariation {
+  id              String            @id @default(cuid())
+  baseQuestionId  String            @map("base_question_id")
+  difficulty      String
+  variationNumber Int               @map("variation_number")
+  content         String
+  explanation     String
+  displayCode     String?           @map("display_code")
+  version         Int               @default(1)
+  isVisible       Boolean           @default(true) @map("is_visible")
+  modifiedAt      DateTime?         @map("modified_at")
+  parentVersionId String?           @map("parent_version_id")
+  confidenceScore Float?            @map("confidence_score") // 0.0-1.0, null = nunca analizada
+  lastQADate      DateTime?         @map("last_qa_date") // Fecha del último análisis QA
+  alternatives      Alternative[]
+  baseQuestion      BaseQuestion      @relation(fields: [baseQuestionId], references: [id], onDelete: Cascade)
+  qaSweep2Results   QASweep2Result[]
+  controlQuestions  ControlQuestion[]
+  controlAnswers    ControlAnswer[]
+  examQuestions     ExamQuestion[]
+  examAnswers       ExamAnswer[]
+  mockExamQuestions MockExamQuestion[]
+  mockExamAnswers   MockExamAnswer[]
+
+  @@map("question_variations")
+}
+
+model Alternative {
+  id          String            @id @default(cuid())
+  variationId String            @map("variation_id")
+  text        String
+  isCorrect   Boolean           @default(false) @map("is_correct")
+  explanation String?
+  order       Int               @default(0)
+  variation   QuestionVariation @relation(fields: [variationId], references: [id], onDelete: Cascade)
+
+  @@map("alternatives")
+}
+
+model QARun {
+  id         String     @id @default(cuid())
+  startedAt  DateTime   @default(now())
+  finishedAt DateTime?
+  params     Json
+  status     String
+  summary    Json?
+  results    QAResult[]
+
+  @@map("qa_runs")
+}
+
+model QAResult {
+  id                    String    @id @default(cuid())
+  runId                 String
+  baseId                String
+  variationId           String
+  stage                 String
+  labels                Json
+  scores                Json?
+  critique              String?
+  patch                 Json?
+  riskLevel             String?
+  applied               Boolean   @default(false)
+  fixStatus             String?
+  humanReviewRequired   Boolean   @default(false)
+  humanReviewNotes      String?
+  reviewedBy            String?
+  reviewedAt            DateTime?
+  patchConfidence       Decimal?  @db.Decimal(3, 2)
+  createdAt             DateTime  @default(now())
+  run                   QARun     @relation(fields: [runId], references: [id], onDelete: Cascade)
+
+  @@index([humanReviewRequired])
+  @@index([fixStatus])
+  @@index([riskLevel])
+  @@map("qa_results")
+}
+
+model CreditTransaction {
+  id            String              @id @default(cuid())
+  userId        String
+  amount        Int
+  type          CreditTransactionType
+  packageType   String?
+  description   String
+  balanceBefore Int
+  balanceAfter  Int
+  metadata      Json?
+  createdAt     DateTime            @default(now())
+  user          User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("credit_transactions")
+}
+
+/// Tokens de verificación de email (single-use)
+model EmailVerification {
+  id               String   @id @default(cuid())
+  userId           String
+  tokenHash        String   @unique
+  expiresAt        DateTime
+  consumedAt       DateTime?
+  createdAt        DateTime @default(now())
+  createdIp        String?
+  createdUserAgent String?
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("email_verifications")
+}
+
+/// Pagos realizados a través de Flow
+model Payment {
+  id         String         @id @default(cuid())
+  userId     String
+  amount     Int            // en CLP
+  credits    Int            // créditos a otorgar (0 si es paquete de controles/pruebas/ensayos)
+  currency   String         @default("CLP")
+  status     PaymentStatus  @default(CREATED)
+  packageType PackageType   @default(CREDITS) @map("package_type") // CREDITS, CONTROL, EXAM, MOCK_EXAM
+  packageId  String?        @map("package_id") // ID del paquete específico (ControlPackage, ExamPackage, etc.)
+  flowToken  String?        @unique
+  flowOrder  String?
+  payUrl     String?
+  metadata   Json?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  controlPurchases ControlPurchase[]
+  examPurchases    ExamPurchase[]
+  mockExamPurchases MockExamPurchase[]
+
+  @@index([userId])
+  @@index([createdAt])
+  @@index([packageType])
+  @@map("payments")
+}
+
+enum PaymentStatus {
+  CREATED
+  PENDING
+  PAID
+  FAILED
+  CANCELED
+}
+
+enum PackageType {
+  CREDITS
+  CONTROL
+  EXAM
+  MOCK_EXAM
+}
+
+enum UserRole {
+  STUDENT
+  ADMIN
+  CONTENT_MANAGER
+  REVIEWER
+}
+
+enum CreditTransactionType {
+  DEDUCTION
+  PURCHASE
+  REFUND
+  BONUS
+  ADMIN_ADJUSTMENT
+}
+
+enum Difficulty {
+  EASY
+  MEDIUM
+  HARD
+}
+
+enum QuestionType {
+  MULTIPLE_CHOICE
+  TRUE_FALSE
+  ESSAY
+}
+
+enum QuizType {
+  PRACTICE
+  SIMULATION
+  REVIEW
+}
+
+/// QA Sweep 2.0 - Sistema avanzado de evaluación y corrección
+model QASweep2Run {
+  id          String            @id @default(cuid())
+  name        String
+  description String?
+  status      QASweep2Status    @default(PENDING)
+  config      Json              // Configuración de modelos, prompts, etc.
+  results     QASweep2Result[]
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  @@map("qa_sweep_2_runs")
+}
+
+model QASweep2Result {
+  id                 String              @id @default(cuid())
+  runId              String
+  variationId        String
+  diagnosis          Json                // Resultado de evaluación (GPT-4o Mini)
+  corrections        Json?               // Resultado de corrección (GPT-4o)
+  finalLabels        Json                // Etiquetas finales
+  status             QASweep2ResultStatus @default(ANALYZED)
+  aiModelUsed        String              @map("ai_model_used")
+  confidenceScore    Float               @map("confidence_score")
+  tokensIn           Int                 @map("tokens_in")
+  tokensOut          Int                 @map("tokens_out")
+  latencyMs          Int                 @map("latency_ms")
+  metadata           Json?               // Metadata adicional (newVariationId, appliedTaxonomy, etc.)
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  run                QASweep2Run         @relation(fields: [runId], references: [id], onDelete: Cascade)
+  variation          QuestionVariation   @relation(fields: [variationId], references: [id], onDelete: Cascade)
+
+  @@index([runId])
+  @@index([variationId])
+  @@index([status])
+  @@map("qa_sweep_2_results")
+}
+
+model QASweep2Label {
+  id           String            @id @default(cuid())
+  name         String            @unique
+  description  String
+  severity     QASweep2Severity
+  category     QASweep2Category
+  autoFixable  Boolean           @default(false)
+  createdAt    DateTime          @default(now())
+
+  @@map("qa_sweep_2_labels")
+}
+
+enum QASweep2Status {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+}
+
+enum QASweep2ResultStatus {
+  ANALYZED
+  CORRECTED
+  REVIEWED
+  APPLIED
+}
+
+enum QASweep2Severity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum QASweep2Category {
+  CONTENT
+  LOGIC
+  CLINICAL
+  FORMAT
+  GENDER
+  SAFETY
+}
+
+// ============================================================================
+// SISTEMA DE CONTROLES (EVALUACIONES)
+// ============================================================================
+
+// Paquetes de controles que puede comprar el alumno
+model ControlPackage {
+  id          String   @id @default(cuid())
+  name        String   // "Paquete 5 Controles"
+  description String?
+  price       Int      // 4900 (en pesos CLP)
+  controlQty  Int      @map("control_qty") // 5
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  
+  purchases   ControlPurchase[]
+
+  @@map("control_packages")
+}
+
+// Compras de paquetes de controles
+model ControlPurchase {
+  id              String          @id @default(cuid())
+  userId          String          @map("user_id")
+  packageId       String          @map("package_id")
+  paymentId       String?         @map("payment_id") // Referencia a Payment (Flow)
+  controlsTotal   Int             @map("controls_total") // 5
+  controlsUsed    Int             @default(0) @map("controls_used")
+  status          ControlPurchaseStatus @default(ACTIVE)
+  purchasedAt     DateTime        @default(now()) @map("purchased_at")
+  expiresAt       DateTime?       @map("expires_at")
+  
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  package         ControlPackage  @relation(fields: [packageId], references: [id])
+  payment         Payment?        @relation(fields: [paymentId], references: [id])
+  controls        Control[]
+
+  @@index([userId])
+  @@index([status])
+  @@map("control_purchases")
+}
+
+// Instancia de un control (15 preguntas)
+model Control {
+  id              String          @id @default(cuid())
+  purchaseId      String          @map("purchase_id")
+  userId          String          @map("user_id")
+  status          ControlStatus   @default(IN_PROGRESS)
+  score           Int?            // Puntaje final (0-15)
+  correctAnswers  Int?            @map("correct_answers")
+  totalQuestions  Int             @default(15) @map("total_questions")
+  startedAt       DateTime        @default(now()) @map("started_at")
+  completedAt     DateTime?       @map("completed_at")
+  timeSpentSecs   Int?            @map("time_spent_secs") // Tiempo total en segundos
+  
+  purchase        ControlPurchase @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  questions       ControlQuestion[]
+  answers         ControlAnswer[]
+
+  @@index([userId])
+  @@index([status])
+  @@map("controls")
+}
+
+// Preguntas dentro de un control (15 preguntas)
+model ControlQuestion {
+  id              String   @id @default(cuid())
+  controlId       String   @map("control_id")
+  variationId     String   @map("variation_id") // QuestionVariation
+  questionOrder   Int      @map("question_order") // 1-15
+  
+  control         Control           @relation(fields: [controlId], references: [id], onDelete: Cascade)
+  variation       QuestionVariation @relation(fields: [variationId], references: [id])
+  
+  @@unique([controlId, questionOrder])
+  @@index([controlId])
+  @@map("control_questions")
+}
+
+// Respuestas del alumno
+model ControlAnswer {
+  id              String   @id @default(cuid())
+  controlId       String   @map("control_id")
+  variationId     String   @map("variation_id")
+  selectedAnswer  String   @map("selected_answer") // A, B, C, D
+  isCorrect       Boolean  @map("is_correct")
+  answeredAt      DateTime @default(now()) @map("answered_at")
+  
+  control         Control           @relation(fields: [controlId], references: [id], onDelete: Cascade)
+  variation       QuestionVariation @relation(fields: [variationId], references: [id])
+
+  @@unique([controlId, variationId])
+  @@index([controlId])
+  @@map("control_answers")
+}
+
+enum ControlPurchaseStatus {
+  PENDING
+  ACTIVE
+  EXPIRED
+  CANCELLED
+}
+
+enum ControlStatus {
+  IN_PROGRESS
+  COMPLETED
+  ABANDONED
+}
+
+// ============================================================================
+// SISTEMA DE PRUEBAS (EXÁMENES DE 45 PREGUNTAS)
+// ============================================================================
+
+// Paquetes de pruebas que puede comprar el alumno
+model ExamPackage {
+  id          String   @id @default(cuid())
+  name        String   @unique // "Paquete 3 Pruebas", "Paquete 10 Pruebas", "Paquete 20 Pruebas"
+  description String?
+  price       Int      // 8900, 18900, 32900 (en pesos CLP)
+  examQty     Int      @map("exam_qty") // 3, 10, 20
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  
+  purchases   ExamPurchase[]
+
+  @@map("exam_packages")
+}
+
+// Compras de paquetes de pruebas
+model ExamPurchase {
+  id              String          @id @default(cuid())
+  userId          String          @map("user_id")
+  packageId       String          @map("package_id")
+  paymentId       String?         @map("payment_id") // Referencia a Payment (Flow)
+  examsTotal      Int             @map("exams_total") // 3, 10, 20
+  examsUsed       Int             @default(0) @map("exams_used")
+  status          ExamPurchaseStatus @default(ACTIVE)
+  purchasedAt     DateTime        @default(now()) @map("purchased_at")
+  expiresAt       DateTime?       @map("expires_at")
+  
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  package         ExamPackage     @relation(fields: [packageId], references: [id])
+  payment         Payment?        @relation(fields: [paymentId], references: [id])
+  exams           Exam[]
+
+  @@index([userId])
+  @@index([status])
+  @@map("exam_purchases")
+}
+
+// Instancia de una prueba (45 preguntas)
+model Exam {
+  id              String          @id @default(cuid())
+  purchaseId      String          @map("purchase_id")
+  userId          String          @map("user_id")
+  status          ExamStatus      @default(IN_PROGRESS)
+  score           Int?            // Puntaje final (0-45)
+  correctAnswers  Int?            @map("correct_answers")
+  totalQuestions  Int             @default(45) @map("total_questions")
+  startedAt       DateTime        @default(now()) @map("started_at")
+  completedAt     DateTime?       @map("completed_at")
+  timeSpentSecs   Int?            @map("time_spent_secs") // Tiempo total en segundos
+  
+  purchase        ExamPurchase    @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  questions       ExamQuestion[]
+  answers         ExamAnswer[]
+
+  @@index([userId])
+  @@index([status])
+  @@map("exams")
+}
+
+// Preguntas dentro de una prueba (45 preguntas)
+model ExamQuestion {
+  id              String   @id @default(cuid())
+  examId          String   @map("exam_id")
+  variationId     String   @map("variation_id") // QuestionVariation
+  questionOrder   Int      @map("question_order") // 1-45
+  
+  exam            Exam              @relation(fields: [examId], references: [id], onDelete: Cascade)
+  variation       QuestionVariation @relation(fields: [variationId], references: [id])
+  
+  @@unique([examId, questionOrder])
+  @@index([examId])
+  @@map("exam_questions")
+}
+
+// Respuestas del alumno en pruebas
+model ExamAnswer {
+  id              String   @id @default(cuid())
+  examId          String   @map("exam_id")
+  variationId     String   @map("variation_id")
+  selectedAnswer  String   @map("selected_answer") // A, B, C, D
+  isCorrect       Boolean  @map("is_correct")
+  answeredAt      DateTime @default(now()) @map("answered_at")
+  
+  exam            Exam              @relation(fields: [examId], references: [id], onDelete: Cascade)
+  variation       QuestionVariation @relation(fields: [variationId], references: [id])
+
+  @@unique([examId, variationId])
+  @@index([examId])
+  @@map("exam_answers")
+}
+
+enum ExamPurchaseStatus {
+  PENDING
+  ACTIVE
+  EXPIRED
+  CANCELLED
+}
+
+enum ExamStatus {
+  IN_PROGRESS
+  COMPLETED
+  ABANDONED
+}
+
+// ============================================================================
+// SISTEMA DE ENSAYOS EUNACOM (180 PREGUNTAS)
+// ============================================================================
+
+// Paquetes de ensayos que puede comprar el alumno
+model MockExamPackage {
+  id          String   @id @default(cuid())
+  name        String   @unique // "Paquete 1 Ensayo", "Paquete 3 Ensayos", "Paquete 5 Ensayos"
+  description String?
+  price       Int      // 6900, 14900, 22900 (en pesos CLP)
+  mockExamQty Int      @map("mock_exam_qty") // 1, 3, 5
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  
+  purchases   MockExamPurchase[]
+
+  @@map("mock_exam_packages")
+}
+
+// Compras de paquetes de ensayos
+model MockExamPurchase {
+  id              String          @id @default(cuid())
+  userId          String          @map("user_id")
+  packageId       String          @map("package_id")
+  paymentId       String?         @map("payment_id") // Referencia a Payment (Flow)
+  mockExamsTotal  Int             @map("mock_exams_total") // 1, 3, 5
+  mockExamsUsed   Int             @default(0) @map("mock_exams_used")
+  status          MockExamPurchaseStatus @default(ACTIVE)
+  purchasedAt     DateTime        @default(now()) @map("purchased_at")
+  expiresAt       DateTime?       @map("expires_at")
+  
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  package         MockExamPackage @relation(fields: [packageId], references: [id])
+  payment         Payment?        @relation(fields: [paymentId], references: [id])
+  mockExams       MockExam[]
+
+  @@index([userId])
+  @@index([status])
+  @@map("mock_exam_purchases")
+}
+
+// Instancia de un ensayo (180 preguntas)
+model MockExam {
+  id              String          @id @default(cuid())
+  purchaseId      String          @map("purchase_id")
+  userId          String          @map("user_id")
+  status          MockExamStatus  @default(IN_PROGRESS)
+  score           Int?            // Puntaje final (0-180)
+  correctAnswers  Int?            @map("correct_answers")
+  totalQuestions  Int             @default(180) @map("total_questions")
+  startedAt       DateTime        @default(now()) @map("started_at")
+  completedAt     DateTime?       @map("completed_at")
+  timeSpentSecs   Int?            @map("time_spent_secs") // Tiempo total en segundos
+  
+  purchase        MockExamPurchase @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  questions       MockExamQuestion[]
+  answers         MockExamAnswer[]
+  aiAnalyses      ExamAIAnalysis[]
+
+  @@index([userId])
+  @@index([status])
+  @@map("mock_exams")
+}
+
+// Preguntas dentro de un ensayo (180 preguntas)
+model MockExamQuestion {
+  id              String   @id @default(cuid())
+  mockExamId      String   @map("mock_exam_id")
+  variationId     String   @map("variation_id") // QuestionVariation
+  questionOrder   Int      @map("question_order") // 1-180
+  
+  mockExam        MockExam          @relation(fields: [mockExamId], references: [id], onDelete: Cascade)
+  variation       QuestionVariation @relation(fields: [variationId], references: [id])
+  
+  @@unique([mockExamId, questionOrder])
+  @@index([mockExamId])
+  @@map("mock_exam_questions")
+}
+
+// Respuestas del alumno en ensayos
+model MockExamAnswer {
+  id              String   @id @default(cuid())
+  mockExamId      String   @map("mock_exam_id")
+  variationId     String   @map("variation_id")
+  selectedAnswer  String   @map("selected_answer") // A, B, C, D
+  isCorrect       Boolean  @map("is_correct")
+  answeredAt      DateTime @default(now()) @map("answered_at")
+  
+  mockExam        MockExam          @relation(fields: [mockExamId], references: [id], onDelete: Cascade)
+  variation       QuestionVariation @relation(fields: [variationId], references: [id])
+
+  @@unique([mockExamId, variationId])
+  @@index([mockExamId])
+  @@map("mock_exam_answers")
+}
+
+// Análisis IA de rendimiento en ensayos
+model ExamAIAnalysis {
+  id                    String    @id @default(cuid())
+  userId                String    @map("user_id")
+  mockExamId            String?   @map("mock_exam_id") // NULL para análisis evolutivos
+  analysisType          AnalysisType @map("analysis_type") // 'INDIVIDUAL' | 'EVOLUTIONARY'
+
+  // Individual analysis fields
+  strengths             String[] // Especialidades >70%
+  mediumPerformance     String[]  @map("medium_performance") // Especialidades 50-70%
+  weaknesses            String[] // Especialidades <50%
+  individualSummary     String?   @map("individual_summary") @db.Text // ~300 caracteres
+
+  // Evolutionary analysis fields
+  evolutionarySummary   String?   @map("evolutionary_summary") @db.Text // ~400 caracteres
+  examsAnalyzed         Int?      @map("exams_analyzed") // Número de ensayos analizados
+  lastExamAnalyzed      String?   @map("last_exam_analyzed") // ID del último ensayo analizado
+
+  // Metadata
+  aiModel               String    @map("ai_model") // 'gpt-5-mini'
+  tokensUsed            Int       @map("tokens_used")
+  latencyMs             Int       @map("latency_ms")
+  createdAt             DateTime  @default(now()) @map("created_at")
+
+  // Relations
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mockExam              MockExam? @relation(fields: [mockExamId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([mockExamId])
+  @@index([analysisType])
+  @@map("exam_ai_analyses")
+}
+
+enum AnalysisType {
+  INDIVIDUAL    // Análisis post-ensayo individual
+  EVOLUTIONARY  // Análisis evolutivo global
+}
+
+enum MockExamPurchaseStatus {
+  PENDING
+  ACTIVE
+  EXPIRED
+  CANCELLED
+}
+
+enum MockExamStatus {
+  IN_PROGRESS
+  COMPLETED
+  ABANDONED
+}
+
+// ============================================================================
+// SISTEMA DE MARKETING INTELLIGENCE
+// ============================================================================
+
+// Campaña de marketing (Google Ads, Facebook Ads, etc.)
+model Campaign {
+  id              String           @id @default(cuid())
+  externalId      String           @unique @map("external_id") // ID de Google Ads
+  name            String
+  platform        CampaignPlatform // GOOGLE_ADS, META_ADS, etc.
+  status          CampaignStatus   @default(ACTIVE)
+  budget          Float?           // Presupuesto diario
+  currency        String           @default("CLP")
+  startDate       DateTime?        @map("start_date")
+  endDate         DateTime?        @map("end_date")
+  isActive        Boolean          @default(true) @map("is_active")
+  metadata        Json?            // Configuraciones adicionales
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @updatedAt @map("updated_at")
+
+  metrics         CampaignMetric[]
+  recommendations Recommendation[]
+  alerts          Alert[]
+
+  @@index([platform])
+  @@index([status])
+  @@map("campaigns")
+}
+
+// Métricas diarias de campaña
+model CampaignMetric {
+  id              String   @id @default(cuid())
+  campaignId      String   @map("campaign_id")
+  date            DateTime
+
+  // Métricas de impresión y clics
+  impressions     Int      @default(0)
+  clicks          Int      @default(0)
+  ctr             Float    @default(0) // Click-through rate
+
+  // Métricas de conversión
+  conversions     Int      @default(0)
+  conversionRate  Float    @default(0) @map("conversion_rate")
+  conversionValue Float    @default(0) @map("conversion_value")
+
+  // Métricas de costo
+  cost            Float    @default(0)
+  cpc             Float    @default(0) // Cost per click
+  cpa             Float    @default(0) // Cost per acquisition
+
+  // ROI
+  revenue         Float    @default(0)
+  roi             Float    @default(0) // Return on investment
+  roas            Float    @default(0) // Return on ad spend
+
+  // Métricas de engagement
+  avgTimeOnSite   Float?   @map("avg_time_on_site") // Segundos
+  bounceRate      Float?   @map("bounce_rate")
+  pagesPerSession Float?   @map("pages_per_session")
+
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  campaign        Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@unique([campaignId, date])
+  @@index([date])
+  @@map("campaign_metrics")
+}
+
+// Recomendaciones generadas por IA
+model Recommendation {
+  id              String               @id @default(cuid())
+  campaignId      String?              @map("campaign_id")
+  type            RecommendationType
+  priority        RecommendationPriority
+  category        String?              // budget, targeting, creative, bidding, schedule
+  title           String
+  description     String               @db.Text
+  actionItems     String[]             @map("action_items")
+  expectedImpact  String?              @map("expected_impact") @db.Text
+  estimatedROI    Float?               @map("estimated_roi")
+  aiConfidence    Float?               @map("ai_confidence") // 0.0 to 1.0
+  status          RecommendationStatus @default(PENDING)
+  appliedAt       DateTime?            @map("applied_at")
+  appliedBy       String?              @map("applied_by")
+  resultNotes     String?              @map("result_notes") @db.Text
+  expiresAt       DateTime?            @map("expires_at")
+  createdAt       DateTime             @default(now()) @map("created_at")
+  updatedAt       DateTime             @updatedAt @map("updated_at")
+
+  campaign        Campaign?            @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@index([campaignId])
+  @@index([status])
+  @@index([priority])
+  @@map("recommendations")
+}
+
+// Análisis de IA para Marketing (diarios y semanales)
+model MarketingAIAnalysis {
+  id              String                @id @default(cuid())
+  type            MarketingAnalysisType
+  period          String                // "2024-01-15" para diario, "2024-W03" para semanal
+  startDate       DateTime              @map("start_date")
+  endDate         DateTime              @map("end_date")
+
+  // Resumen del análisis
+  summary         String                @db.Text
+  keyInsights     String[]              @map("key_insights")
+  concerns        String[]              // Áreas de preocupación
+  opportunities   String[]              // Oportunidades detectadas
+
+  // Datos analizados
+  totalSpend      Float                 @map("total_spend")
+  totalRevenue    Float                 @map("total_revenue")
+  overallROI      Float                 @map("overall_roi")
+
+  // Metadata de IA
+  aiModel         String                @map("ai_model") // "gpt-4-turbo", "claude-3-sonnet"
+  tokensUsed      Int                   @map("tokens_used")
+  latencyMs       Int                   @map("latency_ms")
+
+  createdAt       DateTime              @default(now()) @map("created_at")
+
+  @@unique([type, period])
+  @@index([type])
+  @@index([createdAt])
+  @@map("marketing_ai_analyses")
+}
+
+// Alertas automáticas de anomalías
+model Alert {
+  id              String       @id @default(cuid())
+  campaignId      String?      @map("campaign_id")
+  type            AlertType
+  severity        AlertSeverity
+  title           String
+  message         String       @db.Text
+  metric          String?      // Métrica que disparó la alerta
+  threshold       Float?       // Umbral configurado
+  actualValue     Float?       @map("actual_value") // Valor real
+  isRead          Boolean      @default(false) @map("is_read")
+  isResolved      Boolean      @default(false) @map("is_resolved")
+  resolvedAt      DateTime?    @map("resolved_at")
+  resolvedBy      String?      @map("resolved_by")
+  resolvedNotes   String?      @map("resolved_notes") @db.Text
+  createdAt       DateTime     @default(now()) @map("created_at")
+
+  campaign        Campaign?    @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@index([campaignId])
+  @@index([severity])
+  @@index([isRead])
+  @@index([isResolved])
+  @@map("alerts")
+}
+
+// Conversaciones con IA del dashboard
+model ChatMessage {
+  id              String   @id @default(cuid())
+  sessionId       String   @map("session_id")
+  role            ChatRole
+  content         String   @db.Text
+  metadata        Json?    // Datos adicionales (campañas consultadas, etc.)
+  aiModel         String?  @map("ai_model")
+  tokensUsed      Int?     @map("tokens_used")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  @@index([sessionId])
+  @@index([createdAt])
+  @@map("chat_messages")
+}
+
+// Configuración de tests A/B
+model ABTest {
+  id              String       @id @default(cuid())
+  name            String
+  description     String?      @db.Text
+  status          ABTestStatus @default(DRAFT)
+
+  // Variantes
+  variantA        Json         @map("variant_a") // Configuración de variante A
+  variantB        Json         @map("variant_b") // Configuración de variante B
+
+  // Distribución de tráfico
+  trafficSplit    Float        @default(0.5) @map("traffic_split") // 0.5 = 50/50
+
+  // Resultados
+  startedAt       DateTime?    @map("started_at")
+  endedAt         DateTime?    @map("ended_at")
+  winningVariant  String?      @map("winning_variant") // "A" o "B"
+  confidence      Float?       // Nivel de confianza estadística
+  results         Json?        // Resultados detallados
+
+  createdAt       DateTime     @default(now()) @map("created_at")
+  updatedAt       DateTime     @updatedAt @map("updated_at")
+
+  @@map("ab_tests")
+}
+
+// Enums para Marketing Intelligence
+enum CampaignPlatform {
+  GOOGLE_ADS
+  META_ADS
+  LINKEDIN_ADS
+  TIKTOK_ADS
+  MANUAL
+}
+
+enum CampaignStatus {
+  ACTIVE
+  PAUSED
+  ENDED
+  DRAFT
+}
+
+enum RecommendationType {
+  BUDGET_OPTIMIZATION
+  KEYWORD_ADJUSTMENT
+  AD_COPY_IMPROVEMENT
+  TARGETING_REFINEMENT
+  BIDDING_STRATEGY
+  SCHEDULE_OPTIMIZATION
+  CREATIVE_REFRESH
+  LANDING_PAGE
+  OTHER
+}
+
+enum RecommendationPriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum RecommendationStatus {
+  PENDING
+  IN_REVIEW
+  APPROVED
+  APPLIED
+  REJECTED
+  DISMISSED
+  EXPIRED
+}
+
+enum MarketingAnalysisType {
+  DAILY
+  WEEKLY
+  MONTHLY
+  ON_DEMAND
+}
+
+enum AlertType {
+  BUDGET_OVERRUN
+  LOW_PERFORMANCE
+  HIGH_CPA
+  LOW_CONVERSION_RATE
+  TRAFFIC_DROP
+  COST_SPIKE
+  ANOMALY_DETECTED
+  OPPORTUNITY
+}
+
+enum AlertSeverity {
+  INFO
+  WARNING
+  ERROR
+  CRITICAL
+}
+
+enum ChatRole {
+  USER
+  ASSISTANT
+  SYSTEM
+}
+
+enum ABTestStatus {
+  DRAFT
+  RUNNING
+  COMPLETED
+  CANCELLED
+}

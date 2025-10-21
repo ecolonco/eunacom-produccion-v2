@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sobre Nosotros - EUNACOM Platform | La mejor plataforma de preparación</title>
+  <meta name="description" content="Conoce EUNACOM Platform: la plataforma más completa para preparar el examen EUNACOM en Chile. Más de 10.000 ejercicios explicados, sistema prepago sin contratos, y prueba gratis." />
+  <meta name="keywords" content="EUNACOM Platform, sobre nosotros, preparación EUNACOM, examen médico Chile, revalidación médica, plataforma educativa" />
+  <link rel="canonical" href="https://eunacom-nuevo.vercel.app/about.html" />
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="Sobre EUNACOM Platform - La mejor preparación para tu examen" />
+  <meta property="og:description" content="Plataforma completa con +10.000 ejercicios explicados para preparar el examen EUNACOM. Sin contratos, prepago flexible, prueba gratis." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://eunacom-nuevo.vercel.app/about.html" />
+
+  <!-- Schema.org AboutPage -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "AboutPage",
+    "name": "Sobre EUNACOM Platform",
+    "description": "Información sobre EUNACOM Platform, la plataforma de preparación más completa para el examen EUNACOM en Chile",
+    "mainEntity": {
+      "@type": "EducationalOrganization",
+      "name": "EUNACOM Platform",
+      "description": "Plataforma de preparación para el examen EUNACOM con más de 10.000 ejercicios explicados",
+      "url": "https://eunacom-nuevo.vercel.app",
+      "email": "softwaredatamatic@gmail.com",
+      "foundingDate": "2025",
+      "address": {
+        "@type": "PostalAddress",
+        "addressCountry": "CL"
+      }
+    }
+  }
+  </script>
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      padding: 20px;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      overflow: hidden;
+    }
+
+    .hero {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      text-align: center;
+      padding: 60px 40px;
+    }
+
+    .hero h1 {
+      font-size: 3em;
+      margin-bottom: 15px;
+      font-weight: 700;
+    }
+
+    .hero .subtitle {
+      font-size: 1.3em;
+      opacity: 0.95;
+      max-width: 700px;
+      margin: 0 auto;
+    }
+
+    .content {
+      padding: 40px;
+    }
+
+    section {
+      margin-bottom: 50px;
+    }
+
+    section:last-child {
+      margin-bottom: 0;
+    }
+
+    h2 {
+      color: #667eea;
+      font-size: 2em;
+      margin-bottom: 20px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    h2 .icon {
+      font-size: 1.2em;
+    }
+
+    h3 {
+      color: #764ba2;
+      font-size: 1.4em;
+      margin-bottom: 15px;
+      margin-top: 25px;
+      font-weight: 600;
+    }
+
+    p {
+      margin-bottom: 15px;
+      font-size: 1.05em;
+      color: #555;
+      line-height: 1.8;
+    }
+
+    .highlight {
+      background: #f8f9ff;
+      padding: 25px;
+      border-radius: 8px;
+      border-left: 4px solid #667eea;
+      margin: 20px 0;
+    }
+
+    .highlight p {
+      margin-bottom: 10px;
+    }
+
+    .highlight p:last-child {
+      margin-bottom: 0;
+    }
+
+    ul {
+      margin: 15px 0;
+      padding-left: 25px;
+    }
+
+    li {
+      margin: 12px 0;
+      font-size: 1.05em;
+      color: #555;
+      line-height: 1.7;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+      margin: 25px 0;
+    }
+
+    .feature-card {
+      background: #f8f9ff;
+      padding: 25px;
+      border-radius: 8px;
+      border: 2px solid #e0e7ff;
+      transition: all 0.3s;
+    }
+
+    .feature-card:hover {
+      border-color: #667eea;
+      transform: translateY(-5px);
+      box-shadow: 0 10px 25px rgba(102, 126, 234, 0.15);
+    }
+
+    .feature-card .icon {
+      font-size: 2.5em;
+      margin-bottom: 15px;
+      display: block;
+    }
+
+    .feature-card h4 {
+      color: #667eea;
+      font-size: 1.2em;
+      margin-bottom: 10px;
+      font-weight: 600;
+    }
+
+    .feature-card p {
+      margin-bottom: 0;
+      font-size: 0.95em;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      margin: 30px 0;
+    }
+
+    .stat-card {
+      text-align: center;
+      padding: 30px 20px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border-radius: 8px;
+      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    }
+
+    .stat-number {
+      font-size: 3em;
+      font-weight: 700;
+      display: block;
+      margin-bottom: 10px;
+    }
+
+    .stat-label {
+      font-size: 1em;
+      opacity: 0.95;
+    }
+
+    .process-steps {
+      counter-reset: step-counter;
+      list-style: none;
+      padding: 0;
+    }
+
+    .process-steps li {
+      counter-increment: step-counter;
+      position: relative;
+      padding-left: 80px;
+      margin: 30px 0;
+    }
+
+    .process-steps li::before {
+      content: counter(step-counter);
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 50px;
+      height: 50px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5em;
+      font-weight: 700;
+    }
+
+    .differentiators {
+      list-style: none;
+      padding: 0;
+    }
+
+    .differentiators li {
+      padding: 15px;
+      margin: 10px 0;
+      background: #f8f9ff;
+      border-radius: 6px;
+      border-left: 4px solid #667eea;
+      font-size: 1.05em;
+    }
+
+    .differentiators li strong {
+      color: #667eea;
+      font-weight: 600;
+    }
+
+    .cta-section {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 50px;
+      border-radius: 8px;
+      text-align: center;
+      margin-top: 40px;
+    }
+
+    .cta-section h2 {
+      color: white;
+      margin-bottom: 20px;
+      display: block;
+    }
+
+    .cta-section p {
+      color: white;
+      font-size: 1.2em;
+      margin-bottom: 30px;
+      opacity: 0.95;
+    }
+
+    .cta-button {
+      display: inline-block;
+      background: white;
+      color: #667eea;
+      padding: 18px 45px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 1.2em;
+      margin: 10px;
+      transition: all 0.3s;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    }
+
+    .cta-button:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 6px 25px rgba(0,0,0,0.3);
+    }
+
+    .back-link {
+      display: inline-block;
+      margin-top: 30px;
+      color: #667eea;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 1.1em;
+      padding: 10px 20px;
+      border: 2px solid #667eea;
+      border-radius: 6px;
+      transition: all 0.2s;
+    }
+
+    .back-link:hover {
+      background: #667eea;
+      color: white;
+    }
+
+    .contact-info {
+      background: #fff3cd;
+      padding: 20px;
+      border-radius: 8px;
+      border-left: 4px solid #ffc107;
+      margin: 20px 0;
+    }
+
+    .contact-info a {
+      color: #667eea;
+      font-weight: 600;
+      text-decoration: none;
+    }
+
+    .contact-info a:hover {
+      text-decoration: underline;
+    }
+
+    @media (max-width: 768px) {
+      .hero h1 {
+        font-size: 2em;
+      }
+
+      .hero .subtitle {
+        font-size: 1.1em;
+      }
+
+      .content {
+        padding: 25px;
+      }
+
+      h2 {
+        font-size: 1.6em;
+      }
+
+      .features-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .stats {
+        grid-template-columns: 1fr;
+      }
+
+      .process-steps li {
+        padding-left: 70px;
+      }
+
+      .cta-button {
+        display: block;
+        margin: 10px 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Hero Section -->
+    <div class="hero">
+      <h1>🩺 Sobre EUNACOM Platform</h1>
+      <p class="subtitle">La plataforma de preparación más completa para el examen EUNACOM en Chile</p>
+    </div>
+
+    <div class="content">
+      <!-- ¿Qué es EUNACOM? (El Examen) -->
+      <section>
+        <h2><span class="icon">📋</span> ¿Qué es el examen EUNACOM?</h2>
+        <p>
+          El <strong>EUNACOM (Examen Único Nacional de Conocimientos de Medicina)</strong> es la evaluación que deben rendir los <strong>médicos titulados en el extranjero</strong> para poder ejercer la medicina en Chile.
+        </p>
+        <p>
+          Es administrado por <strong>ASOFAMECH (Asociación de Facultades de Medicina de Chile)</strong> y es un requisito <strong>obligatorio para la revalidación del título médico</strong> en el país.
+        </p>
+
+        <div class="highlight">
+          <h3>Formato del examen:</h3>
+          <ul>
+            <li><strong>180 preguntas</strong> de selección múltiple</li>
+            <li><strong>3 horas</strong> de duración</li>
+            <li>Evaluación en <strong>todas las especialidades médicas</strong></li>
+            <li>Énfasis en: Medicina Interna, Cirugía, Pediatría, Ginecología-Obstetricia, Medicina Familiar y Psiquiatría</li>
+          </ul>
+        </div>
+
+        <p>
+          Aprobar el EUNACOM es fundamental para que médicos extranjeros puedan ejercer legalmente su profesión en Chile, validando que poseen los conocimientos médicos necesarios según los estándares chilenos.
+        </p>
+      </section>
+
+      <!-- ¿Qué es EUNACOM Platform? -->
+      <section>
+        <h2><span class="icon">🚀</span> ¿Qué es EUNACOM Platform?</h2>
+        <p>
+          <strong>EUNACOM Platform</strong> es una plataforma online diseñada específicamente para ayudarte a prepararte y aprobar el examen EUNACOM.
+        </p>
+        <p>
+          Ofrecemos acceso a <strong>más de 10.000 ejercicios explicados</strong>, organizados por especialidades médicas y niveles de dificultad, con un sistema inteligente que te ayuda a identificar tus áreas débiles y mejorar continuamente.
+        </p>
+
+        <div class="stats">
+          <div class="stat-card">
+            <span class="stat-number">+10.000</span>
+            <span class="stat-label">Ejercicios explicados</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-number">100%</span>
+            <span class="stat-label">Especialidades cubiertas</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-number">24/7</span>
+            <span class="stat-label">Acceso desde cualquier lugar</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ¿Por qué existe esta plataforma? -->
+      <section>
+        <h2><span class="icon">💡</span> ¿Por qué existe EUNACOM Platform?</h2>
+
+        <h3>El problema que resolvemos:</h3>
+        <p>
+          Sabemos lo desafiante que es revalidar tu título médico en un país nuevo. Los médicos extranjeros que desean ejercer en Chile enfrentan varios obstáculos:
+        </p>
+        <ul>
+          <li><strong>Falta de recursos de calidad</strong> específicos para preparar el EUNACOM</li>
+          <li><strong>Materiales tradicionales caros o desactualizados</strong></li>
+          <li><strong>Dificultad para practicar</strong> con ejercicios similares al examen real</li>
+          <li><strong>Falta de retroalimentación</strong> para identificar áreas débiles</li>
+          <li><strong>Sistemas rígidos</strong> con contratos anuales y costos elevados</li>
+        </ul>
+
+        <div class="highlight">
+          <h3>Nuestra solución:</h3>
+          <p>
+            Por eso creamos <strong>EUNACOM Platform</strong>: para darte acceso a miles de ejercicios de calidad médica, con explicaciones claras y un sistema que te ayuda a identificar exactamente dónde necesitas mejorar.
+          </p>
+          <p>
+            <strong>Sin contratos complicados, sin letras chicas, solo una herramienta efectiva para tu preparación.</strong>
+          </p>
+        </div>
+      </section>
+
+      <!-- ¿Para quién es? -->
+      <section>
+        <h2><span class="icon">👨‍⚕️</span> ¿Para quién es EUNACOM Platform?</h2>
+        <p>Nuestra plataforma está diseñada para:</p>
+
+        <div class="features-grid">
+          <div class="feature-card">
+            <span class="icon">🌎</span>
+            <h4>Médicos titulados en el extranjero</h4>
+            <p>Que necesitan aprobar el EUNACOM para ejercer en Chile</p>
+          </div>
+          <div class="feature-card">
+            <span class="icon">🎓</span>
+            <h4>Profesionales en proceso de revalidación</h4>
+            <p>Que buscan preparación estructurada y efectiva</p>
+          </div>
+          <div class="feature-card">
+            <span class="icon">📚</span>
+            <h4>Médicos con experiencia</h4>
+            <p>Que necesitan actualizar conocimientos y practicar</p>
+          </div>
+          <div class="feature-card">
+            <span class="icon">⚡</span>
+            <h4>Estudiantes enfocados</h4>
+            <p>Que quieren maximizar su tiempo de estudio</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ¿Cómo funciona? -->
+      <section>
+        <h2><span class="icon">⚙️</span> ¿Cómo funciona?</h2>
+        <p>Prepararte para el EUNACOM con nuestra plataforma es simple:</p>
+
+        <ol class="process-steps">
+          <li>
+            <strong>Regístrate gratis</strong><br>
+            Crea tu cuenta en menos de 2 minutos. Recibes <strong>1 control gratis de 15 preguntas</strong> para evaluar la plataforma sin compromiso.
+          </li>
+          <li>
+            <strong>Practica con ejercicios por especialidad</strong><br>
+            Accede a más de 10.000 ejercicios organizados por especialidades médicas y niveles de dificultad.
+          </li>
+          <li>
+            <strong>Recibe feedback detallado</strong><br>
+            Cada ejercicio incluye explicación médica completa de la respuesta correcta con referencias actualizadas.
+          </li>
+          <li>
+            <strong>Identifica tus áreas débiles automáticamente</strong><br>
+            Nuestro sistema analiza tu desempeño y te muestra exactamente dónde necesitas reforzar.
+          </li>
+          <li>
+            <strong>Compra paquetes según tus necesidades</strong><br>
+            Sistema prepago flexible: compra solo lo que necesitas, cuando lo necesitas. Sin contratos ni mensualidades.
+          </li>
+          <li>
+            <strong>Mide tu progreso con ensayos completos</strong><br>
+            Simula el examen real con ensayos de 180 preguntas y evalúa tu preparación.
+          </li>
+          <li>
+            <strong>Prepárate con confianza para el EUNACOM</strong><br>
+            Llega al examen oficial sabiendo exactamente en qué nivel estás y qué esperar.
+          </li>
+        </ol>
+      </section>
+
+      <!-- Diferenciadores clave -->
+      <section>
+        <h2><span class="icon">⭐</span> ¿Qué nos hace diferentes?</h2>
+
+        <ul class="differentiators">
+          <li>
+            <strong>+10.000 ejercicios con explicación médica detallada</strong> - No solo respuestas correctas, sino el fundamento médico completo con referencias a guías clínicas actualizadas.
+          </li>
+          <li>
+            <strong>Prueba gratis sin tarjeta</strong> - Recibe 1 control de 15 preguntas gratis al registrarte. Evalúa la calidad sin riesgo.
+          </li>
+          <li>
+            <strong>Sin contratos ni mensualidades</strong> - Sistema prepago: pagas solo por lo que usas, cuando lo necesitas. Sin ataduras.
+          </li>
+          <li>
+            <strong>Inteligencia Artificial para calidad</strong> - Utilizamos IA (GPT-4) para revisión continua y control de calidad de ejercicios.
+          </li>
+          <li>
+            <strong>Contenido actualizado</strong> - Ejercicios basados en las últimas guías médicas internacionales y nacionales.
+          </li>
+          <li>
+            <strong>Sin fechas de expiración</strong> - Los paquetes que compras no expiran. Estudia a tu propio ritmo sin presión.
+          </li>
+          <li>
+            <strong>Dashboard inteligente de progreso</strong> - Análisis detallado por especialidad, identificación automática de áreas débiles y recomendaciones personalizadas.
+          </li>
+          <li>
+            <strong>Multiplataforma</strong> - Funciona perfectamente en computadores, tablets y celulares. Estudia donde quieras.
+          </li>
+        </ul>
+      </section>
+
+      <!-- Tecnología y Calidad -->
+      <section>
+        <h2><span class="icon">🔬</span> Tecnología y Control de Calidad</h2>
+        <p>
+          En <strong>EUNACOM Platform</strong> combinamos tecnología moderna con rigor médico:
+        </p>
+
+        <div class="features-grid">
+          <div class="feature-card">
+            <span class="icon">🤖</span>
+            <h4>Inteligencia Artificial</h4>
+            <p>GPT-4 para control de calidad automatizado y actualización continua de contenido médico</p>
+          </div>
+          <div class="feature-card">
+            <span class="icon">👨‍⚕️</span>
+            <h4>Revisión Médica Profesional</h4>
+            <p>Ejercicios validados por profesionales médicos especializados</p>
+          </div>
+          <div class="feature-card">
+            <span class="icon">📊</span>
+            <h4>Analytics Avanzado</h4>
+            <p>Sistema inteligente de tracking de progreso y análisis de desempeño</p>
+          </div>
+          <div class="feature-card">
+            <span class="icon">🔒</span>
+            <h4>Pagos Seguros</h4>
+            <p>Procesamiento seguro a través de Flow con encriptación SSL</p>
+          </div>
+          <div class="feature-card">
+            <span class="icon">⚡</span>
+            <h4>Plataforma Rápida</h4>
+            <p>Tecnología web moderna para carga instantánea y experiencia fluida</p>
+          </div>
+          <div class="feature-card">
+            <span class="icon">🔄</span>
+            <h4>Actualización Continua</h4>
+            <p>Contenido revisado y actualizado según últimas guías clínicas</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Valores y Compromiso -->
+      <section>
+        <h2><span class="icon">💎</span> Nuestros Valores</h2>
+
+        <div class="highlight">
+          <p><strong>🌐 Accesibilidad:</strong> Precios justos sin barreras de entrada. Creemos que todos los médicos deben tener acceso a preparación de calidad.</p>
+
+          <p><strong>📚 Calidad:</strong> Contenido médico preciso, actualizado y rigurosamente revisado. No comprometemos la calidad.</p>
+
+          <p><strong>🤝 Transparencia:</strong> Sin letras chicas, sin contratos trampa. Lo que ves es lo que obtienes.</p>
+
+          <p><strong>⏰ Flexibilidad:</strong> Estudia cuando quieras, donde quieras, a tu propio ritmo. Tu vida, tus horarios.</p>
+
+          <p><strong>🎯 Éxito del estudiante:</strong> Tu aprobación es nuestro objetivo. Diseñamos cada feature pensando en tu éxito.</p>
+        </div>
+      </section>
+
+      <!-- Contacto -->
+      <section>
+        <h2><span class="icon">📧</span> Contacto</h2>
+        <div class="contact-info">
+          <p><strong>¿Tienes preguntas?</strong> Estamos aquí para ayudarte.</p>
+          <p>
+            📧 Email: <a href="mailto:softwaredatamatic@gmail.com">softwaredatamatic@gmail.com</a>
+          </p>
+          <p>
+            ❓ Consulta nuestras <a href="/faq.html" target="_blank">Preguntas Frecuentes</a>
+          </p>
+        </div>
+      </section>
+
+      <!-- CTA Final -->
+      <div class="cta-section">
+        <h2>¿Listo para comenzar tu preparación?</h2>
+        <p>Regístrate gratis y recibe 1 control de 15 preguntas sin costo ni compromiso</p>
+        <a href="/" class="cta-button">🚀 Comenzar Gratis</a>
+        <a href="/faq.html" class="cta-button">❓ Ver Preguntas Frecuentes</a>
+      </div>
+
+      <!-- Medical Disclaimer -->
+      <div style="max-width: 800px; margin: 40px auto; padding: 20px; background: #fff9e6; border-left: 4px solid #ffc107; border-radius: 6px;">
+        <p style="font-size: 0.85em; color: #666; line-height: 1.7; margin: 0;">
+          <strong>⚠️ Aviso importante:</strong> Los ejercicios y contenidos de esta plataforma tienen fines
+          exclusivamente educativos y de preparación para el examen EUNACOM. No deben ser considerados como
+          base para realizar diagnósticos médicos, establecer tratamientos o tomar decisiones clínicas.
+          Consulte siempre con profesionales de la salud calificados para casos clínicos reales.
+        </p>
+      </div>
+
+      <!-- Back Link -->
+      <div style="text-align: center;">
+        <a href="/" class="back-link">← Volver a la plataforma</a>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
