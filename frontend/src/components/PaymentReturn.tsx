@@ -21,8 +21,19 @@ export const PaymentReturn: React.FC = () => {
     // Flow notifica el pago vía webhook; aquí solo confirmamos
     setStatus('success');
     setMessage('¡Pago procesado! Tus créditos se acreditarán en breve.');
-    
-    // Opcional: refrescar saldo del usuario llamando /api/auth/me
+
+    // Disparar evento de conversión de Google Ads
+    if (typeof window !== 'undefined' && window.gtag) {
+      window.gtag('event', 'conversion', {
+        'send_to': 'AW-17672216019/pHtICLCV2rEbENO94upB',
+        'value': 1.0,
+        'currency': 'CLP',
+        'transaction_id': token || `payment_${Date.now()}`
+      });
+      console.log('✅ Google Ads conversion event fired:', token);
+    }
+
+    // Opcional: refreshar saldo del usuario llamando /api/auth/me
     setTimeout(() => {
       window.location.href = '/';
     }, 3000);

@@ -10,3 +10,19 @@ interface ImportMetaEnv {
 interface ImportMeta {
   readonly env: ImportMetaEnv
 }
+
+// Google Tag Manager / Google Ads types
+interface Window {
+  dataLayer: any[];
+  gtag: (
+    command: 'config' | 'event' | 'js' | 'set',
+    targetId: string | Date,
+    config?: {
+      send_to?: string;
+      value?: number;
+      currency?: string;
+      transaction_id?: string;
+      [key: string]: any;
+    }
+  ) => void;
+}
